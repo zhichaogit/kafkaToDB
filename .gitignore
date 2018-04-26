@@ -1,0 +1,4 @@
+/libs/*.jar
+/bin/*.class
+/bin/log4j.*
+/log/*
