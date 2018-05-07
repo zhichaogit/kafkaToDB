@@ -218,6 +218,7 @@ public class EsgynDB
     }
 
     public long  InsertData(Connection  conn,
+			    String      message,
 			    String      schemaName,
 			    String      tableName, 
 			    int         thread,
@@ -253,6 +254,7 @@ public class EsgynDB
 	    st.executeUpdate(insertSql);
 	    st.cancel();
 	} catch (SQLException e) {
+	    log.debug ("Thread [" + thread + "] InsertData raw data: [" + message + "]");
 	    e.printStackTrace();
 	    return 0;
 	}
@@ -262,6 +264,7 @@ public class EsgynDB
     }
 
     public long UpdateData(Connection  conn,
+			   String      message,
 			   String      schemaName,
 			   String      tableName, 
 			   int         thread,
@@ -302,6 +305,7 @@ public class EsgynDB
 	    st.executeUpdate(updateSql);
 	    st.cancel();
 	} catch (SQLException e) {
+	    log.debug ("Thread [" + thread + "] UpdateData raw data: [" + message + "]");
 	    e.printStackTrace();
 	    return 0;
 	}
@@ -311,6 +315,7 @@ public class EsgynDB
     }
 
     public long DeleteData(Connection  conn,
+			   String      message,
 			   String      schemaName,
 			   String      tableName, 
 			   int         thread,
@@ -344,6 +349,7 @@ public class EsgynDB
 	    st.executeUpdate(deleteSql);
 	    st.cancel();
 	} catch (SQLException e) {
+	    log.debug ("Thread [" + thread + "] DeleteData raw data: [" + message + "]");
 	    e.printStackTrace();
 	    return 0;
 	}
