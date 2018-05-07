@@ -104,8 +104,13 @@ public class EsgynDB
 		}
 	    } else {
 		TableInfo  table = new TableInfo(defschema, deftable);
-		init_culumns(table);
-		schema.AddTable(deftable, table);
+		if (init_culumns(table) > 0) {
+		    schema.AddTable(deftable, table);
+		} else {
+		    log.error("The table [" + deftable + "] is not exists in "
+			      + "schema [" + defschema+ "]");
+		}
+		
 	    }
 	} catch (SQLException e) {
             e.printStackTrace();
@@ -114,8 +119,9 @@ public class EsgynDB
 	return schema;
     }
 
-    public void init_culumns(TableInfo table)
+    public int init_culumns(TableInfo table)
     {
+	int    columnnum = 0;
 	try {
 	    String getTableColumns = "SELECT o.object_name TABLE_NAME, "
 		+ "c.COLUMN_NAME COLUMN_NAME, c.FS_DATA_TYPE DATA_TYPE, "
@@ -149,12 +155,15 @@ public class EsgynDB
 				 + ", Type ID: " + coltype + "\n");
 
 		table.AddColumn(column);
+		columnnum++;
 	    }
 	    log.debug(strBuffer.toString());
 	    psmt.close();
 	} catch (SQLException e) {
 	    e.printStackTrace();
 	}
+
+	return columnnum;
     }
 
     public long GetBatchSize()
