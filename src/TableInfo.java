@@ -40,17 +40,17 @@ public class TableInfo
 	return (ColumnInfo)columns.get(index);
     }
 
-    public void IncreaseInsert()
+    public synchronized void IncreaseInsert()
     {
 	insertnum++;
     }
 
-    public void IncreaseUpdate()
+    public synchronized void IncreaseUpdate()
     {
 	updatenum++;
     }
 
-    public void IncreaseDelete()
+    public synchronized void IncreaseDelete()
     {
 	deletenum++;
     }

@@ -26,6 +26,11 @@ public class EsgynDB
     PreparedStatement       keeppsmt = null;
     private static Logger   log = Logger.getLogger(EsgynDB.class);
 
+    private long    messagenum = 0;
+    private long    insertnum = 0;
+    private long    updatenum = 0;
+    private long    deletenum = 0;
+
     public EsgynDB(String  defschema_,
 		   String  deftable_,
 		   String  dburl_, 
@@ -260,6 +265,11 @@ public class EsgynDB
 	}
 	
 	table.IncreaseInsert();
+	synchronized (this) {
+	    insertnum++;
+	    messagenum++;
+	}
+
 	return 1;
     }
 
@@ -311,6 +321,11 @@ public class EsgynDB
 	}
 
 	table.IncreaseUpdate();
+	synchronized (this){
+	    updatenum++;
+	    messagenum++;
+	}
+
 	return 1;
     }
 
@@ -355,12 +370,20 @@ public class EsgynDB
 	}
 
 	table.IncreaseDelete();
+	synchronized (this){
+	    messagenum++;
+	    deletenum++;
+	}
+
 	return 1;
     }
 
     public void DisplayDatabase()
     {
-	log.info("Show the state of consumer:");
+	log.info("Show the state of consumer [Total Messages: " + messagenum
+		 + ", Insert Messages: " + insertnum 
+		 + ", Update Messages: " + updatenum
+		 + ", Delete Messages: " + deletenum + "]");
 	for (Map.Entry<String, SchemaInfo> schema : schemas.entrySet()) {
 	    schema.getValue().DisplaySchema();
 	}

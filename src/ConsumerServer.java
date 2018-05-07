@@ -44,12 +44,6 @@ public class ConsumerServer
     KafkaConsumer<String, String> kafka;
     Connection  dbconn = null;
 
-    private long    messagenum = 0;
-    private long    insertnum = 0;
-    private long    updatenum = 0;
-    private long    deletenum = 0;
-    private long    updkeynum = 0;
-
     private static Logger log = Logger.getLogger(ConsumerServer.class);
 
     ConsumerServer(EsgynDB esgyndb_,
@@ -82,11 +76,6 @@ public class ConsumerServer
 	delimiter   = delimiter_;
 	full        = full_;
 	skip        = skip_;
-
-	messagenum  = 0;
-	updatenum   = 0;
-	deletenum   = 0;
-	updkeynum   = 0;
 
 	Properties props = new Properties();
 	
@@ -137,13 +126,7 @@ public class ConsumerServer
 	    esgyndb.CloseConnection(dbconn);
 	    long diff = (System.currentTimeMillis() - startTime );
 
-	    log.info("ProcessMessages messages infomation in " + (diff - streamTO) 
-		     + " ms, batch size = " + commitCount
-		     + "\n\t Total Messages: " + messagenum 
-		     + "\n\tInsert Messages: " + insertnum
-		     + "\n\tUpdate Messages: " + updatenum
-		     + "\n\tDelete Messages: " + deletenum
-		     + "\n\tUpdkey Messages: " + updkeynum);
+	    esgyndb.DisplayDatabase();
 	} catch (ConsumerTimeoutException cte) {
 	    if (!skip)
 		log.error("ProcessMessages consumer time out; " + cte.getMessage());
@@ -204,30 +187,25 @@ public class ConsumerServer
 		  + urm.GetTableName() + ", partition: " + partitionID );
 	switch(urm.GetOperatorType()) {
 	case "I":
-	    num = esgyndb.InsertData(dbconn, urm.GetSchemaName(), 
+	    num = esgyndb.InsertData(dbconn, message.value(), urm.GetSchemaName(), 
 				     urm.GetTableName(), partitionID, columns);
-	    insertnum += num;
 	    break;
 	case "U":
-	    num = esgyndb.UpdateData(dbconn, urm.GetSchemaName(), 
+	    num = esgyndb.UpdateData(dbconn, message.value(), urm.GetSchemaName(), 
 				     urm.GetTableName(), partitionID, columns);
-	    updkeynum += num;
 	    break;
 	case "K":
-	    num = esgyndb.UpdateData(dbconn, urm.GetSchemaName(), 
+	    num = esgyndb.UpdateData(dbconn, message.value(), urm.GetSchemaName(), 
 				     urm.GetTableName(), partitionID, columns);
-	    updatenum += num;
 	    break;
 	case "D":
-	    num = esgyndb.DeleteData(dbconn, urm.GetSchemaName(), 
+	    num = esgyndb.DeleteData(dbconn, message.value(), urm.GetSchemaName(), 
 				     urm.GetTableName(), partitionID, columns);
-	    deletenum += num;
 	    break;
 
 	default:
 	    log.error("ProcessMessage operator [" + urm.GetOperatorType() + "]");
 	}
-	messagenum += num;
     }
 
     public int GetConsumerID() 
