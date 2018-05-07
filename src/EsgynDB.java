@@ -239,7 +239,7 @@ public class EsgynDB
 	    ColumnValue columnValue = columns.get(0);
 	    ColumnInfo  column      = 
 		table.GetColumn(columnValue.GetColumnID());
-	    String      insertSql   = "UPSERT INTO " + schemaName + "." 
+	    String      insertSql   = "UPSERT USING LOAD INTO " + schemaName + "." 
 		+ tableName + "(" + column.GetColunmName();
 	    String      valueSql    = ") VALUES(" + columnValue.GetCurValue();
 
@@ -259,7 +259,7 @@ public class EsgynDB
 	    st.executeUpdate(insertSql);
 	    st.cancel();
 	} catch (SQLException e) {
-	    log.debug ("Thread [" + thread + "] InsertData raw data: [" + message + "]");
+	    log.error ("Thread [" + thread + "] InsertData raw data: [" + message + "]");
 	    e.printStackTrace();
 	    return 0;
 	}
@@ -315,7 +315,7 @@ public class EsgynDB
 	    st.executeUpdate(updateSql);
 	    st.cancel();
 	} catch (SQLException e) {
-	    log.debug ("Thread [" + thread + "] UpdateData raw data: [" + message + "]");
+	    log.error ("Thread [" + thread + "] UpdateData raw data: [" + message + "]");
 	    e.printStackTrace();
 	    return 0;
 	}
@@ -364,7 +364,7 @@ public class EsgynDB
 	    st.executeUpdate(deleteSql);
 	    st.cancel();
 	} catch (SQLException e) {
-	    log.debug ("Thread [" + thread + "] DeleteData raw data: [" + message + "]");
+	    log.error ("Thread [" + thread + "] DeleteData raw data: [" + message + "]");
 	    e.printStackTrace();
 	    return 0;
 	}
