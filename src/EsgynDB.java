@@ -234,19 +234,20 @@ public class EsgynDB
 	    ColumnInfo  column      = 
 		table.GetColumn(columnValue.GetColumnID());
 	    String      insertSql   = "UPSERT INTO " + schemaName + "." 
-		+ tableName + "(\"" + column.GetColunmName() + "\"";
-	    String      valueSql    = ") VALUES(\'" + columnValue.GetCurValue();
+		+ tableName + "(" + column.GetColunmName();
+	    String      valueSql    = ") VALUES(" + columnValue.GetCurValue();
 
 	    for(int i = 1; i < columns.size(); i++) {
 		columnValue = columns.get(i);
 		column = table.GetColumn(columnValue.GetColumnID());
-		insertSql += ",\"" + column.GetColunmName() + "\"";
+		insertSql += ", " + column.GetColunmName();
 		
-		valueSql += "\', \'" + columnValue.GetCurValue();
+		valueSql += ", " + columnValue.GetCurValue();
 	    }
-	    insertSql += valueSql + "\');";
 
-	    log.debug ("Thread [" + thread + "] InsertData: " + insertSql);
+	    insertSql += valueSql + ");";
+
+	    log.debug ("Thread [" + thread + "] InsertData: [" + insertSql + "]");
 	    Statement st = conn.createStatement();
 
 	    st.executeUpdate(insertSql);
@@ -277,22 +278,25 @@ public class EsgynDB
 	    ColumnInfo  column      = 
 		table.GetColumn(columnValue.GetColumnID());
 	    String      updateSql   = "UPDATE  " + schemaName + "." 
-		+ tableName + " SET \"" + column.GetColunmName() + "\" = \'" 
+		+ tableName + " SET " + column.GetColunmName() + " = "
 		+ columnValue.GetCurValue();
-	    String      whereSql    = " WHERE \"" + column.GetColunmName()+ "\" = \'"
-		+ columnValue.GetOldValue();
+	    String      whereSql    = " WHERE " + column.GetColunmName()
+		+ columnValue.GetOldCondValue();
+
 
 	    for(int i = 1; i < columns.size(); i++) {
 		columnValue = columns.get(i);
 		column = table.GetColumn(columnValue.GetColumnID());
-		updateSql += "\', \"" + column.GetColunmName() + "\" = \'"
+		
+		updateSql += ", " + column.GetColunmName() + " = "
 		    + columnValue.GetCurValue();
-		whereSql += "\' AND \"" + column.GetColunmName() + "\" = \'"
-		    + columnValue.GetOldValue();
+		whereSql += " AND " + column.GetColunmName() 
+		    + columnValue.GetOldCondValue();
 	    }
-	    updateSql += "\' " + whereSql + "\';";
 
-	    log.debug ("Thread [" + thread + "] UpdateData: " + updateSql);
+	    updateSql += whereSql + ";";
+
+	    log.debug ("Thread [" + thread + "] UpdateData: [" + updateSql + "}");
 	    Statement st = conn.createStatement();
 
 	    st.executeUpdate(updateSql);
@@ -323,16 +327,16 @@ public class EsgynDB
 	    ColumnInfo  column      = 
 		table.GetColumn(columnValue.GetColumnID());
 	    String      deleteSql   = "DELETE FROM " + schemaName + "." 
-		+ tableName + " WHERE \""+ column.GetColunmName() + "\" = \'"
-		+ columnValue.GetOldValue();
+		+ tableName + " WHERE "+ column.GetColunmName() 
+		+ columnValue.GetOldCondValue();
 
 	    for(int i = 1; i < columns.size(); i++) {
 		columnValue = columns.get(i);
 		column = table.GetColumn(columnValue.GetColumnID());
-		deleteSql += "\' AND \"" + column.GetColunmName() + "\" = \'"
-		    + columnValue.GetOldValue();
+		deleteSql += " AND " + column.GetColunmName()
+		    + columnValue.GetOldCondValue();;
 	    }
-	    deleteSql += "\';";
+	    deleteSql += ";";
 
 	    log.debug ("Thread [" + thread + "] DeleteData: " + deleteSql);
 	    Statement st = conn.createStatement();

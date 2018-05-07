@@ -8,7 +8,7 @@ public class ColumnInfo
 		      String typeName_,
 		      String columnType_) 
     {
-	columnName = columnName_;
+	columnName = "\"" + columnName_ + "\"";
 	typeName   = typeName_;
 	columnType = Integer.parseInt(columnType_);
     }

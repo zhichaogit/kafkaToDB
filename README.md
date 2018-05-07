@@ -15,7 +15,7 @@ KafkaCDC depends some jar files:
 usage: Consumer Server
 * -b,--broker <arg>      bootstrap.servers setting, ex: <node>:9092, default: "localhost:9092"
 * -c,--commit <arg>      num message per Kakfa synch, default: 500
-* -f,--format <arg>      format of data, default: unicom
+* -f,--format <arg>      format of data, support "onicom" and "normal" now, default: normal
 * -g,--group <arg>       group for this consumer, default: 0
 * -p,--parallel <arg>    parallel thread number to process message, one thread only process data from one partition, default: 16
 * -s,--schema <arg>      default database schema, use the schema from data without this option, default: null

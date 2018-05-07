@@ -188,7 +188,7 @@ public class ConsumerServer
 	}
 
 	RowMessage urm = null;
-	if (format == "unicom")
+	if (format.equals("unicom"))
 	    urm = new UnicomRowMessage(esgyndb.GetDefaultSchema(),
 				       esgyndb.GetDefaultTable(),
 				       delimiter, partitionID, message.value());

@@ -285,7 +285,7 @@ public class KafkaCDC implements Runnable{
 	dbip = cmdLine.hasOption("dbip") ? cmdLine.getOptionValue("dbip")
 	    : DEFAULT_IPADDR;
 	format= cmdLine.hasOption("format") ? cmdLine.getOptionValue("format")
-	    : "unicom";
+	    : "normal";
 	groupID = cmdLine.hasOption("group") ? cmdLine.getOptionValue("group")
 	    : "group_0";
 	parallel = cmdLine.hasOption("parallel") ? 
@@ -325,6 +325,13 @@ public class KafkaCDC implements Runnable{
 	    dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/schema=" + defschema;
 	else
 	    dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/schema=" + DEFAULT_SCHEMA;
+
+	if (!format.equals("unicom") && !format.equals("normal")){
+	    HelpFormatter formatter = new HelpFormatter();
+	    log.error ("Just support \"unicom\" and \"normal\" format now. cur format: \"" + format + "\"");
+	    formatter.printHelp("Consumer Server", exeOptions);
+	    System.exit(0);
+	}
 
 	if (defschema == null && deftable != null) {
 	    HelpFormatter formatter = new HelpFormatter();
