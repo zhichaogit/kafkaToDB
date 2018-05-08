@@ -427,7 +427,7 @@ public class EsgynDB
 	    ColumnValue columnValue = columns.get(0);
 	    ColumnInfo  column      = 
 		table.GetColumn(columnValue.GetColumnID());
-	    String      deleteSql   = "DELETE FROM " + schemaName + "." 
+	    String      deleteSql   = "DELETE WITH NO ROLLBACK FROM " + schemaName + "." 
 		+ tableName + " WHERE "+ column.GetColunmName() 
 		+ columnValue.GetOldCondStr();
 
@@ -492,7 +492,10 @@ public class EsgynDB
 		}
 	    }
 	} catch (SQLException e) {
-	    e.printStackTrace();
+	    do{
+		e.printStackTrace();
+		e = e.getNextException();
+	    }while(e!=null); 
 	}
     }
 
