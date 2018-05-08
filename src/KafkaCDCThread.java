@@ -36,5 +36,10 @@ public class KafkaCDCThread extends Thread
 		 + "], End Time: [" + sdf.format(endtime) 
 		 + "], Run Time [" + df.format(use_time) + " s]");
     }
+
+    public void close()
+    {
+	consumer.DropConsumer();
+    }
 }
 

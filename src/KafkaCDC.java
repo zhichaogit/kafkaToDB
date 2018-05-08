@@ -65,6 +65,17 @@ public class KafkaCDC implements Runnable{
         public void run() 
 	{
             log.warn("Ctrl+C exit!");
+
+	    for (KafkaCDCThread thread : threads) {
+		try{
+		    log.info("wait sub thread stop");
+		    thread.close();
+		    thread.join();
+		} catch(Exception e){
+		    e.printStackTrace();
+		} 
+	    }
+
 	    if (esgyndb != null){
 		esgyndb.DisplayDatabase();
 	    } else {

@@ -2,7 +2,9 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.sql.Connection;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -10,6 +12,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.log4j.Logger; 
 
 import kafka.consumer.ConsumerTimeoutException;
+
 @SuppressWarnings("deprecation") 		
 
 /*
@@ -34,7 +37,6 @@ public class ConsumerServer
     long    zkTO;
     int     partitionID;
     long    commitCount;
-    boolean running = true;
 
     boolean full;
     boolean skip;
@@ -42,6 +44,7 @@ public class ConsumerServer
     String  format;
 
     KafkaConsumer<String, String> kafka;
+    private final AtomicBoolean running = new AtomicBoolean(true);
     Connection  dbconn = null;
 
     private static Logger log = Logger.getLogger(ConsumerServer.class);
@@ -69,8 +72,6 @@ public class ConsumerServer
 	streamTO    = streamTO_;
 	zkTO        = zkTO_;
 	commitCount = commitCount_;
-
-	running     = true;
 
 	format      = format_;
 	delimiter   = delimiter_;
@@ -110,11 +111,10 @@ public class ConsumerServer
     public void ProcessMessages() 
     {
 	try {
-	    long startTime = System.currentTimeMillis();
 	    log.info("ProcessMessages start ...");
 
-	    dbconn = esgyndb.CreateConnection();
-	    while(running) {
+	    dbconn = esgyndb.CreateConnection(false);
+	    while(running.get()) {
 		// note that we don't commitSync to kafka - tho we should
 		ConsumerRecords<String, String> records = kafka.poll(streamTO);
 
@@ -123,29 +123,22 @@ public class ConsumerServer
 
 		ProcessRecords(records);
 	    } // while true
-	    esgyndb.CloseConnection(dbconn);
-	    long diff = (System.currentTimeMillis() - startTime );
 
-	    esgyndb.DisplayDatabase();
+	    log.info("ProcessMessages exit loop server.");
 	} catch (ConsumerTimeoutException cte) {
-	    if (!skip)
-		log.error("ProcessMessages consumer time out; " + cte.getMessage());
-	}
-	/*
-	catch (BatchUpdateException bx) {
-	    int[] insertCounts = bx.getUpdateCounts();
-	    int count = 1;
-	    for (int i : insertCounts) {
-		if ( i == Statement.EXECUTE_FAILED ) 
-		    log.error("Error on request #" + count +": Execute failed");
-		else 
-		    count++;
+	    log.error("ProcessMessages consumer time out; " + cte.getMessage());
+	} catch (WakeupException we) {
+	    log.info("Kafka Consulmer wakeup exception");
+	    // Ignore exception if closing
+	    if (running.get()) {
+		log.error("ProcessMessages consumer wakeup; " + we.getMessage());
 	    }
-	    log.error(bx.getMessage());
-	    } 
-	catch (SQLException sx) {
-	    log.error ("SQL error: " + sx.getMessage());
-	}*/
+	} finally {
+	    esgyndb.CommitAll(dbconn, partitionID);
+	    esgyndb.CloseConnection(dbconn);
+	    esgyndb.DisplayDatabase();
+	    kafka.close();
+	}
     }
 
     public void ProcessRecords(ConsumerRecords<String, String> records) 
@@ -213,9 +206,9 @@ public class ConsumerServer
 	return partitionID;
     }
 
-    public void DropConsumer() 
+    public synchronized void DropConsumer() 
     {
-	running = false;
-	kafka.close();
+	running.set(false);
+	kafka.wakeup();
     }
 }

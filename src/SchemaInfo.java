@@ -28,6 +28,10 @@ public class SchemaInfo
 	return tables.get(tablename);
     }
 
+    public Map<String, TableInfo> GetTables(){
+	return tables;
+    }
+
     public void DisplaySchema()
     {
 	log.info("Show the state of schema [" + schemaName + "]");

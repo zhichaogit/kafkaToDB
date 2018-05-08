@@ -1,26 +1,30 @@
 public class ColumnValue
 {
-    int         columnID  = 0;
-    String      curValue  = null;
-    String      oldValue  = null;
-    String      nullValue = "null";
-    String      oldCondValue = " is null";
+    int         columnID     = 0;
+    String      curValue     = null;
+    String      curValueStr  = null;
+    String      oldValue     = null;
+    String      oldValueStr  = null;
+    String      nullValueStr = "null";
+    String      oldCondStr   = " is null";
 
     public ColumnValue(int columnID_, String curValue_, String oldValue_)
     {
 	columnID = columnID_;
 
 	if (curValue_ != null) {
-	    curValue = "\'" + curValue_.replace("\"","").replace("\'","") + "\'";
+	    curValue = curValue_.replace("\"","").replace("\'","");
+	    curValueStr = "\'" + curValue + "\'";
 	} else {
-	    curValue = nullValue;
+	    curValueStr = nullValueStr;
 	}
 
 	if (oldValue_ != null) {
-	    oldValue = "\'" + oldValue_.replace("\"","").replace("\'","") + "\'";
-	    oldCondValue = " = " + oldValue;
+	    oldValue = oldValue_.replace("\"","").replace("\'","");
+	    oldValueStr = "\'" + oldValue + "\'";
+	    oldCondStr = " = " + oldValueStr;
 	} else {
-	    oldValue = nullValue;
+	    oldValueStr = nullValueStr;
 	}
     }
 
@@ -46,12 +50,22 @@ public class ColumnValue
 
     public String GetOldValue()
     {
-	return curValue;
+	return oldValue;
+    }
+
+    public String GetCurValueStr()
+    {
+	return curValueStr;
+    }
+
+    public String GetOldValueStr()
+    {
+	return oldValueStr;
     }
     
-    public String GetOldCondValue()
+    public String GetOldCondStr()
     {
-	return oldCondValue;
+	return oldCondStr;
     }
 }
 
