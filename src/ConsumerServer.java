@@ -134,6 +134,7 @@ public class ConsumerServer
 		log.error("ProcessMessages consumer wakeup; " + we.getMessage());
 	    }
 	} finally {
+	    log.info("ProcessMessages CommitAll");
 	    esgyndb.CommitAll(dbconn, partitionID);
 	    esgyndb.CloseConnection(dbconn);
 	    esgyndb.DisplayDatabase();

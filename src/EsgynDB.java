@@ -306,6 +306,7 @@ public class EsgynDB
 		    count++;
 	    }
 	    log.error(bx.getMessage());
+	    return 0;
 	} catch (SQLException e) {
 	    log.error ("Thread [" + thread + "] InsertData raw data: [" + message + "]");
 	    e.printStackTrace();
@@ -381,6 +382,7 @@ public class EsgynDB
 		    count++;
 	    }
 	    log.error(bx.getMessage());
+	    return 0;
 	} catch (SQLException e) {
 	    log.error ("Thread [" + thread + "] UpdateData raw data: [" + message + "]");
 	    e.printStackTrace();
@@ -455,6 +457,7 @@ public class EsgynDB
 		    count++;
 	    }
 	    log.error(bx.getMessage());
+	    return 0;
 	} catch (SQLException e) {
 	    log.error ("Thread [" + thread + "] DeleteData raw data: [" + message + "]");
 	    e.printStackTrace();
@@ -484,8 +487,12 @@ public class EsgynDB
 		for (Map.Entry<String, TableInfo> table : tables.entrySet()) {
 		    tableinfo = table.getValue();
 		    stmt = tableinfo.GetInsertStmt(conn, thread);
+		    log.info("CommitAll "+ tableinfo.GetTableName() + ", stmt:" + stmt
+			     + ", Row:" + tableinfo.GetCacheRows());
 		    if (stmt != null && tableinfo.GetCacheRows() > 0){
 			int [] batchResult = stmt.executeBatch();
+			log.info("batchResult:" + batchResult);
+
 			conn.commit();
 			tableinfo.SetCacheRows(0);
 		    }
