@@ -11,6 +11,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.log4j.Logger; 
 
+import java.lang.ArrayIndexOutOfBoundsException;
 import kafka.consumer.ConsumerTimeoutException;
 
 @SuppressWarnings("deprecation") 		
@@ -145,7 +146,14 @@ public class ConsumerServer
     public void ProcessRecords(ConsumerRecords<String, String> records) 
     {
 	for (ConsumerRecord<String, String> message : records) {
-	    ProcessMessage(message);
+	    try {
+		ProcessMessage(message);
+	    } catch (ArrayIndexOutOfBoundsException aiooe) {
+		log.error ("Thread [" + partitionID + "], table schema is not "
+			   + "matched with data, ProcessRecords raw data: [" 
+			   + message + "]");
+		aiooe.printStackTrace();
+	    }
 	} // for each msg
     }
 

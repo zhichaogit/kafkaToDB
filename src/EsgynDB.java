@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.lang.StringBuffer;
 import org.apache.log4j.Logger; 
+import java.lang.IndexOutOfBoundsException;
  
 public class EsgynDB
 {
@@ -272,12 +273,15 @@ public class EsgynDB
 	    }
 
 	    
+	    for(int i = 0; i < table.GetColumnCount(); i++) {
+		column      = table.GetColumn(i);
+		stmt.setNull(i+1, column.GetColunmType());
+	    }
+
 	    for(int i = 0; i < columns.size(); i++) {
 		columnValue = columns.get(i);
 		column      = table.GetColumn(columnValue.GetColumnID());
-		if (columnValue.CurValueIsNull())
-		    stmt.setNull(i+1, column.GetColunmType());
-		else
+		if (!columnValue.CurValueIsNull())
 		    stmt.setString(i+1, columnValue.GetCurValue());
 	    }
 
@@ -299,6 +303,7 @@ public class EsgynDB
 	catch (BatchUpdateException bx) {
 	    int[] insertCounts = bx.getUpdateCounts();
 	    int count = 1;
+	    log.error ("Thread [" + thread + "] InsertData raw data: [" + message + "]");
 	    for (int i : insertCounts) {
 		if ( i == Statement.EXECUTE_FAILED ) 
 		    log.error("Error on request #" + count +": Execute failed");
@@ -306,6 +311,10 @@ public class EsgynDB
 		    count++;
 	    }
 	    log.error(bx.getMessage());
+	    return 0;
+	} catch (IndexOutOfBoundsException iobe) {
+	    log.error ("Thread [" + thread + "] InsertData raw data: [" + message + "]");
+	    iobe.printStackTrace();
 	    return 0;
 	} catch (SQLException e) {
 	    log.error ("Thread [" + thread + "] InsertData raw data: [" + message + "]");
@@ -383,6 +392,10 @@ public class EsgynDB
 	    }
 	    log.error(bx.getMessage());
 	    return 0;
+	} catch (IndexOutOfBoundsException iobe) {
+	    log.error ("Thread [" + thread + "] InsertData raw data: [" + message + "]");
+	    iobe.printStackTrace();
+	    return 0;
 	} catch (SQLException e) {
 	    log.error ("Thread [" + thread + "] UpdateData raw data: [" + message + "]");
 	    e.printStackTrace();
@@ -457,6 +470,10 @@ public class EsgynDB
 		    count++;
 	    }
 	    log.error(bx.getMessage());
+	    return 0;
+	} catch (IndexOutOfBoundsException iobe) {
+	    log.error ("Thread [" + thread + "] InsertData raw data: [" + message + "]");
+	    iobe.printStackTrace();
 	    return 0;
 	} catch (SQLException e) {
 	    log.error ("Thread [" + thread + "] DeleteData raw data: [" + message + "]");

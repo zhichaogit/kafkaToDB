@@ -65,6 +65,11 @@ public class TableInfo
 	return (ColumnInfo)columns.get(index);
     }
 
+    public long GetColumnCount()
+    {
+	return columns.size();
+    }
+
     public synchronized void IncreaseInsert(long num)
     {
 	insertnum += num;
