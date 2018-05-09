@@ -12,15 +12,14 @@ public class KafkaCDCThread extends Thread
 
     public void run() 
     {
-	log.info("KafkaCDCThread thread id [" + consumer.GetConsumerID() 
-		 + "], start to run ...");
+	log.info("start to run ...");
 
 	try {
 	    consumer.ProcessMessages();
 	} catch (Exception e) {
 	    e.printStackTrace();		
 	}
-	log.info("KafkaCDCThread stoped.");
+	log.info("stoped.");
     }
 
     public int threadid()

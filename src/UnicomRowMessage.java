@@ -28,7 +28,7 @@ public class UnicomRowMessage extends RowMessage
 
     public void AnalyzeMessage()
     {
-	log.trace("Exit AnalyzeMessage function");
+	log.trace("exit function");
 
 	String[] formats = message.split("");
 
@@ -60,7 +60,6 @@ public class UnicomRowMessage extends RowMessage
 
 	StringBuffer strBuffer = new StringBuffer();
 
-	strBuffer.append("UnicomRowMessage thread [" + thread + "]\n");
 	strBuffer.append("Raw message:[" + message + "]\n");
 	strBuffer.append("Operator message: [pid: " + processID 
 			 + ", scn sign:" + scnSign + ", transaction id:" 
@@ -77,10 +76,9 @@ public class UnicomRowMessage extends RowMessage
 	    offset = 0;
 	    columns.add(get_column(formats[i].getBytes()));
 	}
-	strBuffer.append("\nUnicomRowMessage end");
 	log.debug(strBuffer);
 
-	log.trace("Exit AnalyzeMessage function");
+	log.trace("exit function");
     }
 
     private int byte_array_to_long(byte[] data, int start, int length) {
@@ -138,7 +136,7 @@ public class UnicomRowMessage extends RowMessage
 	}
 
 	default:
-	    log.error("unknown operator:" + coldata[offset-1] + "data [" 
+	    log.error("unknown operator: " + coldata[offset-1] + " data [" 
 		      + coldata + "]");
 	}
 

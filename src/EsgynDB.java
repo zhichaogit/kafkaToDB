@@ -48,7 +48,7 @@ public class EsgynDB
 		   String  dbpassword_,
 		   long    commitCount_) 
     {
-	log.trace("Enter EsgynDB function [" + defschema_ + "." + deftable_ 
+	log.trace("enter function [" + defschema_ + "." + deftable_ 
 		  + ", " + dburl_ + ", " + dbdriver_ + ", " + dbuser_ 
 		  + ", " + commitCount_ + "]");
 
@@ -66,24 +66,23 @@ public class EsgynDB
 	schemas = new HashMap<String, SchemaInfo>(); 
 	dbkeepconn = CreateConnection(true);
 	try {
-	    log.info("Prepare the keepalive stmt, query:" + keepQuery); 
+	    log.info("prepare the keepalive stmt, query:" + keepQuery); 
 	    keepstmt = dbkeepconn.prepareStatement(keepQuery);
 	} catch (SQLException e) {
-	    log.error("Prepare the keepstmt error, the keepalive query:" 
-		      + keepQuery);
+	    log.error("prepare the keepalive stmt error.");
             e.printStackTrace();
 	}
-	log.info("Start to init schemas:"); 
+	log.info("start to init schemas:"); 
 	init_schemas();
 
-	log.trace("Exit EsgynDB function");
+	log.trace("exit function");
     }
 
     private void init_schemas()
     {
 	ResultSet            schemaRS = null;
 
-	log.trace("Enter init_schemas function");
+	log.trace("enter function");
 	try {
 	    DatabaseMetaData dbmd = dbkeepconn.getMetaData();
 	    String           schemaName = null;
@@ -93,19 +92,19 @@ public class EsgynDB
 		schemaRS = dbmd.getSchemas();
 		while (schemaRS.next()) {
 		    schemaName = schemaRS.getString("TABLE_SCHEM");
-		    log.info("Start to init schema [" + schemaName + "]");
+		    log.info("start to init schema [" + schemaName + "]");
 		    schema = init_schema(schemaName);
 
 		    schemas.put(schemaName, schema);
 		}
 	    } else {
-		log.info("Start to init default schema [" + defschema + "]");
+		log.info("start to init default schema [" + defschema + "]");
 		schema = init_schema(defschema);
 
 		if (schema != null)
 		    schemas.put(defschema, schema);
 		else 
-		    log.error("Init schema [" + defschema + "] error, cann't find!");
+		    log.error("init schema [" + defschema + "] fail, cann't find!");
 	    }
 	} catch (SQLException sqle) {
             sqle.printStackTrace();
@@ -113,14 +112,14 @@ public class EsgynDB
             e.printStackTrace();
         }
 
-	log.trace("Exit init_schemas function");
+	log.trace("exit function");
     }
 
     public SchemaInfo init_schema(String schemaName)
     {
 	SchemaInfo          schema = null;
 
-	log.trace("Enter init_schema function [" + schemaName + "]");
+	log.trace("enter function [" + schemaName + "]");
 	try {
 	    if (deftable == null) {
 		ResultSet         tableRS = null;
@@ -132,7 +131,7 @@ public class EsgynDB
 		    String     tableName = tableRS.getString("TABLE_NAME");
 		    TableInfo  table = new TableInfo(schemaName, tableName);
 		    
-		    log.info("Start to init table [" + schemaName + "."  + 
+		    log.info("start to init table [" + schemaName + "."  + 
 			     tableName + "]");
 		    init_culumns(table);
 		    schema.AddTable(tableName, table);
@@ -140,13 +139,13 @@ public class EsgynDB
 	    } else {
 		TableInfo  table = new TableInfo(defschema, deftable);
 
-		log.info("Start to init table [" + defschema + "."  
+		log.info("start to init table [" + defschema + "." 
 			 + deftable + "]");
 		if (init_culumns(table) > 0) {
 		    schema = new SchemaInfo(schemaName);
 		    schema.AddTable(deftable, table);
 		} else {
-		    log.error("Init table [" + defschema + "." + deftable 
+		    log.error("init table [" + defschema + "." + deftable 
 			      + "] is not exist!");
 		}
 	    }
@@ -156,13 +155,13 @@ public class EsgynDB
             e.printStackTrace();
         }
 
-	log.trace("Enter init_schema function [" + schema + "]");
+	log.trace("exit function [" + schema + "]");
 	return schema;
     }
 
     public long init_culumns(TableInfo table)
     {
-	log.trace("Enter init_culumns function [" + table + "]");
+	log.trace("enter function [" + table + "]");
 
 	try {
 	    String getTableColumns = "SELECT o.object_name TABLE_NAME, "
@@ -206,7 +205,7 @@ public class EsgynDB
 	    e.printStackTrace();
 	}
 
-	log.trace("Exit init_culumns function [" + table.GetColumnCount() + "");
+	log.trace("exit function [" + table.GetColumnCount() + "");
 	return table.GetColumnCount();
     }
 
@@ -218,12 +217,9 @@ public class EsgynDB
     public Connection CreateConnection(boolean autocommit)
     {
 	Connection          dbconn = null;
-	log.trace("Enter CreateConnection function [" + autocommit + "]");
+	log.trace("enter function [" + autocommit + "]");
 
 	try {
-	    log.info("Create connection with parameter ["
-		     + "driver:" + dbdriver + ",autocommit:" + autocommit
-		     + ", dburl:" + dburl + ", dbuser:" + dbuser + "]"); 
 	    Class.forName(dbdriver);
 	    dbconn = DriverManager.getConnection(dburl, dbuser, dbpassword);
 	    dbconn.setAutoCommit(autocommit);
@@ -231,20 +227,20 @@ public class EsgynDB
 	    log.error ("SQL error: " + se.getMessage());
 	    se.printStackTrace();
 	} catch (ClassNotFoundException ce) {
-	    log.error ("Driver class not found: " + ce.getMessage());
+	    log.error ("driver class not found: " + ce.getMessage());
 	    ce.printStackTrace();
 	} catch (Exception e) {
-	    log.error ("Create connect error: " + e.getMessage());
+	    log.error ("create connect error: " + e.getMessage());
 	    e.printStackTrace();
 	}
 	
-	log.trace("Exit CreateConnection function");
+	log.trace("exit function");
 	return dbconn;
     }
 
     public void CloseConnection(Connection  dbconn)
     {
-	log.trace("Enter CloseConnection function [" + dbconn + "]");
+	log.trace("enter function [" + dbconn + "]");
 
 	try {
 	    dbconn.close();
@@ -252,7 +248,7 @@ public class EsgynDB
 	    e.printStackTrace();
 	}
 
-	log.trace("Exit CloseConnection function");
+	log.trace("exit function");
     }
 
     public String GetDefaultSchema()
@@ -302,7 +298,7 @@ public class EsgynDB
 	if (table == null)
 	    return result;
 
-	log.trace("Enter InsertData function [" + conn + ", " + message + ","
+	log.trace("enter function [" + conn + ", " + message + ","
 		  + schemaName + "." + tableName + "," + thread + "]");
 
 	try {
@@ -363,22 +359,22 @@ public class EsgynDB
 
 	    for (int i : insertCounts) {
 		if ( i == Statement.EXECUTE_FAILED ) 
-		    log.error("Error on request #" + count +": Execute failed");
+		    log.error("error on request #" + count +" execute failed");
 		else 
 		    count++;
 	    }
-	    log.error (bue.getMessage() + "\nThread [" + thread 
-		       + "] InsertData raw data: [" + message + "]");
+	    log.error (bue.getMessage() + "\nBatchUpdate exception raw data: ["
+		       + message + "]");
 	    bue.printStackTrace();
 	} catch (IndexOutOfBoundsException iobe) {
-	    log.error ("Thread [" + thread + "] InsertData raw data: [" + message + "]");
+	    log.error ("IndexOutOfBounds exception raw data: [" + message + "]");
 	    iobe.printStackTrace();
 	} catch (SQLException e) {
-	    log.error ("Thread [" + thread + "] InsertData raw data: [" + message + "]");
+	    log.error ("SQL exception raw data: [" + message + "]");
 	    e.printStackTrace();
 	}
 	
-	log.trace("Exit InsertData function [" + result + "]");
+	log.trace("exit function [" + result + "]");
 	return result;
     }
 
@@ -396,8 +392,8 @@ public class EsgynDB
 	if (table == null)
 	    return result;
 
-	log.trace("Enter UpdateData function [" + conn + ", " + message + ","
-		  + schemaName + "." + tableName + "," + thread + "]");
+	log.trace("enter function [" + conn + ", " + message + "," + schemaName
+		  + "." + tableName + "," + thread + "]");
 
 	try {
 	    if (table.GetCacheRows() != 0) {
@@ -436,7 +432,7 @@ public class EsgynDB
 
 	    updateSql += whereSql + ";";
 
-	    log.debug ("Thread [" + thread + "] UpdateData: [" + updateSql + "}");
+	    log.debug ("update sql: [" + updateSql + "]");
 	    Statement st = conn.createStatement();
 
 	    st.executeUpdate(updateSql);
@@ -454,22 +450,22 @@ public class EsgynDB
 
 	    for (int i : insertCounts) {
 		if ( i == Statement.EXECUTE_FAILED ) 
-		    log.error("Error on request #" + count +": Execute failed");
+		    log.error("error on request #" + count +" execute failed");
 		else 
 		    count++;
 	    }
-	    log.error (bue.getMessage() + "\nThread [" + thread 
-		       + "] InsertData raw data: [" + message + "]");
+	    log.error (bue.getMessage() + "\nBatchUpdate exception raw data: ["
+		       + message + "]");
 	    bue.printStackTrace();
 	} catch (IndexOutOfBoundsException iobe) {
-	    log.error ("Thread [" + thread + "] InsertData raw data: [" + message + "]");
+	    log.error ("IndexOutOfBounds exception raw data: [" + message + "]");
 	    iobe.printStackTrace();
 	} catch (SQLException e) {
-	    log.error ("Thread [" + thread + "] UpdateData raw data: [" + message + "]");
+	    log.error ("SQL exception raw data: [" + message + "]");
 	    e.printStackTrace();
 	}
 
-	log.trace("Exit UpdateData function [" + result + "]");
+	log.trace("exit function [" + result + "]");
 	return result;
     }
 
@@ -487,8 +483,8 @@ public class EsgynDB
 	if (table == null)
 	    return result;
 
-	log.trace("Enter DeleteData function [" + conn + ", " + message + ","
-		  + schemaName + "." + tableName + "," + thread + "]");
+	log.trace("enter function [" + conn + ", " + message + "," + schemaName
+		  + "." + tableName + "," + thread + "]");
 
 	try {
 	    if (table.GetCacheRows() != 0) {
@@ -520,7 +516,7 @@ public class EsgynDB
 	    }
 	    deleteSql += ";";
 
-	    log.debug ("Thread [" + thread + "] DeleteData: " + deleteSql);
+	    log.debug ("delete sql: " + deleteSql);
 	    Statement st = conn.createStatement();
 
 	    st.executeUpdate(deleteSql);
@@ -538,31 +534,29 @@ public class EsgynDB
 
 	    for (int i : insertCounts) {
 		if ( i == Statement.EXECUTE_FAILED ) 
-		    log.error("Error on request #" + count +": Execute failed");
+		    log.error("error on request #" + count +" execute failed");
 		else 
 		    count++;
 	    }
-	    log.error (bue.getMessage() + "\nThread [" + thread 
-		       + "] InsertData raw data: [" + message + "]");
+	    log.error (bue.getMessage() + "\nBatchUpdate exception raw data: ["
+		       + message + "]");
 	    bue.printStackTrace();
 	} catch (IndexOutOfBoundsException iobe) {
-	    log.error ("Thread [" + thread + "] InsertData raw data: [" 
-		       + message + "]");
+	    log.error ("IndexOutOfBounds exception raw data: [" + message + "]");
 	    iobe.printStackTrace();
 	} catch (SQLException e) {
-	    log.error ("Thread [" + thread + "] DeleteData raw data: [" 
-		       + message + "]");
+	    log.error ("SQL exception raw data: [" + message + "]");
 	    e.printStackTrace();
 	}
 
-	log.trace("Exit DeleteData function [" + result + "]");
+	log.trace("exit function [" + result + "]");
 	return result;
     }
 
     public void  CommitAll(Connection  conn,
 			   int         thread)
     {
-	log.trace("Enter CommitAll function");
+	log.trace("enter function");
 
 	try {
  	    PreparedStatement stmt;
@@ -575,14 +569,19 @@ public class EsgynDB
 		for (Map.Entry<String, TableInfo> table : tables.entrySet()) {
 		    tableinfo = table.getValue();
 		    stmt = tableinfo.GetInsertStmt(conn, thread);
-		    log.info("CommitAll "+ tableinfo.GetTableName() + ", stmt:" + stmt
-			     + ", Row:" + tableinfo.GetCacheRows());
 		    if (stmt != null && tableinfo.GetCacheRows() > 0){
+			log.info(tableinfo.GetTableName() + ", stmt:" + stmt
+				 + ", cache row:" + tableinfo.GetCacheRows());
 			int [] batchResult = stmt.executeBatch();
-			log.info("batchResult:" + batchResult);
-
 			conn.commit();
+			long rows = tableinfo.GetCacheRows();
+			synchronized (this) {
+			    insertnum += rows;
+			    messagenum += rows;
+			}
+
 			tableinfo.SetCacheRows(0);
+			tableinfo.IncreaseInsert(rows);
 		    }
 		}
 	    }
@@ -593,7 +592,7 @@ public class EsgynDB
 	    }while(e!=null); 
 	}
 
-	log.trace("Exit CommitAll function");
+	log.trace("exit function");
     }
 
     public void DisplayDatabase()
@@ -605,11 +604,11 @@ public class EsgynDB
 	DecimalFormat df = new DecimalFormat("####0.000");
 	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
-	log.info("Consumer state [start: " + sdf.format(starttime) + ", cur: " 
-		 + sdf.format(endtime) + ", run: " + df.format(use_time) 
-		 + "s, speed: " + speed + " /s]\n\t[Total: " + messagenum 
-		 + ", Insert: " + insertnum + ", Update: " + updatenum 
-		 + ", Delete: " + deletenum + "]");
+	log.info("consumer states, total message: " + messagenum + ", run: " 
+		 + df.format(use_time) + "s, speed: " + speed + "/s\n\t[start: "
+		 + sdf.format(starttime) + ", cur: " + sdf.format(endtime)
+		 + ", insert: " + insertnum + ", update: " + updatenum 
+		 + ", delete: " + deletenum + "]");
 	for (Map.Entry<String, SchemaInfo> schema : schemas.entrySet()) {
 	    schema.getValue().DisplaySchema();
 	}

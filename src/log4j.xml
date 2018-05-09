@@ -3,7 +3,7 @@
 <log4j:configuration xmlns:log4j='http://jakarta.apache.org/log4j/'>
   <appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
     <layout class="org.apache.log4j.PatternLayout">
-      <param name="ConversionPattern" value="%c %d{ISO8601} -- %p -- %m%n"/>
+      <param name="ConversionPattern" value="%d{ISO8601} -- %p -- %t %l, %m%n"/>
     </layout>
   </appender>
   <appender name="DEBUG" class="org.apache.log4j.RollingFileAppender">
@@ -12,7 +12,7 @@
     <param name="MaxFileSize" value="100MB"/>
     <param name="MaxBackupIndex" value="5"/>
     <layout class="org.apache.log4j.PatternLayout">
-      <param name="ConversionPattern" value="%c %d{ISO8601} -- %p -- %m%n"/>
+      <param name="ConversionPattern" value="%d{ISO8601} -- %p -- %t %l, %m%n"/>
     </layout>
   </appender>
   <appender name="INFO" class="org.apache.log4j.RollingFileAppender">
@@ -21,7 +21,7 @@
     <param name="MaxFileSize" value="100MB"/>
     <param name="MaxBackupIndex" value="5"/>
     <layout class="org.apache.log4j.PatternLayout">
-      <param name="ConversionPattern" value="%c %d{ISO8601} -- %p -- %m%n"/>
+      <param name="ConversionPattern" value="%d{ISO8601} -- %p -- %t %l, %m%n"/>
     </layout>
     <filter class="org.apache.log4j.varia.LevelRangeFilter">
       <param name="LevelMin" value="INFO"/>
@@ -33,7 +33,7 @@
     <param name="MaxFileSize" value="100MB"/>
     <param name="MaxBackupIndex" value="5"/>
     <layout class="org.apache.log4j.PatternLayout">
-      <param name="ConversionPattern" value="%c %d{ISO8601} -- %p -- %m%n"/>
+      <param name="ConversionPattern" value="%d{ISO8601} -- %p -- %t %l, %m%n"/>
     </layout>
     <filter class="org.apache.log4j.varia.LevelRangeFilter">
       <param name="LevelMin" value="WARN"/>
@@ -45,7 +45,7 @@
     <param name="MaxFileSize" value="100MB"/>
     <param name="MaxBackupIndex" value="5"/>
     <layout class="org.apache.log4j.PatternLayout">
-      <param name="ConversionPattern" value="%c %d{ISO8601} -- %p -- %m%n"/>
+      <param name="ConversionPattern" value="%d{ISO8601} -- %p -- %t %l, %m%n"/>
     </layout>
     <filter class="org.apache.log4j.varia.LevelRangeFilter">
       <param name="LevelMin" value="ERROR"/>
@@ -57,7 +57,7 @@
     <param name="MaxFileSize" value="100MB"/>
     <param name="MaxBackupIndex" value="5"/>
     <layout class="org.apache.log4j.PatternLayout">
-      <param name="ConversionPattern" value="%c %d{ISO8601} -- %p -- %m%n"/>
+      <param name="ConversionPattern" value="%d{ISO8601} -- %p -- %t %l, %m%n"/>
     </layout>
     <filter class="org.apache.log4j.varia.LevelRangeFilter">
       <param name="LevelMin" value="FATAL"/>

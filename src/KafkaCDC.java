@@ -59,33 +59,30 @@ public class KafkaCDC implements Runnable{
     {
         public KafkaCDCCtrlCThread() 
 	{  
-            super("KafkaCDC Exit Handler");  
+            super("CtrlCThread");  
         }  
 
         public void run() 
 	{
-            log.warn("KafkaCDC exiting via Ctrl+C!");
+            log.warn("exiting via Ctrl+C!");
 
 	    for (KafkaCDCThread thread : threads) {
 		try{
-		    log.info("KafkaCDCCtrlCThread start to wait KafkaCDCThread [" 
-			     + thread.threadid() + "] stop ...");
+		    log.info("waiting for " + thread.getName() + " stop.");
 		    thread.close();
 		    thread.join();
-		    log.info("KafkaCDCCtrlCThread wait KafkaCDCThread [" 
-			     + thread.threadid() + "] stop success!");
+		    log.info(thread.getName() + " stop success.");
 		} catch(Exception e){
-		    log.error("KafkaCDCCtrlCThread wait KafkaCDCThread [" 
-			     + thread.threadid() + "] stop fail");
+		    log.error("wait " + thread.getName() + " stop fail!");
 		    e.printStackTrace();
 		} 
 	    }
 
 	    if (esgyndb != null){
-		log.info("KafkaCDCCtrlCThread thread show the last results:");
+		log.info("show the last results:");
 		esgyndb.DisplayDatabase();
 	    } else {
-		log.warn("KafkaCDCCtrlCThread thread, didn't connect to database!");
+		log.warn("didn't connect to database!");
 	    }
             running = false;  
         }  
@@ -98,11 +95,12 @@ public class KafkaCDC implements Runnable{
 
     public void run() 
     {  
+	log.warn("keepalive thread start to run");  
         while (running) {
 	    try {
 		Thread.sleep(interval);
 		if (!esgyndb.KeepAlive()){
-		    log.error("Keepalive thead is disconnected from EsgynDB!");
+		    log.error("keepalive thread is disconnected from EsgynDB!");
 		    break;
 		}
 		esgyndb.DisplayDatabase();
@@ -110,17 +108,17 @@ public class KafkaCDC implements Runnable{
 		    break;
 		}
 	    } catch (InterruptedException ie) {
-		log.error("Keepalive thead InterruptedException " 
+		log.error("keepalive throw InterruptedException " 
 			  + ie.getMessage());
 		ie.printStackTrace(); 
 		break;
 	    } catch (Exception e) {
-		log.error("Keepalive thead Exception " + e.getMessage());
+		log.error("keepalive throw Exception " + e.getMessage());
 		e.printStackTrace(); 
 		break;
 	    }
         }  
-	log.warn("Keepalive thead exited!");  
+	log.warn("keepalive thread exited!");  
     }
 
     public void init( String [] args ) throws ParseException {
@@ -292,7 +290,7 @@ public class KafkaCDC implements Runnable{
 	// indicate that "required options are missing"
 	if (args.length == 0) {
 	    HelpFormatter formatter = new HelpFormatter();
-	    log.error ("Must with parameter -t topic");
+	    log.error ("must with parameter -t topic");
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
 	}
@@ -348,18 +346,20 @@ public class KafkaCDC implements Runnable{
 	if (defschema != null)
 	    dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/schema=" + defschema;
 	else
-	    dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/schema=" + DEFAULT_SCHEMA;
+	    dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/schema=" 
+		+ DEFAULT_SCHEMA;
 
 	if (!format.equals("unicom") && !format.equals("normal")){
 	    HelpFormatter formatter = new HelpFormatter();
-	    log.error ("Just support \"unicom\" and \"normal\" format now. cur format: \"" + format + "\"");
+	    log.error ("just support \"unicom\" and \"normal\" format now. "
+		       + "cur format: \"" + format + "\"");
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
 	}
 
 	if (defschema == null && deftable != null) {
 	    HelpFormatter formatter = new HelpFormatter();
-	    log.error ("If table is specified, schema must be specified too.");
+	    log.error ("if table is specified, schema must be specified too.");
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
 	}
@@ -367,7 +367,7 @@ public class KafkaCDC implements Runnable{
 	// one of zook must be given
 	if ( topic == null ) {
 	    HelpFormatter formatter = new HelpFormatter();
-	    log.error ("The topic parameter must be specified.");
+	    log.error ("the topic parameter must be specified.");
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
 	}
@@ -380,8 +380,7 @@ public class KafkaCDC implements Runnable{
 	try {
 	    me.init(args);
 	} catch (ParseException pe) {
-	    log.error ("Parse parameters fail, the error massage:"
-		       + pe.getMessage());
+	    log.error ("parse parameters error:" + pe.getMessage());
 	    pe.printStackTrace();
 	    System.exit(0);
 	}
@@ -433,30 +432,30 @@ public class KafkaCDC implements Runnable{
 							 me.zkTO,
 							 me.commitCount);
 	    KafkaCDCThread thread = new KafkaCDCThread(consumer);
-
+	    thread.setName("Thread-" + i);
 	    me.threads.add(thread);
 	    thread.start();
 	}
 	
 	Thread ctrltrhead = new Thread(me);
-        ctrltrhead.setName("KafkaCDCCtrlCThread");
+        ctrltrhead.setName("CtrlCThread");
 
-	log.info("Start up KafkaCDCCtrlCThread thread");
+	log.info("start up CtrlCThread");
         ctrltrhead.run();  
 
 	for (KafkaCDCThread thread : me.threads) {
 	    try{
-		log.info("Waiting KafkaCDCThread stop");
+		log.info("waiting " + thread.getName() + " stop");
 		thread.join();
 	    } catch(Exception e){
 		e.printStackTrace();
 	    }
 	}
 
-	log.info("All of KafkaCDCThread stop");
+	log.info("all of sub thread stoped");
 	me.running = false;
 
     	Date endtime = new Date();
-    	log.info("KafkaCDC end time: " + sdf.format(endtime));
+    	log.info("exit time: " + sdf.format(endtime));
     }
 }

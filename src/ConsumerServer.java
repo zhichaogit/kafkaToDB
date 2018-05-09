@@ -64,7 +64,7 @@ public class ConsumerServer
 		   long    zkTO_,
 		   long    commitCount_) 
     {
-	log.trace("Enter ConsumerServer function");
+	log.trace("enter function");
 	esgyndb     = esgyndb_;
 	zookeeper   = zookeeper_; 
 	broker      = broker_;
@@ -108,45 +108,45 @@ public class ConsumerServer
 	    // always start from beginning
 	    kafka.seekToBeginning(Arrays.asList(partition));
 	}
-	log.trace("Exit ConsumerServer function");
+	log.trace("exit function");
     }	
 	
     public void ProcessMessages() 
     {
-	log.trace("Enter ProcessMessages function");
+	log.trace("enter function");
 
 	try {
 	    dbconn = esgyndb.CreateConnection(false);
-	    log.info("ProcessMessages enter loop server...");
+	    log.info("enter server loop...");
 	    while(running.get()) {
 		// note that we don't commitSync to kafka - tho we should
 		ConsumerRecords<String, String> records = kafka.poll(streamTO);
 
-		log.debug("ProcessMessages poll messages: " + records.count());
+		log.debug("poll messages: " + records.count());
 		if (records.isEmpty())
 		    break;               // timed out
 
 		ProcessRecords(records);
 	    } // while true
 
-	    log.info("ProcessMessages exit loop server.");
+	    log.info("exit server loop.");
 	} catch (ConsumerTimeoutException cte) {
-	    log.error("ProcessMessages consumer time out; " + cte.getMessage());
+	    log.error("consumer time out: " + cte.getMessage());
 	} catch (WakeupException we) {
-	    log.info("Kafka Consulmer wakeup exception");
+	    log.warn("wakeup exception");
 	    // Ignore exception if closing
 	    if (running.get()) {
-		log.error("ProcessMessages consumer wakeup; " + we.getMessage());
+		log.error("wakeup: " + we.getMessage());
 	    }
 	} finally {
-	    log.info("ProcessMessages CommitAll");
+	    log.info("commit the cache record");
 	    esgyndb.CommitAll(dbconn, partitionID);
-	    log.info("ProcessMessages CloseConnection");
+	    log.info("cloase connection");
 	    esgyndb.CloseConnection(dbconn);
 	    esgyndb.DisplayDatabase();
 	    kafka.close();
 	}
-	log.trace("Exit ProcessMessages function");
+	log.trace("exit  function");
     }
 
     public void ProcessRecords(ConsumerRecords<String, String> records) 
@@ -155,8 +155,7 @@ public class ConsumerServer
 	    try {
 		ProcessMessage(message);
 	    } catch (ArrayIndexOutOfBoundsException aiooe) {
-		log.error ("Thread [" + partitionID + "], table schema is not "
-			   + "matched with data, ProcessRecords raw data: [" 
+		log.error ("table schema is not matched with data, raw data: [" 
 			   + message + "]");
 		aiooe.printStackTrace();
 	    }
@@ -172,9 +171,9 @@ public class ConsumerServer
 	long    num       = 0;
 
 	if (partition != partitionID) {
-	    log.error("ProcessMessage message info [topic: " + topic 
-		      + ", partition: " + partition + ", offset: " + offset 
-		      + "], current partition #" + partitionID);
+	    log.error("message info [topic: " + topic + ", partition: " 
+		      + partition + ", off: " + offset + "], current partition #" 
+		      + partitionID);
 	    return;
 	}
 
@@ -212,7 +211,7 @@ public class ConsumerServer
 	    break;
 
 	default:
-	    log.error("ProcessMessage operator [" + urm.GetOperatorType() + "]");
+	    log.error("operator [" + urm.GetOperatorType() + "]");
 	}
     }
 
