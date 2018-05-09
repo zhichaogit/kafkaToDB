@@ -52,34 +52,40 @@ public class KafkaCDC implements Runnable{
     String   dbuser       = DEFAULT_USER;
     String   dbpassword   = DEFAULT_PASSWORD;
 
-    private boolean                   running = true;
+    private volatile boolean          running = true;
     private EsgynDB                   esgyndb = null;
     private ArrayList<KafkaCDCThread> threads = null;
-    private class CtrlCHandler extends Thread 
+    private class KafkaCDCCtrlCThread extends Thread 
     {
-        public CtrlCHandler() 
+        public KafkaCDCCtrlCThread() 
 	{  
-            super("Exit Handler");  
+            super("KafkaCDC Exit Handler");  
         }  
 
         public void run() 
 	{
-            log.warn("Ctrl+C exit!");
+            log.warn("KafkaCDC exiting via Ctrl+C!");
 
 	    for (KafkaCDCThread thread : threads) {
 		try{
-		    log.info("wait sub thread stop");
+		    log.info("KafkaCDCCtrlCThread start to wait KafkaCDCThread [" 
+			     + thread.threadid() + "] stop ...");
 		    thread.close();
 		    thread.join();
+		    log.info("KafkaCDCCtrlCThread wait KafkaCDCThread [" 
+			     + thread.threadid() + "] stop success!");
 		} catch(Exception e){
+		    log.error("KafkaCDCCtrlCThread wait KafkaCDCThread [" 
+			     + thread.threadid() + "] stop fail");
 		    e.printStackTrace();
 		} 
 	    }
 
 	    if (esgyndb != null){
+		log.info("KafkaCDCCtrlCThread thread show the last results:");
 		esgyndb.DisplayDatabase();
 	    } else {
-		log.warn("Didn't connect to database!");
+		log.warn("KafkaCDCCtrlCThread thread, didn't connect to database!");
 	    }
             running = false;  
         }  
@@ -87,7 +93,7 @@ public class KafkaCDC implements Runnable{
 
     public KafkaCDC() 
     {  
-        Runtime.getRuntime().addShutdownHook(new CtrlCHandler());  
+        Runtime.getRuntime().addShutdownHook(new KafkaCDCCtrlCThread());  
     }  
 
     public void run() 
@@ -96,18 +102,25 @@ public class KafkaCDC implements Runnable{
 	    try {
 		Thread.sleep(interval);
 		if (!esgyndb.KeepAlive()){
-		    log.error("Database disconnected!");
+		    log.error("Keepalive thead is disconnected from EsgynDB!");
 		    break;
 		}
 		esgyndb.DisplayDatabase();
 		if (threads.size() == 0) {
 		    break;
 		}
-	    } catch (InterruptedException e) {
+	    } catch (InterruptedException ie) {
+		log.error("Keepalive thead InterruptedException " 
+			  + ie.getMessage());
+		ie.printStackTrace(); 
+		break;
+	    } catch (Exception e) {
+		log.error("Keepalive thead Exception " + e.getMessage());
 		e.printStackTrace(); 
+		break;
 	    }
         }  
-	log.info("Exit OK");  
+	log.warn("Keepalive thead exited!");  
     }
 
     public void init( String [] args ) throws ParseException {
@@ -346,7 +359,7 @@ public class KafkaCDC implements Runnable{
 
 	if (defschema == null && deftable != null) {
 	    HelpFormatter formatter = new HelpFormatter();
-	    log.error ("If table is specified table, schema must be specified too.");
+	    log.error ("If table is specified, schema must be specified too.");
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
 	}
@@ -366,16 +379,18 @@ public class KafkaCDC implements Runnable{
 		
 	try {
 	    me.init(args);
-	} catch (ParseException p) {
-	    log.error ("parameter error " + p.getMessage());
+	} catch (ParseException pe) {
+	    log.error ("Parse parameters fail, the error massage:"
+		       + pe.getMessage());
+	    pe.printStackTrace();
 	    System.exit(0);
 	}
-    	Date starttime = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    	Date             starttime = new Date();
 	StringBuffer     strBuffer = new StringBuffer();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
 	strBuffer.append("KafkaCDC start time: " + sdf.format(starttime));
-	strBuffer.append("\n\n\tbroker    = " + me.broker);
+	strBuffer.append("\n\tbroker      = " + me.broker);
 	strBuffer.append("\n\tcommitCount = " + me.commitCount);
 	strBuffer.append("\n\tdelimiter   = " + me.groupID);
 	strBuffer.append("\n\tformat      = " + me.format);
@@ -422,24 +437,23 @@ public class KafkaCDC implements Runnable{
 	    me.threads.add(thread);
 	    thread.start();
 	}
-
 	
 	Thread ctrltrhead = new Thread(me);
-        ctrltrhead.setName("Ctrl C Thread");
+        ctrltrhead.setName("KafkaCDCCtrlCThread");
 
-	log.info("start up ctrl+c thread");
+	log.info("Start up KafkaCDCCtrlCThread thread");
         ctrltrhead.run();  
 
 	for (KafkaCDCThread thread : me.threads) {
 	    try{
-		log.info("wait sub thread stop");
+		log.info("Waiting KafkaCDCThread stop");
 		thread.join();
 	    } catch(Exception e){
 		e.printStackTrace();
-	    } 
+	    }
 	}
 
-	log.info("all of sub thread stop");
+	log.info("All of KafkaCDCThread stop");
 	me.running = false;
 
     	Date endtime = new Date();

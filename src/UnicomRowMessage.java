@@ -18,6 +18,7 @@ public class UnicomRowMessage extends RowMessage
     String                  transactionOff  = null;
     String                  catlogName      = null;
     String                  timestamp       = null;
+    String                  emptystr        = "";
 
     public UnicomRowMessage(String defschema_, String deftable_, String delimiter_,
 			    int thread_, String message_)
@@ -27,6 +28,8 @@ public class UnicomRowMessage extends RowMessage
 
     public void AnalyzeMessage()
     {
+	log.trace("Exit AnalyzeMessage function");
+
 	String[] formats = message.split("");
 
 	// transaction information
@@ -76,6 +79,8 @@ public class UnicomRowMessage extends RowMessage
 	}
 	strBuffer.append("\nUnicomRowMessage end");
 	log.debug(strBuffer);
+
+	log.trace("Exit AnalyzeMessage function");
     }
 
     private int byte_array_to_long(byte[] data, int start, int length) {
@@ -128,7 +133,7 @@ public class UnicomRowMessage extends RowMessage
 	}
 
 	case SEPARATOR_NO_DATA: {
-	    value = new String ("");
+	    value = emptystr;
 	    break;
 	}
 

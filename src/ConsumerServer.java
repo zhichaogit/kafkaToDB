@@ -64,6 +64,7 @@ public class ConsumerServer
 		   long    zkTO_,
 		   long    commitCount_) 
     {
+	log.trace("Enter ConsumerServer function");
 	esgyndb     = esgyndb_;
 	zookeeper   = zookeeper_; 
 	broker      = broker_;
@@ -107,18 +108,21 @@ public class ConsumerServer
 	    // always start from beginning
 	    kafka.seekToBeginning(Arrays.asList(partition));
 	}
+	log.trace("Exit ConsumerServer function");
     }	
 	
     public void ProcessMessages() 
     {
-	try {
-	    log.info("ProcessMessages start ...");
+	log.trace("Enter ProcessMessages function");
 
+	try {
 	    dbconn = esgyndb.CreateConnection(false);
+	    log.info("ProcessMessages enter loop server...");
 	    while(running.get()) {
 		// note that we don't commitSync to kafka - tho we should
 		ConsumerRecords<String, String> records = kafka.poll(streamTO);
 
+		log.debug("ProcessMessages poll messages: " + records.count());
 		if (records.isEmpty())
 		    break;               // timed out
 
@@ -137,10 +141,12 @@ public class ConsumerServer
 	} finally {
 	    log.info("ProcessMessages CommitAll");
 	    esgyndb.CommitAll(dbconn, partitionID);
+	    log.info("ProcessMessages CloseConnection");
 	    esgyndb.CloseConnection(dbconn);
 	    esgyndb.DisplayDatabase();
 	    kafka.close();
 	}
+	log.trace("Exit ProcessMessages function");
     }
 
     public void ProcessRecords(ConsumerRecords<String, String> records) 
