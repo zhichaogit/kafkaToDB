@@ -323,7 +323,7 @@ public class KafkaCDC implements Runnable{
 	defschema = cmdLine.hasOption("schema") ? cmdLine.getOptionValue("schema")
 	    : null;
 	topic = cmdLine.getOptionValue("topic");
-	topic = cmdLine.hasOption("updatable") ? true : false;
+	updatable = cmdLine.hasOption("updatable") ? true : false;
 	zookeeper = cmdLine.hasOption("zook") ? cmdLine.getOptionValue("zook") 
 	    : null;
 
