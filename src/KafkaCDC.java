@@ -51,6 +51,7 @@ public class KafkaCDC implements Runnable{
     String   delimiter    = null;
     String   dbuser       = DEFAULT_USER;
     String   dbpassword   = DEFAULT_PASSWORD;
+    boolean  updatable    = false;
 
     private volatile boolean          running = true;
     private EsgynDB                   esgyndb = null;
@@ -199,6 +200,11 @@ public class KafkaCDC implements Runnable{
 	    .hasArg()
 	    .desc("REQUIRED. topic of subscription")
 	    .build();
+	Option updatableOption = Option.builder("u")
+	    .longOpt("updatable")
+	    .required(false)
+	    .desc("disable updata and delete, default: false")
+	    .build();
 	Option zkOption = Option.builder("z")
 	    .longOpt("zook")
 	    .required(false)
@@ -272,6 +278,7 @@ public class KafkaCDC implements Runnable{
 	exeOptions.addOption(parallelOption);
 	exeOptions.addOption(schemaOption);
 	exeOptions.addOption(topicOption);
+	exeOptions.addOption(updatableOption);
 	exeOptions.addOption(zkOption);
 
 	exeOptions.addOption(dbportOption);
@@ -316,6 +323,7 @@ public class KafkaCDC implements Runnable{
 	defschema = cmdLine.hasOption("schema") ? cmdLine.getOptionValue("schema")
 	    : null;
 	topic = cmdLine.getOptionValue("topic");
+	topic = cmdLine.hasOption("updatable") ? true : false;
 	zookeeper = cmdLine.hasOption("zook") ? cmdLine.getOptionValue("zook") 
 	    : null;
 
@@ -413,7 +421,8 @@ public class KafkaCDC implements Runnable{
 				 me.dbdriver, 
 				 me.dbuser, 
 				 me.dbpassword, 
-				 me.commitCount);
+				 me.commitCount,
+				 me.updatable);
 	me.threads = new ArrayList<KafkaCDCThread>(0);
 
         for (int i = 0; i <me.parallel; i++) {

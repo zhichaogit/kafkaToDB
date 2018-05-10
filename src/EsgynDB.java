@@ -28,6 +28,7 @@ public class EsgynDB
     long        commitCount = 500;
     Connection  dbkeepconn  = null;
     String      keepQuery   = "values(1);";
+    boolean     updatable   = false;
     Map<String, SchemaInfo> schemas  = null;
     PreparedStatement       keepstmt = null;
     private static Logger   log = Logger.getLogger(EsgynDB.class);
@@ -46,7 +47,8 @@ public class EsgynDB
 		   String  dbdriver_, 
 		   String  dbuser_, 
 		   String  dbpassword_,
-		   long    commitCount_) 
+		   long    commitCount_,
+		   boolean updatable_) 
     {
 	log.trace("enter function [" + defschema_ + "." + deftable_ 
 		  + ", " + dburl_ + ", " + dbdriver_ + ", " + dbuser_ 
@@ -59,6 +61,7 @@ public class EsgynDB
 	defschema   = defschema_;
 	deftable    = deftable_;
 	commitCount = commitCount_;
+	updatable   = updatable_;
 
 	begin = new Date().getTime();
 	starttime = new Date();
@@ -395,6 +398,17 @@ public class EsgynDB
 	log.trace("enter function [" + conn + ", " + message + "," + schemaName
 		  + "." + tableName + "," + thread + "]");
 
+	if (!updatable) {
+	    table.IncreaseUpdate();
+	    synchronized (this){
+		updatenum++;
+		messagenum++;
+	    }
+
+	    log.trace("exit function [1]");
+	    return 1;
+	}
+
 	try {
 	    if (table.GetCacheRows() != 0) {
 		PreparedStatement stmt = table.GetInsertStmt(conn, thread);
@@ -485,6 +499,16 @@ public class EsgynDB
 
 	log.trace("enter function [" + conn + ", " + message + "," + schemaName
 		  + "." + tableName + "," + thread + "]");
+	if (!updatable) {
+	    table.IncreaseDelete();
+	    synchronized (this){
+		deletenum++;
+		messagenum++;
+	    }
+
+	    log.trace("exit function [1]");
+	    return 1;
+	}
 
 	try {
 	    if (table.GetCacheRows() != 0) {
@@ -524,9 +548,9 @@ public class EsgynDB
 	    conn.commit();
 	    result = 1;
 	    table.IncreaseDelete();
-	    synchronized (this){
-		messagenum++;
+	    synchronized (this){	
 		deletenum++;
+		messagenum++;
 	    }
 	} catch (BatchUpdateException bue) {
 	    int[] insertCounts = bue.getUpdateCounts();
