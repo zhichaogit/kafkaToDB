@@ -1,19 +1,22 @@
 public class ColumnInfo
 {
-    String      columnName = null;
-    String      typeName   = null;
+    int         columnID   = -1;
     int         columnType = -1;
+    String      typeName   = null;
+    String      columnName = null;
 
-    public ColumnInfo(String columnName_,
+    public ColumnInfo(String columnID_,
+		      String columnType_,
 		      String typeName_,
-		      String columnType_) 
+		      String columnName_) 
     {
-	columnName = "\"" + columnName_ + "\"";
-	typeName   = typeName_;
+	columnID   = Integer.parseInt(columnID_);
 	columnType = Integer.parseInt(columnType_);
+	typeName   = typeName_;
+	columnName = "\"" + columnName_ + "\"";
     }
 
-    public String GetColunmName()
+    public String GetColumnName()
     {
 	return columnName;
     }
@@ -23,9 +26,14 @@ public class ColumnInfo
 	return typeName;
     }
 
-    public int GetColunmType()
+    public int GetColumnType()
     {
 	return columnType;
+    }
+
+    public int GetColumnID()
+    {
+	return columnID;
     }
 }
 

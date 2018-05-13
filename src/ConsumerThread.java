@@ -1,5 +1,5 @@
 import java.util.Arrays;
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.Properties;
 import java.sql.Connection;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,7 +26,7 @@ import kafka.consumer.ConsumerTimeoutException;
  *   a.  pdsh script per node
  *   b.  zookeeper?
  */
-public class ConsumerServer 
+public class ConsumerThread extends Thread
 {
     EsgynDB esgyndb;
     // execution settings
@@ -46,11 +46,11 @@ public class ConsumerServer
 
     KafkaConsumer<String, String> kafka;
     private final AtomicBoolean running = new AtomicBoolean(true);
-    Connection  dbconn = null;
+    Connection  dbConn = null;
 
-    private static Logger log = Logger.getLogger(ConsumerServer.class);
+    private static Logger log = Logger.getLogger(ConsumerThread.class);
 
-    ConsumerServer(EsgynDB esgyndb_,
+    ConsumerThread(EsgynDB esgyndb_,
 		   boolean full_,
 		   boolean skip_,
 		   String  delimiter_,
@@ -109,15 +109,15 @@ public class ConsumerServer
 	    kafka.seekToBeginning(Arrays.asList(partition));
 	}
 	log.trace("exit function");
-    }	
+    }
 	
-    public void ProcessMessages() 
+    public void run() 
     {
 	log.trace("enter function");
 
 	try {
-	    dbconn = esgyndb.CreateConnection(false);
-	    log.info("enter server loop...");
+	    dbConn = esgyndb.CreateConnection(false);
+	    log.info("consumer server started.");
 	    while(running.get()) {
 		// note that we don't commitSync to kafka - tho we should
 		ConsumerRecords<String, String> records = kafka.poll(streamTO);
@@ -129,7 +129,7 @@ public class ConsumerServer
 		ProcessRecords(records);
 	    } // while true
 
-	    log.info("exit server loop.");
+	    log.info("consumer server stoped.");
 	} catch (ConsumerTimeoutException cte) {
 	    log.error("consumer time out: " + cte.getMessage());
 	} catch (WakeupException we) {
@@ -140,11 +140,12 @@ public class ConsumerServer
 	    }
 	} finally {
 	    log.info("commit the cache record");
-	    esgyndb.CommitAll(dbconn, partitionID);
+	    esgyndb.CommitAllDatabase(dbConn);
 	    log.info("cloase connection");
-	    esgyndb.CloseConnection(dbconn);
+	    esgyndb.CloseConnection(dbConn);
 	    esgyndb.DisplayDatabase();
 	    kafka.close();
+	    running.set(false);
 	}
 	log.trace("exit  function");
     }
@@ -189,30 +190,7 @@ public class ConsumerServer
 
 	urm.AnalyzeMessage();
 
-	ArrayList<ColumnValue> columns = urm.GetColumns();
-	log.debug("Database schema: " + urm.GetSchemaName() + ", table name: "
-		  + urm.GetTableName() + ", partition: " + partitionID );
-	switch(urm.GetOperatorType()) {
-	case "I":
-	    num = esgyndb.InsertData(dbconn, message.value(), urm.GetSchemaName(), 
-				     urm.GetTableName(), partitionID, columns);
-	    break;
-	case "U":
-	    num = esgyndb.UpdateData(dbconn, message.value(), urm.GetSchemaName(), 
-				     urm.GetTableName(), partitionID, columns);
-	    break;
-	case "K":
-	    num = esgyndb.UpdateData(dbconn, message.value(), urm.GetSchemaName(), 
-				     urm.GetTableName(), partitionID, columns);
-	    break;
-	case "D":
-	    num = esgyndb.DeleteData(dbconn, message.value(), urm.GetSchemaName(), 
-				     urm.GetTableName(), partitionID, columns);
-	    break;
-
-	default:
-	    log.error("operator [" + urm.GetOperatorType() + "]");
-	}
+	esgyndb.InsertMessageToDatabase(dbConn, urm);
     }
 
     public int GetConsumerID() 
@@ -220,7 +198,12 @@ public class ConsumerServer
 	return partitionID;
     }
 
-    public synchronized void DropConsumer() 
+    public synchronized boolean GetState() 
+    {
+	return 	running.get();
+    } 
+
+    public synchronized void Close() 
     {
 	running.set(false);
 	kafka.wakeup();

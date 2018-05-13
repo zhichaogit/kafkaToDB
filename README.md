@@ -26,12 +26,12 @@ usage: Consumer Server
 *    --dbuser <arg>      database server user, default: db__root
 *    --dbpw <arg>        database server password, default: zz
 *    --delim <arg>       field delimiter, default: ','(comma)
-*    --interval <arg>    the print state time interval, default: 10000ms
+*    --interval <arg>    the print state time interval, default: 10s
 *    --full              pull data from beginning, default: false
 *    --skip              skip all error of data, default: false
-*    --sto <arg>         kafka poll time-out limit, default: 60000ms
+*    --sto <arg>         kafka poll time-out limit, default: 60s
 *    --table <arg>       kafka poll time-out limit, default: null
-*    --zkto <arg>        zookeeper time-out limit, default: 10000ms
+*    --zkto <arg>        zookeeper time-out limit, default: 10s
 
 Must create the schema and tables first of all.
 # example:

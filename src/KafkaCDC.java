@@ -14,11 +14,11 @@ import java.util.ArrayList;
 import org.apache.log4j.Logger;
 
 public class KafkaCDC implements Runnable{
-    private final long   DEFAULT_STREAM_TO_MS = 60000;
-    private final long   DEFAULT_ZOOK_TO_MS   = 10000;
+    private final long   DEFAULT_STREAM_TO_MS = 60; // the unit is second, 60s
+    private final long   DEFAULT_ZOOK_TO_MS   = 10; // the unit is second, 10s
     private final long   DEFAULT_COMMIT_COUNT = 500;
     private final long   DEFAULT_PARALLE      = 16;
-    private final long   DEFAULT_INTERVAL     = 10000;
+    private final long   DEFAULT_INTERVAL     = 10; // the unit is second, 10s
     private final String DEFAULT_BROKER       = "localhost:9092";
     private final String DEFAULT_IPADDR       = "localhost";
     private final String DEFAULT_PORT         = "23400";
@@ -51,11 +51,10 @@ public class KafkaCDC implements Runnable{
     String   delimiter    = null;
     String   dbuser       = DEFAULT_USER;
     String   dbpassword   = DEFAULT_PASSWORD;
-    boolean  updatable    = false;
 
-    private volatile boolean          running = true;
+    private volatile long             running = 0;
     private EsgynDB                   esgyndb = null;
-    private ArrayList<KafkaCDCThread> threads = null;
+    private ArrayList<ConsumerThread> consumers = null;
     private class KafkaCDCCtrlCThread extends Thread 
     {
         public KafkaCDCCtrlCThread() 
@@ -67,14 +66,14 @@ public class KafkaCDC implements Runnable{
 	{
             log.warn("exiting via Ctrl+C!");
 
-	    for (KafkaCDCThread thread : threads) {
+	    for (ConsumerThread consumer : consumers) {
 		try{
-		    log.info("waiting for " + thread.getName() + " stop.");
-		    thread.close();
-		    thread.join();
-		    log.info(thread.getName() + " stop success.");
+		    log.info("waiting for " + consumer.getName() + " stop.");
+		    consumer.Close();
+		    consumer.join();
+		    log.info(consumer.getName() + " stop success.");
 		} catch(Exception e){
-		    log.error("wait " + thread.getName() + " stop fail!");
+		    log.error("wait " + consumer.getName() + " stop fail!");
 		    e.printStackTrace();
 		} 
 	    }
@@ -85,7 +84,7 @@ public class KafkaCDC implements Runnable{
 	    } else {
 		log.warn("didn't connect to database!");
 	    }
-            running = false;  
+            running = 0;  
         }  
     }  
 
@@ -97,7 +96,7 @@ public class KafkaCDC implements Runnable{
     public void run() 
     {  
 	log.warn("keepalive thread start to run");  
-        while (running) {
+        while (running != 0) {
 	    try {
 		Thread.sleep(interval);
 		if (!esgyndb.KeepAlive()){
@@ -105,8 +104,10 @@ public class KafkaCDC implements Runnable{
 		    break;
 		}
 		esgyndb.DisplayDatabase();
-		if (threads.size() == 0) {
-		    break;
+		for (ConsumerThread consumer : consumers) {
+		    if (!consumer.GetState()){
+			running--;
+		    }
 		}
 	    } catch (InterruptedException ie) {
 		log.error("keepalive throw InterruptedException " 
@@ -200,11 +201,6 @@ public class KafkaCDC implements Runnable{
 	    .hasArg()
 	    .desc("REQUIRED. topic of subscription")
 	    .build();
-	Option updatableOption = Option.builder("u")
-	    .longOpt("updatable")
-	    .required(false)
-	    .desc("disable updata and delete, default: false")
-	    .build();
 	Option zkOption = Option.builder("z")
 	    .longOpt("zook")
 	    .required(false)
@@ -278,7 +274,6 @@ public class KafkaCDC implements Runnable{
 	exeOptions.addOption(parallelOption);
 	exeOptions.addOption(schemaOption);
 	exeOptions.addOption(topicOption);
-	exeOptions.addOption(updatableOption);
 	exeOptions.addOption(zkOption);
 
 	exeOptions.addOption(dbportOption);
@@ -323,7 +318,6 @@ public class KafkaCDC implements Runnable{
 	defschema = cmdLine.hasOption("schema") ? cmdLine.getOptionValue("schema")
 	    : null;
 	topic = cmdLine.getOptionValue("topic");
-	updatable = cmdLine.hasOption("updatable") ? true : false;
 	zookeeper = cmdLine.hasOption("zook") ? cmdLine.getOptionValue("zook") 
 	    : null;
 
@@ -346,6 +340,10 @@ public class KafkaCDC implements Runnable{
 	    : null;
 	zkTO = cmdLine.hasOption("zkto") ? 
 	    Long.parseLong(cmdLine.getOptionValue("zkto")) : DEFAULT_ZOOK_TO_MS;
+
+	interval *= 1000;
+	streamTO *= 1000;
+	zkTO *= 1000;
 
 	if (defschema != null)
 	    defschema = defschema.toUpperCase();
@@ -421,13 +419,12 @@ public class KafkaCDC implements Runnable{
 				 me.dbdriver, 
 				 me.dbuser, 
 				 me.dbpassword, 
-				 me.commitCount,
-				 me.updatable);
-	me.threads = new ArrayList<KafkaCDCThread>(0);
+				 me.commitCount);
+	me.consumers = new ArrayList<ConsumerThread>(0);
 
         for (int i = 0; i <me.parallel; i++) {
 	    // connect to kafka w/ either zook setting
-	    ConsumerServer consumer = new ConsumerServer(me.esgyndb,
+	    ConsumerThread consumer = new ConsumerThread(me.esgyndb,
 							 me.full,
 							 me.skip,
 							 me.delimiter,
@@ -440,29 +437,28 @@ public class KafkaCDC implements Runnable{
 							 me.streamTO,
 							 me.zkTO,
 							 me.commitCount);
-	    KafkaCDCThread thread = new KafkaCDCThread(consumer);
-	    thread.setName("Thread-" + i);
-	    me.threads.add(thread);
-	    thread.start();
+	    consumer.setName("ConsumerThread-" + i);
+	    me.consumers.add(consumer);
+	    consumer.start();
 	}
 	
+	me.running = me.parallel;
 	Thread ctrltrhead = new Thread(me);
         ctrltrhead.setName("CtrlCThread");
 
 	log.info("start up CtrlCThread");
         ctrltrhead.run();  
 
-	for (KafkaCDCThread thread : me.threads) {
+	for (ConsumerThread consumer : me.consumers) {
 	    try{
-		log.info("waiting " + thread.getName() + " stop");
-		thread.join();
+		log.info("waiting " + consumer.getName() + " stop");
+		consumer.join();
 	    } catch(Exception e){
 		e.printStackTrace();
 	    }
 	}
 
 	log.info("all of sub thread stoped");
-	me.running = false;
 
     	Date endtime = new Date();
     	log.info("exit time: " + sdf.format(endtime));

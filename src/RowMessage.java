@@ -1,4 +1,5 @@
-import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import org.apache.log4j.Logger; 
  
 public class RowMessage
@@ -12,7 +13,7 @@ public class RowMessage
 
     protected static Logger log = Logger.getLogger(RowMessage.class); 
 
-    ArrayList<ColumnValue>  columns = null;
+    Map<Integer, ColumnValue>   columns = null;
 
     public RowMessage(String defschema_, String deftable_, String delimiter_,
 		      int thread_, String message_)
@@ -43,11 +44,11 @@ public class RowMessage
 	strBuffer.append("Operator Info: [Table Name: " + tableName 
 			 + ", Type: " + operatorType + "]");
 
-	columns = new ArrayList<ColumnValue>(0);
+	columns = new HashMap<Integer, ColumnValue>(0);
 	for (int i = 0; i < formats.length; i++) {
 	    strBuffer.append("\n\tColumn: " + formats[i]);
 	    ColumnValue columnValue = new ColumnValue(i, formats[i], null);
-	    columns.add(columnValue);
+	    columns.put(i, columnValue);
 	}
 	strBuffer.append("\nRowMessage end");
 	log.debug(strBuffer);
@@ -70,7 +71,12 @@ public class RowMessage
 	return operatorType;
     }
 
-    public ArrayList<ColumnValue> GetColumns()
+    public String GetMessage()
+    {
+	return message;
+    }
+
+    public Map<Integer, ColumnValue> GetColumns()
     {
 	return columns;
     }

@@ -1,4 +1,5 @@
-import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import org.apache.log4j.Logger; 
  
 public class UnicomRowMessage extends RowMessage
@@ -67,14 +68,15 @@ public class UnicomRowMessage extends RowMessage
 			 + ", transaction sign" + transactionSign
 			 + ", rebuild transaction id" + rebuildTID
 			 + ", transaction offset:"  + transactionOff + "]\n");
-	strBuffer.append("Operator Info: [Table Name :" + tableName + ", Type: "
+	strBuffer.append("Operator Info: [Table Name: " + tableName + ", Type: "
 			 + operatorType + ", Timestamp: " + timestamp + "]");
 
-	columns = new ArrayList<ColumnValue>(0);
+	columns = new HashMap<Integer, ColumnValue>(0);
 	for (int i = 4; i < formats.length; i++) {
 	    strBuffer.append("\n\tColumn: " + formats[i]);
 	    offset = 0;
-	    columns.add(get_column(formats[i].getBytes()));
+	    ColumnValue column = get_column(formats[i].getBytes());
+	    columns.put(column.GetColumnID(), column);
 	}
 	log.debug(strBuffer);
 

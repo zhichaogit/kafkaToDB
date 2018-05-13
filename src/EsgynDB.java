@@ -3,15 +3,12 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.DatabaseMetaData;
-import java.sql.Statement;
 import java.sql.PreparedStatement;
-import java.sql.BatchUpdateException;
+
 import java.util.Map;
 import java.util.HashMap;
-import java.util.ArrayList;
 import java.lang.StringBuffer;
 import org.apache.log4j.Logger; 
-import java.lang.IndexOutOfBoundsException;
 
 import java.util.Date;
 import java.text.DecimalFormat;
@@ -28,7 +25,6 @@ public class EsgynDB
     long        commitCount = 500;
     Connection  dbkeepconn  = null;
     String      keepQuery   = "values(1);";
-    boolean     updatable   = false;
     Map<String, SchemaInfo> schemas  = null;
     PreparedStatement       keepstmt = null;
     private static Logger   log = Logger.getLogger(EsgynDB.class);
@@ -36,6 +32,7 @@ public class EsgynDB
     private long    messagenum = 0;
     private long    insertnum = 0;
     private long    updatenum = 0;
+    private long    updkeynum = 0;
     private long    deletenum = 0;
 
     private long    begin;
@@ -47,8 +44,7 @@ public class EsgynDB
 		   String  dbdriver_, 
 		   String  dbuser_, 
 		   String  dbpassword_,
-		   long    commitCount_,
-		   boolean updatable_) 
+		   long    commitCount_) 
     {
 	log.trace("enter function [" + defschema_ + "." + deftable_ 
 		  + ", " + dburl_ + ", " + dbdriver_ + ", " + dbuser_ 
@@ -61,7 +57,6 @@ public class EsgynDB
 	defschema   = defschema_;
 	deftable    = deftable_;
 	commitCount = commitCount_;
-	updatable   = updatable_;
 
 	begin = new Date().getTime();
 	starttime = new Date();
@@ -132,19 +127,22 @@ public class EsgynDB
 		tableRS = dbmd.getTables("Trafodion", schemaName, "%", null);
 		while (tableRS.next()) {
 		    String     tableName = tableRS.getString("TABLE_NAME");
-		    TableInfo  table = new TableInfo(schemaName, tableName);
+		    TableInfo  table = new TableInfo(schemaName, tableName, 
+						     commitCount);
 		    
 		    log.info("start to init table [" + schemaName + "."  + 
 			     tableName + "]");
 		    init_culumns(table);
+		    init_keys(table);
 		    schema.AddTable(tableName, table);
 		}
 	    } else {
-		TableInfo  table = new TableInfo(defschema, deftable);
+		TableInfo  table = new TableInfo(defschema, deftable, commitCount);
 
 		log.info("start to init table [" + defschema + "." 
 			 + deftable + "]");
 		if (init_culumns(table) > 0) {
+		    init_keys(table);
 		    schema = new SchemaInfo(schemaName);
 		    schema.AddTable(deftable, table);
 		} else {
@@ -187,20 +185,78 @@ public class EsgynDB
             ResultSet       columnRS = psmt.executeQuery();
 	    StringBuffer    strBuffer = new StringBuffer();
 	    strBuffer.append("Get table \"" + table.GetSchemaName() + "." 
-			     + table.GetTableName() + "\" columns [\n");
+			     + table.GetTableName() + "\" columns \n[\n");
 
 	    while (columnRS.next()) {
 		String      colname = columnRS.getString("COLUMN_NAME");
 		String      typename = columnRS.getString("TYPE_NAME");
 		String      coltype = columnRS.getString("DATA_TYPE");
-		ColumnInfo  column = new ColumnInfo(colname, typename, coltype);
+		String      colid = columnRS.getString("ORDINAL_POSITION");
+		ColumnInfo  column = new ColumnInfo(colid, coltype, typename, colname);
 
 		strBuffer.append("\tName: " + colname + ", Type: " + typename.trim() 
 				 + ", Type ID: " + coltype + "\n");
 
 		table.AddColumn(column);
 	    }
+	    strBuffer.append("]"); 
 	    log.debug(strBuffer.toString());
+	    psmt.close();
+	} catch (SQLException sqle) {
+	    sqle.printStackTrace();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+
+	log.trace("exit function [" + table.GetColumnCount() + "");
+	return table.GetColumnCount();
+    }
+
+    public long init_keys(TableInfo table)
+    {
+	log.trace("enter function [" + table + "]");
+
+	try {
+	    String getTableKeys = "SELECT k.COLUMN_NAME COLUMN_NAME, "
+		+ "c.FS_DATA_TYPE DATA_TYPE, c.SQL_DATA_TYPE TYPE_NAME, "
+		+ "c.NULLABLE NULLABLE, c.COLUMN_PRECISION DECIMAL_DIGITS, "
+		+ "c.COLUMN_NUMBER KEY_COLUMN_ID, c.COLUMN_NUMBER ORDINAL_POSITION "
+		+ "FROM \"_MD_\".OBJECTS o, \"_MD_\".COLUMNS c, \"_MD_\".KEYS k "
+		+ "WHERE o.OBJECT_UID=c.OBJECT_UID AND o.OBJECT_UID=k.OBJECT_UID "
+		+ "AND c.COLUMN_NUMBER = k.COLUMN_NUMBER AND c.COLUMN_CLASS != 'S' "
+		+ "AND o.SCHEMA_NAME=? AND o.object_name=? "
+		+ "ORDER BY k.KEYSEQ_NUMBER;";
+	    PreparedStatement   psmt = 
+		(PreparedStatement) dbkeepconn.prepareStatement(getTableKeys);
+
+	    psmt.setString(1, table.GetSchemaName());
+	    psmt.setString(2, table.GetTableName());
+
+            ResultSet       keysRS = psmt.executeQuery();
+	    StringBuffer    strBuffer = new StringBuffer();
+	    strBuffer.append("Get primakey of \"" + table.GetSchemaName() 
+			     + "\".\"" + table.GetTableName() 
+			     + "\" key columns\n[\n");
+
+	    while (keysRS.next()) {
+		String      colname  = keysRS.getString("COLUMN_NAME");
+		String      typename = keysRS.getString("TYPE_NAME");
+		String      coltype  = keysRS.getString("DATA_TYPE");
+		String      colid    = keysRS.getString("KEY_COLUMN_ID");
+		ColumnInfo  column   = new ColumnInfo(colid, coltype, typename, colname);
+
+		strBuffer.append("\tName: " + colname + ", Type: " + typename.trim() 
+				 + ", Type ID: " + coltype + "\n");
+
+		table.AddKey(column);
+	    }
+	    strBuffer.append("]\n"); 
+	    if (table.GetKeyCount() == 0) {
+		log.error("No primary key on \"" + table.GetSchemaName()
+			  + "\".\"" + table.GetTableName() + "\"");
+	    } else {
+		log.debug(strBuffer.toString());
+	    }
 	    psmt.close();
 	} catch (SQLException sqle) {
 	    sqle.printStackTrace();
@@ -219,13 +275,13 @@ public class EsgynDB
 
     public Connection CreateConnection(boolean autocommit)
     {
-	Connection          dbconn = null;
+	Connection          dbConn = null;
 	log.trace("enter function [" + autocommit + "]");
 
 	try {
 	    Class.forName(dbdriver);
-	    dbconn = DriverManager.getConnection(dburl, dbuser, dbpassword);
-	    dbconn.setAutoCommit(autocommit);
+	    dbConn = DriverManager.getConnection(dburl, dbuser, dbpassword);
+	    dbConn.setAutoCommit(autocommit);
 	} catch (SQLException se) {
 	    log.error ("SQL error: " + se.getMessage());
 	    se.printStackTrace();
@@ -238,15 +294,15 @@ public class EsgynDB
 	}
 	
 	log.trace("exit function");
-	return dbconn;
+	return dbConn;
     }
 
-    public void CloseConnection(Connection  dbconn)
+    public void CloseConnection(Connection  dbConn_)
     {
-	log.trace("enter function [" + dbconn + "]");
+	log.trace("enter function [" + dbConn_ + "]");
 
 	try {
-	    dbconn.close();
+	    dbConn_.close();
 	} catch (SQLException e) {
 	    e.printStackTrace();
 	}
@@ -264,14 +320,6 @@ public class EsgynDB
 	return deftable;
     }
 
-    public SchemaInfo GetSchema(String schemaName)
-    {
-	if (defschema != null)
-	    return schemas.get(defschema);
-
-	return schemas.get(schemaName);
-    }
-
     public boolean KeepAlive()
     {
 	try {
@@ -287,336 +335,50 @@ public class EsgynDB
 	return true;
     }
 
-    public long InsertData(Connection  conn,
-			   String      message,
-			   String      schemaName,
-			   String      tableName, 
-			   int         thread,
-			   ArrayList<ColumnValue> columns)
+    public long InsertMessageToDatabase(Connection dbConn_, RowMessage urm)
     {
-	SchemaInfo        schema = schemas.get(schemaName);
-	TableInfo         table = schema.GetTable(tableName);
-	long              result = 0;
+	SchemaInfo  schema = schemas.get(urm.GetSchemaName());
+	TableInfo   table = schema.GetTable(urm.GetTableName());
 
-	if (table == null)
-	    return result;
+	if (!table.InitStmt(dbConn_))
+	    return 0;
 
-	log.trace("enter function [" + conn + ", " + message + ","
-		  + schemaName + "." + tableName + "," + thread + "]");
+	switch(urm.GetOperatorType()) {
+	case "I":
+	    insertnum++;
+	    break;
+	case "U":
+	    updatenum++;
+	    break;
+	case "K":
+	    updkeynum++;
+	    break;
+	case "D":
+	    deletenum++;
+	    break;
 
-	try {
-	    ColumnValue columnValue = columns.get(0);
-	    ColumnInfo  column      = table.GetColumn(columnValue.GetColumnID());
-	    PreparedStatement stmt  = table.GetInsertStmt(conn, thread);
-
-	    if (stmt == null) {
-		String      insertSql   = "UPSERT USING LOAD INTO " + schemaName + "." 
-		    + tableName + "(" + column.GetColunmName();
-		String      valueSql    = ") VALUES(?";
-
-		for(int i = 1; i < columns.size(); i++) {
-		    columnValue = columns.get(i);
-		    column = table.GetColumn(columnValue.GetColumnID());
-		    insertSql += ", " + column.GetColunmName();
-		
-		    valueSql += ", ?";
-		}
-
-		insertSql += valueSql + ");";
-
-		log.debug ("Thread [" + thread + "] InsertData: [" + insertSql + "]");
-		stmt = conn.prepareStatement(insertSql);
-		table.SetInsertStmt(conn, thread, stmt);
-	    }
-
-	    
-	    for(int i = 0; i < table.GetColumnCount(); i++) {
-		column      = table.GetColumn(i);
-		stmt.setNull(i+1, column.GetColunmType());
-	    }
-
-	    for(int i = 0; i < columns.size(); i++) {
-		columnValue = columns.get(i);
-		column      = table.GetColumn(columnValue.GetColumnID());
-		if (!columnValue.CurValueIsNull())
-		    stmt.setString(i+1, columnValue.GetCurValue());
-	    }
-
-	    stmt.addBatch();
-	    table.IncCacheRows();
-	    if ((table.GetCacheRows() % commitCount) == 0) {
-		int [] batchResult = stmt.executeBatch();
-		conn.commit();
-		long rows = table.GetCacheRows();
-		synchronized (this) {
-		    insertnum += rows;
-		    messagenum += rows;
-		}
-
-		table.SetCacheRows(0);
-		table.IncreaseInsert(rows);
-	    }
-	} catch (BatchUpdateException bue) {
-	    int[] insertCounts = bue.getUpdateCounts();
-	    int count = 1;
-
-	    for (int i : insertCounts) {
-		if ( i == Statement.EXECUTE_FAILED ) 
-		    log.error("error on request #" + count +" execute failed");
-		else 
-		    count++;
-	    }
-	    log.error (bue.getMessage() + "\nBatchUpdate exception raw data: ["
-		       + message + "]");
-	    bue.printStackTrace();
-	} catch (IndexOutOfBoundsException iobe) {
-	    log.error ("IndexOutOfBounds exception raw data: [" + message + "]");
-	    iobe.printStackTrace();
-	} catch (SQLException e) {
-	    log.error ("SQL exception raw data: [" + message + "]");
-	    e.printStackTrace();
+	default:
+	    log.error("operator [" + urm.GetOperatorType() + "]");
+	    return 0;
 	}
-	
-	log.trace("exit function [" + result + "]");
-	return result;
+
+	messagenum++;
+
+	return table.InsertMessageToTable(urm);
     }
 
-    public long UpdateData(Connection  conn,
-			   String      message,
-			   String      schemaName,
-			   String      tableName, 
-			   int         thread,
-			   ArrayList<ColumnValue> columns)
+    public void CommitAllDatabase(Connection dbConn_)
     {
-	SchemaInfo       schema = schemas.get(schemaName);
-	TableInfo        table = schema.GetTable(tableName);
-	long             result = 0;
+	log.debug("enter function");
 
-	if (table == null)
-	    return result;
-
-	log.trace("enter function [" + conn + ", " + message + "," + schemaName
-		  + "." + tableName + "," + thread + "]");
-
-	if (!updatable) {
-	    table.IncreaseUpdate();
-	    synchronized (this){
-		updatenum++;
-		messagenum++;
+	for (SchemaInfo schemaInfo : schemas.values()) {
+	    Map<String, TableInfo> tables = schemaInfo.GetTables();
+	    for (TableInfo tableinfo : tables.values()) {
+		tableinfo.CommitAllTable(dbConn_);
 	    }
-
-	    log.trace("exit function [1]");
-	    return 1;
 	}
 
-	try {
-	    if (table.GetCacheRows() != 0) {
-		PreparedStatement stmt = table.GetInsertStmt(conn, thread);
-		int [] batchResult = stmt.executeBatch();
-		conn.commit();
-		long rows = table.GetCacheRows();
-		synchronized (this) {
-		    insertnum += rows;
-		    messagenum += rows;
-		}
-
-		table.SetCacheRows(0);
-		table.IncreaseInsert(rows);
-	    }
-
-	    ColumnValue columnValue = columns.get(0);
-	    ColumnInfo  column      = 
-		table.GetColumn(columnValue.GetColumnID());
-	    String      updateSql   = "UPDATE  " + schemaName + "." 
-		+ tableName + " SET " + column.GetColunmName() + " = "
-		+ columnValue.GetCurValueStr();
-	    String      whereSql    = " WHERE " + column.GetColunmName()
-		+ columnValue.GetOldCondStr();
-
-
-	    for(int i = 1; i < columns.size(); i++) {
-		columnValue = columns.get(i);
-		column = table.GetColumn(columnValue.GetColumnID());
-		
-		updateSql += ", " + column.GetColunmName() + " = "
-		    + columnValue.GetCurValueStr();
-		whereSql += " AND " + column.GetColunmName() 
-		    + columnValue.GetOldCondStr();
-	    }
-
-	    updateSql += whereSql + ";";
-
-	    log.debug ("update sql: [" + updateSql + "]");
-	    Statement st = conn.createStatement();
-
-	    st.executeUpdate(updateSql);
-	    st.cancel();
-	    conn.commit();	    
-	    table.IncreaseUpdate();
-	    synchronized (this){
-		updatenum++;
-		messagenum++;
-	    }
-	    result = 1;
-	} catch (BatchUpdateException bue) {
-	    int[] insertCounts = bue.getUpdateCounts();
-	    int count = 1;
-
-	    for (int i : insertCounts) {
-		if ( i == Statement.EXECUTE_FAILED ) 
-		    log.error("error on request #" + count +" execute failed");
-		else 
-		    count++;
-	    }
-	    log.error (bue.getMessage() + "\nBatchUpdate exception raw data: ["
-		       + message + "]");
-	    bue.printStackTrace();
-	} catch (IndexOutOfBoundsException iobe) {
-	    log.error ("IndexOutOfBounds exception raw data: [" + message + "]");
-	    iobe.printStackTrace();
-	} catch (SQLException e) {
-	    log.error ("SQL exception raw data: [" + message + "]");
-	    e.printStackTrace();
-	}
-
-	log.trace("exit function [" + result + "]");
-	return result;
-    }
-
-    public long DeleteData(Connection  conn,
-			   String      message,
-			   String      schemaName,
-			   String      tableName, 
-			   int         thread,
-			   ArrayList<ColumnValue> columns)
-    {
-	SchemaInfo       schema = schemas.get(schemaName);
-	TableInfo        table = schema.GetTable(tableName);
-	long             result = 0;
-
-	if (table == null)
-	    return result;
-
-	log.trace("enter function [" + conn + ", " + message + "," + schemaName
-		  + "." + tableName + "," + thread + "]");
-	if (!updatable) {
-	    table.IncreaseDelete();
-	    synchronized (this){
-		deletenum++;
-		messagenum++;
-	    }
-
-	    log.trace("exit function [1]");
-	    return 1;
-	}
-
-	try {
-	    if (table.GetCacheRows() != 0) {
-		PreparedStatement stmt = table.GetInsertStmt(conn, thread);
-		int [] batchResult = stmt.executeBatch();
-		conn.commit();
-		long rows = table.GetCacheRows();
-		synchronized (this) {
-		    insertnum += rows;
-		    messagenum += rows;
-		}
-
-		table.SetCacheRows(0);
-		table.IncreaseInsert(rows);
-	    }
-
-	    ColumnValue columnValue = columns.get(0);
-	    ColumnInfo  column      = 
-		table.GetColumn(columnValue.GetColumnID());
-	    String      deleteSql   = "DELETE FROM " + schemaName + "." 
-		+ tableName + " WHERE "+ column.GetColunmName() 
-		+ columnValue.GetOldCondStr();
-
-	    for(int i = 1; i < columns.size(); i++) {
-		columnValue = columns.get(i);
-		column = table.GetColumn(columnValue.GetColumnID());
-		deleteSql += " AND " + column.GetColunmName()
-		    + columnValue.GetOldCondStr();;
-	    }
-	    deleteSql += ";";
-
-	    log.debug ("delete sql: " + deleteSql);
-	    Statement st = conn.createStatement();
-
-	    st.executeUpdate(deleteSql);
-	    st.cancel();
-	    conn.commit();
-	    result = 1;
-	    table.IncreaseDelete();
-	    synchronized (this){	
-		deletenum++;
-		messagenum++;
-	    }
-	} catch (BatchUpdateException bue) {
-	    int[] insertCounts = bue.getUpdateCounts();
-	    int count = 1;
-
-	    for (int i : insertCounts) {
-		if ( i == Statement.EXECUTE_FAILED ) 
-		    log.error("error on request #" + count +" execute failed");
-		else 
-		    count++;
-	    }
-	    log.error (bue.getMessage() + "\nBatchUpdate exception raw data: ["
-		       + message + "]");
-	    bue.printStackTrace();
-	} catch (IndexOutOfBoundsException iobe) {
-	    log.error ("IndexOutOfBounds exception raw data: [" + message + "]");
-	    iobe.printStackTrace();
-	} catch (SQLException e) {
-	    log.error ("SQL exception raw data: [" + message + "]");
-	    e.printStackTrace();
-	}
-
-	log.trace("exit function [" + result + "]");
-	return result;
-    }
-
-    public void  CommitAll(Connection  conn,
-			   int         thread)
-    {
-	log.trace("enter function");
-
-	try {
- 	    PreparedStatement stmt;
-	    SchemaInfo        schemainfo;
-	    TableInfo         tableinfo;
-
-	    for (Map.Entry<String, SchemaInfo> schema : schemas.entrySet()) {
-		schemainfo = schema.getValue();
-		Map<String, TableInfo> tables = schemainfo.GetTables();
-		for (Map.Entry<String, TableInfo> table : tables.entrySet()) {
-		    tableinfo = table.getValue();
-		    stmt = tableinfo.GetInsertStmt(conn, thread);
-		    if (stmt != null && tableinfo.GetCacheRows() > 0){
-			log.info(tableinfo.GetTableName() + ", stmt:" + stmt
-				 + ", cache row:" + tableinfo.GetCacheRows());
-			int [] batchResult = stmt.executeBatch();
-			conn.commit();
-			long rows = tableinfo.GetCacheRows();
-			synchronized (this) {
-			    insertnum += rows;
-			    messagenum += rows;
-			}
-
-			tableinfo.SetCacheRows(0);
-			tableinfo.IncreaseInsert(rows);
-		    }
-		}
-	    }
-	} catch (SQLException e) {
-	    do{
-		e.printStackTrace();
-		e = e.getNextException();
-	    }while(e!=null); 
-	}
-
-	log.trace("exit function");
+	log.debug("exit function");
     }
 
     public void DisplayDatabase()
@@ -632,9 +394,9 @@ public class EsgynDB
 		 + df.format(use_time) + "s, speed: " + speed + "/s\n\t[start: "
 		 + sdf.format(starttime) + ", cur: " + sdf.format(endtime)
 		 + ", insert: " + insertnum + ", update: " + updatenum 
-		 + ", delete: " + deletenum + "]");
-	for (Map.Entry<String, SchemaInfo> schema : schemas.entrySet()) {
-	    schema.getValue().DisplaySchema();
+		 + ", updkey: " + updkeynum  + ", delete: " + deletenum + "]");
+	for (SchemaInfo schemaInfo : schemas.values()) {
+	    schemaInfo.DisplaySchema();
 	}
     }
 }
