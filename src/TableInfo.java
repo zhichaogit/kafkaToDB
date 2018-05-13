@@ -126,7 +126,8 @@ public class TableInfo
 	}
     }
 
-    private String get_key_value(Map<Integer, ColumnValue> rowValues, boolean cur)
+    private String get_key_value(String message, 
+				 Map<Integer, ColumnValue> rowValues, boolean cur)
     {
 	String key = null;
 
@@ -136,9 +137,9 @@ public class TableInfo
 
 	    if (cur) {
 		if (column.CurValueIsNull()){
-		    // TODO add message
 		    log.error("the cur primarykey value is null. column name [" 
-			      + keyInfo.GetColumnName() + "]");
+			      + keyInfo.GetColumnName() + "] message [" 
+			      + message + "]");
 		    return null;
 		} else {
 		    /* 
@@ -153,9 +154,9 @@ public class TableInfo
 		}
 	    } else {
 		if (column.OldValueIsNull()){
-		    // TODO add message
 		    log.error("the old primarykey value is null. column name [" 
-			      + keyInfo.GetColumnName() + "]");
+			      + keyInfo.GetColumnName() + "] message [" 
+			      + message + "]");
 		    return null;
 		} else {
 		    /* 
@@ -176,14 +177,14 @@ public class TableInfo
 
     public long InsertRow(RowMessage rowMessage)
     {
-	log.debug ("enter function");
+	log.trace ("enter function");
 
 	Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
 
-	String key = get_key_value(rowValues, true);
+	String message = rowMessage.GetMessage();
+	String key = get_key_value(message, rowValues, true);
 
-	log.debug ("insert row key [" + key + "], message [" 
-		   + rowMessage.GetMessage() + "]");
+	log.debug ("insert row key [" + key + "], message [" + message + "]");
 	// new row is inserted
 	insertRows.put(key, rowValues);
 
@@ -195,20 +196,20 @@ public class TableInfo
 
 	cacheInsert++;
 
-	log.debug ("exit function cache insert [" + cacheInsert + "]");
+	log.trace ("exit function cache insert [" + cacheInsert + "]");
 
 	return 1;
     }
 
     public long UpdateRow(RowMessage rowMessage)
     {
-	log.debug ("enter function");
+	log.trace ("enter function");
 
 	Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
-	String key = get_key_value(rowValues, false);
 
-	log.debug ("update row key [" + key + "], message [" 
-		   + rowMessage.GetMessage() + "]");
+	String message = rowMessage.GetMessage();
+	String key = get_key_value(message, rowValues, false);
+
 	Map<Integer, ColumnValue> insertRow = insertRows.get(key);
 
 	if (insertRow != null){
@@ -220,19 +221,15 @@ public class TableInfo
 		insertRow.put(value.GetColumnID(), value);
 	    }
 
-	    log.debug ("row key [" + key + "] in insert cache");
-	    for (ColumnValue value : insertRow.values()) {
-		log.debug ("\tColumn [" + value.GetColumnID()
-			   + ":" + value.GetCurValue() 
-			   + ":" + value.GetOldValue() +  "]");
-	    }
+	    log.debug("row key [" + key + "] in insert cache, message ["
+		      + message + "]");
 
 	    insertRows.put(key, insertRow);
 	} else {
 	    Map<Integer, ColumnValue> deleterow = deleteRows.get(key);
 	    if (deleterow != null){
 		log.error("update row is exist in delete map [" + key 
-			  + "], the message [" + rowMessage.GetMessage() + "]");
+			  + "], the message [" + message + "]");
 		return 0;
 	    } else {
 		Map<Integer, ColumnValue> updateRow = updateRows.get(key);
@@ -245,35 +242,27 @@ public class TableInfo
 		    updateRow = rowValues;
 		}
 
+		log.debug ("update row key [" + key + "], message [" 
+			   + message + "]");
 		updateRows.put(key, updateRow);
-		log.debug("update row key [" + key + "], row: " + updateRow 
-			  + ", size: " + updateRows.size());
-
-		for (Map<Integer, ColumnValue> row : updateRows.values()){
-		    log.debug("row: " + row);
-		    for (ColumnValue rowvalue : row.values()){
-			log.debug("\tColumn [" + rowvalue.GetColumnID() 
-				  + ", " + rowvalue.GetCurValue() 
-				  + "," + rowvalue.GetOldValue() + "]");
-		    }
-		}
 	    }
 	}
 
 	cacheUpdate++;
 
-	log.debug ("exit function cache update [" + cacheUpdate + "]");
+	log.trace ("exit function cache update [" + cacheUpdate + "]");
 
 	return 1;
     }
 
     public long UpdateRowWithKey(RowMessage rowMessage)
     {
-	log.debug ("exit function");
+	log.trace ("exit function");
 
 	Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
-	String oldkey = get_key_value(rowValues, false);
-	String newkey = get_key_value(rowValues, true);
+	String message = rowMessage.GetMessage();
+	String oldkey = get_key_value(message, rowValues, false);
+	String newkey = get_key_value(message, rowValues, true);
 
 	Map<Integer, ColumnValue> insertRow = insertRows.get(oldkey);
 
@@ -286,12 +275,8 @@ public class TableInfo
 		insertRow.put(value.GetColumnID(), value);
 	    }
 
-	    log.debug ("row key [" + oldkey + ":" + newkey + "] in insert cache");
-	    for (ColumnValue value : insertRow.values()) {
-		log.debug ("\tColumn [" + value.GetColumnID()
-			   + ":" + value.GetCurValue() 
-			   + ":" + value.GetOldValue() +  "]");
-	    }
+	    log.debug("row key [" + oldkey + ":" + newkey 
+		      + "] in insert cache\n");
 	    // remove old key
 	    insertRows.remove(oldkey);
 
@@ -302,7 +287,7 @@ public class TableInfo
 
 	    if (deleterow != null){
 		log.error("update row is exist in delete map [" + oldkey 
-			  + "], the message [" + rowMessage.GetMessage() + "]");
+			  + "], the message [" + message + "]");
 		return 0;
 	    } else {
 		Map<Integer, ColumnValue> updateRow = updateRows.get(oldkey);
@@ -314,31 +299,32 @@ public class TableInfo
 		} else {
 		    updateRow = rowValues;
 		}
-		// remove old key
-		updateRows.remove(oldkey);
 
 		log.debug ("updkey row key [" + oldkey + ":" + newkey 
-			   + "], message [" + rowMessage.GetMessage() + "]");
+			   + "], message [" + message + "]");
+
+		// remove old key
+		updateRows.remove(oldkey);
 		updateRows.put(newkey, updateRow);
 	    }
 	}
 
 	cacheUpdate++;
-	log.debug ("exit function cache update key [" + cacheUpdate + "]");
+	log.trace ("exit function cache update key [" + cacheUpdate + "]");
 
 	return 1;
     }
 
     public long DeleteRow(RowMessage rowMessage)
     {
-	log.debug ("exit function");
+	log.trace ("exit function");
 
 	Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
-	String key = get_key_value(rowValues, false);
+	String message = rowMessage.GetMessage();
+	String key = get_key_value(message, rowValues, false);
 
 	// delete cur row
-	log.debug ("delete row key [" + key + "], message [" 
-		   + rowMessage.GetMessage() + "]");
+	log.debug ("delete row key [" + key + "], message [" + message + "]");
 	deleteRows.put(key, rowValues);
 
 	// remove the insert messages
@@ -349,7 +335,7 @@ public class TableInfo
 
 	cacheDelete++;
 
-	log.debug ("exit function cache delete [" + cacheDelete + "]");
+	log.trace ("exit function cache delete [" + cacheDelete + "]");
 
 	return 1;
     }
@@ -548,22 +534,26 @@ public class TableInfo
 	log.trace("enter function");
 
 	try {
+	    StringBuffer strBuffer = new StringBuffer();
+
 	    for (int i = 0; i < keyColumns.size(); i++) {
 		ColumnInfo keyInfo = keyColumns.get(i);
 		ColumnValue keyValue = row.get(keyInfo.GetColumnID());
 		if (keyValue.OldValueIsNull()) {
-		    String key = get_key_value(row, false);
+		    String key = get_key_value(null, row, false);
 		    log.error("the primary key value is null [table:" 
 			      + schemaName + "." + tableName + ", column:"
 			      + keyInfo.GetColumnName() + "]");
 		    result = 0;
 		    break;
 		} else {
-		    log.debug("\tkey " + i + ":" + keyInfo.GetColumnID()
-			      + " ["+ keyValue.GetOldValue() + "]");
+		    strBuffer.append("\tkey id:" + i + ", column id:" + keyInfo.GetColumnID()
+				     + " ["+ keyValue.GetOldValue() + "]");
 		    deleteStmt.setString(i+1, keyValue.GetOldValue());
 		}
 	    }
+
+	    log.debug(strBuffer);
 
 	    if (result == 1) {
 		deleteStmt.addBatch();

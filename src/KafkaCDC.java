@@ -68,12 +68,12 @@ public class KafkaCDC implements Runnable{
 
 	    for (ConsumerThread consumer : consumers) {
 		try{
-		    log.info("waiting for " + consumer.getName() + " stop.");
+		    log.info("waiting for [" + consumer.getName() + "] stop.");
 		    consumer.Close();
 		    consumer.join();
-		    log.info(consumer.getName() + " stop success.");
+		    log.info(consumer.getName() + " stoped success.");
 		} catch(Exception e){
-		    log.error("wait " + consumer.getName() + " stop fail!");
+		    log.error("wait " + consumer.getName() + " stoped fail!");
 		    e.printStackTrace();
 		} 
 	    }
@@ -451,14 +451,14 @@ public class KafkaCDC implements Runnable{
 
 	for (ConsumerThread consumer : me.consumers) {
 	    try{
-		log.info("waiting " + consumer.getName() + " stop");
+		log.info("waiting consumer [" + consumer.getName() + "] stop");
 		consumer.join();
 	    } catch(Exception e){
 		e.printStackTrace();
 	    }
 	}
 
-	log.info("all of sub thread stoped");
+	log.info("all of sub threads were stoped");
 
     	Date endtime = new Date();
     	log.info("exit time: " + sdf.format(endtime));

@@ -139,19 +139,20 @@ public class ConsumerThread extends Thread
 		log.error("wakeup: " + we.getMessage());
 	    }
 	} finally {
-	    log.info("commit the cache record");
+	    log.info("commit the cached record");
 	    esgyndb.CommitAllDatabase(dbConn);
-	    log.info("cloase connection");
+	    log.info("close connection");
 	    esgyndb.CloseConnection(dbConn);
 	    esgyndb.DisplayDatabase();
 	    kafka.close();
 	    running.set(false);
 	}
-	log.trace("exit  function");
+	log.trace("exit function");
     }
 
     public void ProcessRecords(ConsumerRecords<String, String> records) 
     {
+	log.trace("enter function");
 	for (ConsumerRecord<String, String> message : records) {
 	    try {
 		ProcessMessage(message);
@@ -161,10 +162,12 @@ public class ConsumerThread extends Thread
 		aiooe.printStackTrace();
 	    }
 	} // for each msg
+	log.trace("exit function");
     }
 
     public void ProcessMessage(ConsumerRecord<String, String> message) 
     {
+	log.trace("enter function");
 	// position info for this message
 	long    partition = message.partition();
 	long    offset    = message.offset();
@@ -175,6 +178,7 @@ public class ConsumerThread extends Thread
 	    log.error("message info [topic: " + topic + ", partition: " 
 		      + partition + ", off: " + offset + "], current partition #" 
 		      + partitionID);
+	    log.trace("exit function");
 	    return;
 	}
 
@@ -191,6 +195,8 @@ public class ConsumerThread extends Thread
 	urm.AnalyzeMessage();
 
 	esgyndb.InsertMessageToDatabase(dbConn, urm);
+
+	log.trace("exit function");
     }
 
     public int GetConsumerID() 

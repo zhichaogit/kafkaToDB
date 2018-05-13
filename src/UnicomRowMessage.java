@@ -27,6 +27,7 @@ public class UnicomRowMessage extends RowMessage
 	super(defschema_, deftable_, delimiter_, thread_, message_);
     }
 
+    @Override
     public void AnalyzeMessage()
     {
 	log.trace("exit function");

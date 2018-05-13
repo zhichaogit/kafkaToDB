@@ -369,7 +369,7 @@ public class EsgynDB
 
     public void CommitAllDatabase(Connection dbConn_)
     {
-	log.debug("enter function");
+	log.trace("enter function");
 
 	for (SchemaInfo schemaInfo : schemas.values()) {
 	    Map<String, TableInfo> tables = schemaInfo.GetTables();
@@ -378,7 +378,7 @@ public class EsgynDB
 	    }
 	}
 
-	log.debug("exit function");
+	log.trace("exit function");
     }
 
     public void DisplayDatabase()
