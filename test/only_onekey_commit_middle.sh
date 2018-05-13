@@ -47,13 +47,13 @@ $KAFKA/bin/kafka-console-producer.sh --broker-list $BROKER --topic $TOPIC < $DAT
 #$KAFKA/bin/kafka-console-consumer.sh --zookeeper $ZOOKEEPER --topic $TOPIC --from-beginning
 
 KAFKA_CDC="/work/kafka/KafkaCDC"
-java -cp $KAFKA_CDC/bin/:$KAFKA_CDC/libs/* KafkaCDC -p $PARTITION -b $BROKER -d $IPADDR -s $DESTSCHEMA --table $TABLE -t $TOPIC -f unicom --full --sto 5 --interval 2
+java -cp $KAFKA_CDC/bin/:$KAFKA_CDC/libs/* KafkaCDC -p $PARTITION -b $BROKER -d $IPADDR -s $DESTSCHEMA --table $TABLE -t $TOPIC -f unicom --full --sto 5 --interval 2 -c 3
 
 # clean the environment
 sqlci <<EOF
 SET SCHEMA SEABASE;
 SELECT * FROM $TABLE;
---DROP TABLE IF EXISTS $TABLE;
+DROP TABLE IF EXISTS $TABLE;
 EOF
 
 # result set：
