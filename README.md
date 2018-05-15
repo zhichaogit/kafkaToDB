@@ -31,6 +31,7 @@ usage: Consumer Server
 *    --skip              skip all error of data, default: false
 *    --sto <arg>         kafka poll time-out limit, default: 60s
 *    --table <arg>       kafka poll time-out limit, default: null
+*    --tenant <arg>      database tenant user
 *    --zkto <arg>        zookeeper time-out limit, default: 10s
 
 Must create the schema and tables first of all.

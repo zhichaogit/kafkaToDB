@@ -52,6 +52,8 @@ public class KafkaCDC implements Runnable{
     String   dbuser       = DEFAULT_USER;
     String   dbpassword   = DEFAULT_PASSWORD;
 
+    String   tenantUser   = null;
+
     private volatile long             running = 0;
     private EsgynDB                   esgyndb = null;
     private ArrayList<ConsumerThread> consumers = null;
@@ -147,6 +149,7 @@ public class KafkaCDC implements Runnable{
 	 * --sto <arg>         stream T/O (default is 60000ms)
 	 * --skip              skip the data error
 	 * --table <arg>       table name, default: null
+	 * --tenant <arg>      database tenant user
 	 * --zkto <arg>        zk T/O (default is 10000ms)
 	 */
 	Options exeOptions = new Options();
@@ -259,6 +262,12 @@ public class KafkaCDC implements Runnable{
 	    .hasArg()
 	    .desc("table name, default: null")
 	    .build();
+	Option tenantOption = Option.builder()
+	    .longOpt("tenant")
+	    .required(false)
+	    .hasArg()
+	    .desc("tanent user name, default: null")
+	    .build();
 	Option zktoOption = Option.builder()
 	    .longOpt("zkto")
 	    .required(false)
@@ -286,6 +295,7 @@ public class KafkaCDC implements Runnable{
 	exeOptions.addOption(skipOption);
 	exeOptions.addOption(stoOption);
 	exeOptions.addOption(tableOption);
+	exeOptions.addOption(tenantOption);
 	exeOptions.addOption(zktoOption);
 		
 	// With required options, can't have HELP option to display help as it will only 
@@ -336,6 +346,8 @@ public class KafkaCDC implements Runnable{
 	skip= cmdLine.hasOption("skip") ? true : false;
 	streamTO = cmdLine.hasOption("sto") ? 
 	    Long.parseLong(cmdLine.getOptionValue("sto")) : DEFAULT_STREAM_TO_MS;
+	tenantUser = cmdLine.hasOption("tenant") ? cmdLine.getOptionValue("tenant")
+	    : null;
 	deftable = cmdLine.hasOption("table") ? cmdLine.getOptionValue("table")
 	    : null;
 	zkTO = cmdLine.hasOption("zkto") ? 
@@ -349,11 +361,9 @@ public class KafkaCDC implements Runnable{
 	    defschema = defschema.toUpperCase();
 	if (deftable != null)
 	    deftable = deftable.toUpperCase();
-	if (defschema != null)
-	    dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/schema=" + defschema;
-	else
-	    dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/schema=" 
-		+ DEFAULT_SCHEMA;
+	dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/catelog=Trafodion";
+	if (tenantUser != null)
+	    dburl += ";tenantName=" + tenantUser;
 
 	if (!format.equals("unicom") && !format.equals("normal")){
 	    HelpFormatter formatter = new HelpFormatter();
