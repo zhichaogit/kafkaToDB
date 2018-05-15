@@ -166,10 +166,15 @@ public class ConsumerThread extends Thread
 	}
 	kafka.commitSync();
 	for (TableInfo tableinfo : tables.values()) {
-	    esgyndb.AddInsertNum(tableinfo.GetCacheInsert());
-	    esgyndb.AddUpdateNum(tableinfo.GetCacheUpdate());
-	    esgyndb.AddUpdkeyNum(tableinfo.GetCacheUpdkey());
-	    esgyndb.AddDeleteNum(tableinfo.GetCacheDelete());
+	    esgyndb.AddInsMsgNum(tableinfo.GetCacheInsert());
+	    esgyndb.AddUpdMsgNum(tableinfo.GetCacheUpdate());
+	    esgyndb.AddKeyMsgNum(tableinfo.GetCacheUpdkey());
+	    esgyndb.AddDelMsgNum(tableinfo.GetCacheDelete());
+
+	    esgyndb.AddInsertNum(tableinfo.GetInsertRows());
+	    esgyndb.AddUpdateNum(tableinfo.GetUpdateRows());
+	    esgyndb.AddDeleteNum(tableinfo.GetDeleteRows());
+
 	    tableinfo.ClearCache();
 	}
     }

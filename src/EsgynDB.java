@@ -30,9 +30,13 @@ public class EsgynDB
     private static Logger   log = Logger.getLogger(EsgynDB.class);
 
     private long messageNum = 0;
+    private long insMsgNum  = 0;
+    private long updMsgNum  = 0;
+    private long keyMsgNum  = 0;
+    private long delMsgNum  = 0;
+
     private long insertNum  = 0;
     private long updateNum  = 0;
-    private long updkeyNum  = 0;
     private long deleteNum  = 0;
 
     private long begin;
@@ -336,24 +340,36 @@ public class EsgynDB
 	return true;
     }
 
+    public synchronized void AddInsMsgNum(long insMsgNum_){
+	insMsgNum += insMsgNum_;
+	messageNum += insMsgNum_;
+    }
+
+    public synchronized void AddUpdMsgNum(long updMsgNum_){
+	updMsgNum += updMsgNum_;
+	messageNum += updMsgNum_;
+    }
+
+    public synchronized void AddKeyMsgNum(long keyMsgNum_){
+	keyMsgNum += keyMsgNum_;
+	messageNum += keyMsgNum_;
+    }
+
+    public synchronized void AddDelMsgNum(long delMsgNum_){
+	delMsgNum += delMsgNum_;
+	messageNum += delMsgNum_;
+    }
+
     public synchronized void AddInsertNum(long insertNum_){
 	insertNum += insertNum_;
-	messageNum += insertNum_;
     }
 
     public synchronized void AddUpdateNum(long updateNum_){
 	updateNum += updateNum_;
-	messageNum += updateNum_;
-    }
-
-    public synchronized void AddUpdkeyNum(long updkeyNum_){
-	updkeyNum += updkeyNum_;
-	messageNum += updkeyNum_;
     }
 
     public synchronized void AddDeleteNum(long deleteNum_){
 	deleteNum += deleteNum_;
-	messageNum += deleteNum_;
     }
 
     public void DisplayDatabase()
@@ -366,10 +382,12 @@ public class EsgynDB
 	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
 	log.info("consumer states, total message: " + messageNum + ", run: " 
-		 + df.format(use_time) + "s, speed: " + speed + "/s\n\t[start: "
-		 + sdf.format(starttime) + ", cur: " + sdf.format(endtime)
-		 + ", insert: " + insertNum + ", update: " + updateNum 
-		 + ", updkey: " + updkeyNum  + ", delete: " + deleteNum + "]");
+		 + df.format(use_time) + "s, speed: " + speed + "/s\n\tstart: "
+		 + sdf.format(starttime) + ", cur: " + sdf.format(endtime) 
+		 + "messages [I: " + insMsgNum + ", U: " + updMsgNum + ", K: "
+		 + keyMsgNum  + ", D: " + delMsgNum + "], database operator "
+		 + "[insert: " + insertNum + ", update: " + updateNum 
+		 + ", delete: " + deleteNum + "]");
 	for (TableInfo tableInfo : tables.values()) {
 	    tableInfo.DisplayStat();
 	}

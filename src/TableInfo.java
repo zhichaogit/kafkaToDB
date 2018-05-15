@@ -15,9 +15,13 @@ public class TableInfo
     private String            schemaName = null;
     private String            tableName  = null;
 
+    private long              insMsgNum  = 0;
+    private long              updMsgNum  = 0;
+    private long              keyMsgNum  = 0;
+    private long              delMsgNum  = 0;
+
     private long              insertNum  = 0;
     private long              updateNum  = 0;
-    private long              updkeyNum  = 0;
     private long              deleteNum  = 0;
 
     private long              cacheInsert= 0;
@@ -238,21 +242,30 @@ public class TableInfo
 		if (updateRow != null) {
 		    ColumnValue cacheValue;
 
-		    for (ColumnValue value : rowValues.values()) {
-			cacheValue = updateRow.get(value.GetColumnID());
+		    for (ColumnValue value : updateRow.values()) {
+			cacheValue = rowValues.get(value.GetColumnID());
 			if (cacheValue != null) {
-			    value = new ColumnValue(value.GetColumnID(),
-						    value.GetCurValue(),
-						    cacheValue.GetOldValue());
+			    value = new ColumnValue(cacheValue.GetColumnID(),
+						    cacheValue.GetCurValue(),
+						    value.GetOldValue());
 			}
 
-			updateRow.put(value.GetColumnID(), value);
+			rowValues.put(value.GetColumnID(), value);
 		    }
-		} else {
-		    updateRow = rowValues;
+
+		    for(int i = 0; i < keyColumns.size(); i++) {
+			ColumnInfo keyInfo = keyColumns.get(i);
+			cacheValue = rowValues.get(keyInfo.GetColumnID());
+			String oldValue = cacheValue.GetOldValue();
+			if (!cacheValue.GetCurValue().equals(oldValue)) {
+			    log.error("U message cann't update the keys," 
+				      + " message [" + message + "]");
+			    return 0;
+			}
+		    }
 		}
 
-		updateRows.put(key, updateRow);
+		updateRows.put(key, rowValues);
 	    }
 	}
 
@@ -407,14 +420,18 @@ public class TableInfo
     }
 
     public void ClearCache() {
+	insertNum += insertRows.size();
+	updateNum += updateRows.size();
+	deleteNum += deleteRows.size();
+
 	insertRows.clear();
 	updateRows.clear();
 	deleteRows.clear();
 
-	insertNum += cacheInsert;
-	updateNum += cacheUpdate;
-	updkeyNum += cacheUpdkey;
-	deleteNum += cacheDelete;
+	insMsgNum += cacheInsert;
+	updMsgNum += cacheUpdate;
+	keyMsgNum += cacheUpdkey;
+	delMsgNum += cacheDelete;
 
 	cacheInsert = 0;
 	cacheUpdate = 0;
@@ -647,6 +664,18 @@ public class TableInfo
 	return cacheDelete;
     }
 
+    public long GetInsertRows() {
+	return insertRows.size();
+    }
+
+    public long GetUpdateRows() {
+	return updateRows.size();
+    }
+
+    public long GetDeleteRows() {
+	return deleteRows.size();
+    }
+
     public long InsertMessageToTable(RowMessage urm)
     {
 	log.trace("enter function");
@@ -676,8 +705,10 @@ public class TableInfo
 
     public void DisplayStat()
     {
-	log.info("Table " + schemaName + "." + tableName 
-		 + " state [insert: " + insertNum + ", update: " + updateNum
-		 + ", updkey: " + updkeyNum + ", delete: " + deleteNum + "]");
+	log.info("Table " + schemaName + "." + tableName + " messages [I: " 
+		 + insMsgNum + ", U: " + updMsgNum + ", K: " + keyMsgNum
+		 + ", D: " + delMsgNum + "], table operator [insert: "
+		 + insertNum + ", update: " + updateNum + ", delete: "
+		 + deleteNum + "]");
     }    
 }
