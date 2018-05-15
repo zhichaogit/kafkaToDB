@@ -411,7 +411,7 @@ public class KafkaCDC implements Runnable{
 	strBuffer.append("\n\tstreamTO    = " + me.streamTO);
 	strBuffer.append("\n\tzkTO        = " + me.zkTO);
 	strBuffer.append("\n\tdburl       = " + me.dburl);
-	log.info(strBuffer);
+	log.info(strBuffer.toString());
 			
 	me.esgyndb = new EsgynDB(me.defschema,
 				 me.deftable,

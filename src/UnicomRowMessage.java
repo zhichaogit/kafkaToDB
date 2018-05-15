@@ -79,7 +79,7 @@ public class UnicomRowMessage extends RowMessage
 	    ColumnValue column = get_column(formats[i].getBytes());
 	    columns.put(column.GetColumnID(), column);
 	}
-	log.debug(strBuffer);
+	log.debug(strBuffer.toString());
 
 	log.trace("exit function");
     }

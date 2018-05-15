@@ -18,8 +18,9 @@ public class RowMessage
     public RowMessage(String defschema_, String deftable_, String delimiter_,
 		      int thread_, String message_)
     {
-	log.trace("enter function [" + defschema_ + ", " + deftable_
-		  + ", \"" + delimiter_ + "\", " + thread_ + ", " + message_);
+	log.trace("enter function [schema: " + defschema_ + ", table: " + deftable_
+		  + ", delimiter: \"" + delimiter_ + "\", thread id: " + thread_ 
+		  + ", message [" + message_ + "]");
 
 	schemaName = defschema_;
 	tableName = deftable_;
@@ -51,7 +52,7 @@ public class RowMessage
 	    columns.put(i, columnValue);
 	}
 	strBuffer.append("\nRowMessage end");
-	log.debug(strBuffer);
+	log.debug(strBuffer.toString());
 
 	log.trace("exit function");
     }

@@ -1,5 +1,6 @@
 import java.util.Arrays;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Properties;
 import java.sql.Connection;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,12 +39,14 @@ public class ConsumerThread extends Thread
     long    zkTO;
     int     partitionID;
     long    commitCount;
+    long    cacheNum;
 
     boolean full;
     boolean skip;
     String  delimiter;
     String  format;
 
+    Map<String, TableInfo>  tables = null;
     KafkaConsumer<String, String> kafka;
     private final AtomicBoolean running = new AtomicBoolean(true);
     Connection  dbConn = null;
@@ -74,12 +77,14 @@ public class ConsumerThread extends Thread
 	streamTO    = streamTO_;
 	zkTO        = zkTO_;
 	commitCount = commitCount_;
+	cacheNum    = 0;
 
 	format      = format_;
 	delimiter   = delimiter_;
 	full        = full_;
 	skip        = skip_;
 
+	tables = new HashMap<String, TableInfo>(0);
 	Properties props = new Properties();
 	
 	if (zookeeper != null){
@@ -126,7 +131,12 @@ public class ConsumerThread extends Thread
 		if (records.isEmpty())
 		    break;               // timed out
 
+		cacheNum += records.count();
 		ProcessRecords(records);
+		
+		if (cacheNum > commitCount) {
+		    commit_tables();
+		}
 	    } // while true
 
 	    log.info("consumer server stoped.");
@@ -140,7 +150,7 @@ public class ConsumerThread extends Thread
 	    }
 	} finally {
 	    log.info("commit the cached record");
-	    esgyndb.CommitAllDatabase(dbConn);
+	    commit_tables();
 	    log.info("close connection");
 	    esgyndb.CloseConnection(dbConn);
 	    esgyndb.DisplayDatabase();
@@ -148,6 +158,20 @@ public class ConsumerThread extends Thread
 	    running.set(false);
 	}
 	log.trace("exit function");
+    }
+
+    public void commit_tables() {
+	for (TableInfo tableinfo : tables.values()) {
+	    tableinfo.CommitTable();
+	}
+	kafka.commitSync();
+	for (TableInfo tableinfo : tables.values()) {
+	    esgyndb.AddInsertNum(tableinfo.GetCacheInsert());
+	    esgyndb.AddUpdateNum(tableinfo.GetCacheUpdate());
+	    esgyndb.AddUpdkeyNum(tableinfo.GetCacheUpdkey());
+	    esgyndb.AddDeleteNum(tableinfo.GetCacheDelete());
+	    tableinfo.ClearCache();
+	}
     }
 
     public void ProcessRecords(ConsumerRecords<String, String> records) 
@@ -183,6 +207,7 @@ public class ConsumerThread extends Thread
 	}
 
 	RowMessage urm = null;
+
 	if (format.equals("unicom"))
 	    urm = new UnicomRowMessage(esgyndb.GetDefaultSchema(),
 				       esgyndb.GetDefaultTable(),
@@ -194,8 +219,15 @@ public class ConsumerThread extends Thread
 
 	urm.AnalyzeMessage();
 
-	esgyndb.InsertMessageToDatabase(dbConn, urm);
+	String    tableName = urm.GetSchemaName() + "." + urm.GetTableName();
+	TableInfo tableInfo = esgyndb.GetTableInfo(tableName);
 
+	if (!tableInfo.InitStmt(dbConn))
+	    return;
+
+	tableInfo.InsertMessageToTable(urm);
+
+	tables.put(tableName, tableInfo);
 	log.trace("exit function");
     }
 

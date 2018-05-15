@@ -25,18 +25,18 @@ public class EsgynDB
     long        commitCount = 500;
     Connection  dbkeepconn  = null;
     String      keepQuery   = "values(1);";
-    Map<String, SchemaInfo> schemas  = null;
-    PreparedStatement       keepstmt = null;
+    Map<String, TableInfo>  tables   = null;
+    PreparedStatement       keepStmt = null;
     private static Logger   log = Logger.getLogger(EsgynDB.class);
 
-    private long    messagenum = 0;
-    private long    insertnum = 0;
-    private long    updatenum = 0;
-    private long    updkeynum = 0;
-    private long    deletenum = 0;
+    private long messageNum = 0;
+    private long insertNum  = 0;
+    private long updateNum  = 0;
+    private long updkeyNum  = 0;
+    private long deleteNum  = 0;
 
-    private long    begin;
-    private Date    starttime;
+    private long begin;
+    private Date starttime;
 
     public EsgynDB(String  defschema_,
 		   String  deftable_,
@@ -46,9 +46,10 @@ public class EsgynDB
 		   String  dbpassword_,
 		   long    commitCount_) 
     {
-	log.trace("enter function [" + defschema_ + "." + deftable_ 
-		  + ", " + dburl_ + ", " + dbdriver_ + ", " + dbuser_ 
-		  + ", " + commitCount_ + "]");
+	log.trace("enter function [table: " + defschema_ + "." + deftable_ 
+		  + ", db url: " + dburl_ + ", db driver:" + dbdriver_ 
+		  + ", db user: " + dbuser_  + ", commit count:" 
+		  + commitCount_ + "]");
 
 	dburl       = dburl_;
 	dbdriver    = dbdriver_;
@@ -61,16 +62,17 @@ public class EsgynDB
 	begin = new Date().getTime();
 	starttime = new Date();
 	
-	schemas = new HashMap<String, SchemaInfo>(); 
+	tables = new HashMap<String, TableInfo>(); 
 	dbkeepconn = CreateConnection(true);
 	try {
 	    log.info("prepare the keepalive stmt, query:" + keepQuery); 
-	    keepstmt = dbkeepconn.prepareStatement(keepQuery);
+	    keepStmt = dbkeepconn.prepareStatement(keepQuery);
 	} catch (SQLException e) {
 	    log.error("prepare the keepalive stmt error.");
             e.printStackTrace();
 	}
-	log.info("start to init schemas:"); 
+
+	log.info("start to init schemas"); 
 	init_schemas();
 
 	log.trace("exit function");
@@ -84,25 +86,21 @@ public class EsgynDB
 	try {
 	    DatabaseMetaData dbmd = dbkeepconn.getMetaData();
 	    String           schemaName = null;
-	    SchemaInfo       schema = null;
 	    
 	    if (defschema == null) {
 		schemaRS = dbmd.getSchemas();
 		while (schemaRS.next()) {
 		    schemaName = schemaRS.getString("TABLE_SCHEM");
 		    log.info("start to init schema [" + schemaName + "]");
-		    schema = init_schema(schemaName);
-
-		    schemas.put(schemaName, schema);
+		    init_schema(schemaName);
 		}
 	    } else {
 		log.info("start to init default schema [" + defschema + "]");
-		schema = init_schema(defschema);
-
-		if (schema != null)
-		    schemas.put(defschema, schema);
-		else 
-		    log.error("init schema [" + defschema + "] fail, cann't find!");
+		init_schema(defschema);
+		
+		if (tables.size() <= 0)
+		    log.error("init schema [" + defschema + 
+			      "] fail, cann't find!");
 	    }
 	} catch (SQLException sqle) {
             sqle.printStackTrace();
@@ -113,42 +111,45 @@ public class EsgynDB
 	log.trace("exit function");
     }
 
-    public SchemaInfo init_schema(String schemaName)
+    public TableInfo init_schema(String schemaName)
     {
-	SchemaInfo          schema = null;
+	TableInfo tableInfo = null;
 
-	log.trace("enter function [" + schemaName + "]");
+	log.trace("enter function [schema: " + schemaName + "]");
 	try {
 	    if (deftable == null) {
 		ResultSet         tableRS = null;
 		DatabaseMetaData  dbmd = dbkeepconn.getMetaData();
 
-		schema = new SchemaInfo(schemaName);
 		tableRS = dbmd.getTables("Trafodion", schemaName, "%", null);
 		while (tableRS.next()) {
-		    String     tableName = tableRS.getString("TABLE_NAME");
-		    TableInfo  table = new TableInfo(schemaName, tableName, 
-						     commitCount);
+		    String  tableName = schemaName + "." 
+			+ tableRS.getString("TABLE_NAME");
+		    tableInfo = new TableInfo(schemaName, tableName);
 		    
-		    log.info("start to init table [" + schemaName + "."  + 
-			     tableName + "]");
-		    init_culumns(table);
-		    init_keys(table);
-		    schema.AddTable(tableName, table);
+		    log.info("start to init table [" + tableName + "]");
+		    if (init_culumns(tableInfo) <= 0) {
+			log.error("init table [" + tableName 
+				  + "] is not exist!");
+		    }
+		    if (init_keys(tableInfo) <= 0) {
+			log.error("no primary key on table [" + tableName + "]");
+		    }
+		    tables.put(tableName, tableInfo);
 		}
 	    } else {
-		TableInfo  table = new TableInfo(defschema, deftable, commitCount);
+		String tableName = defschema + "." + deftable;
+		tableInfo = new TableInfo(defschema, deftable);
 
-		log.info("start to init table [" + defschema + "." 
-			 + deftable + "]");
-		if (init_culumns(table) > 0) {
-		    init_keys(table);
-		    schema = new SchemaInfo(schemaName);
-		    schema.AddTable(deftable, table);
-		} else {
-		    log.error("init table [" + defschema + "." + deftable 
-			      + "] is not exist!");
+		log.info("start to init table [" + tableName + "]");
+		if (init_culumns(tableInfo) <= 0) {
+		    log.error("init table [" + tableName + "] is not exist!");
 		}
+		if (init_keys(tableInfo) <= 0) {
+		    log.error("no primary key on table [" + tableName + "]");
+		}
+
+		tables.put(tableName, tableInfo);
 	    }
 	} catch (SQLException sqle) {
             sqle.printStackTrace();
@@ -156,13 +157,13 @@ public class EsgynDB
             e.printStackTrace();
         }
 
-	log.trace("exit function [" + schema + "]");
-	return schema;
+	log.trace("exit function [table info: " + tableInfo + "]");
+	return tableInfo;
     }
 
     public long init_culumns(TableInfo table)
     {
-	log.trace("enter function [" + table + "]");
+	log.trace("enter function [table info: " + table + "]");
 
 	try {
 	    String getTableColumns = "SELECT o.object_name TABLE_NAME, "
@@ -208,13 +209,13 @@ public class EsgynDB
 	    e.printStackTrace();
 	}
 
-	log.trace("exit function [" + table.GetColumnCount() + "");
+	log.trace("exit function [column number:" + table.GetColumnCount() + "]");
 	return table.GetColumnCount();
     }
 
     public long init_keys(TableInfo table)
     {
-	log.trace("enter function [" + table + "]");
+	log.trace("enter function [table info: " + table + "]");
 
 	try {
 	    String getTableKeys = "SELECT k.COLUMN_NAME COLUMN_NAME, "
@@ -251,12 +252,7 @@ public class EsgynDB
 		table.AddKey(column);
 	    }
 	    strBuffer.append("]\n"); 
-	    if (table.GetKeyCount() == 0) {
-		log.error("No primary key on \"" + table.GetSchemaName()
-			  + "\".\"" + table.GetTableName() + "\"");
-	    } else {
-		log.debug(strBuffer.toString());
-	    }
+	    log.debug(strBuffer.toString());
 	    psmt.close();
 	} catch (SQLException sqle) {
 	    sqle.printStackTrace();
@@ -264,8 +260,8 @@ public class EsgynDB
 	    e.printStackTrace();
 	}
 
-	log.trace("exit function [" + table.GetColumnCount() + "");
-	return table.GetColumnCount();
+	log.trace("exit function [key column number: " + table.GetKeyCount() + "]");
+	return table.GetKeyCount();
     }
 
     public long GetBatchSize()
@@ -276,7 +272,7 @@ public class EsgynDB
     public Connection CreateConnection(boolean autocommit)
     {
 	Connection          dbConn = null;
-	log.trace("enter function [" + autocommit + "]");
+	log.trace("enter function [autocommit: " + autocommit + "]");
 
 	try {
 	    Class.forName(dbdriver);
@@ -299,7 +295,7 @@ public class EsgynDB
 
     public void CloseConnection(Connection  dbConn_)
     {
-	log.trace("enter function [" + dbConn_ + "]");
+	log.trace("enter function [db conn: " + dbConn_ + "]");
 
 	try {
 	    dbConn_.close();
@@ -320,10 +316,15 @@ public class EsgynDB
 	return deftable;
     }
 
+    public TableInfo GetTableInfo(String tableName_)
+    {
+	return tables.get(tableName_);
+    }
+
     public boolean KeepAlive()
     {
 	try {
-            ResultSet columnRS = keepstmt.executeQuery();
+            ResultSet columnRS = keepStmt.executeQuery();
 	    while (columnRS.next()) {
                 columnRS.getString("(EXPR)");
             }
@@ -335,50 +336,24 @@ public class EsgynDB
 	return true;
     }
 
-    public long InsertMessageToDatabase(Connection dbConn_, RowMessage urm)
-    {
-	SchemaInfo  schema = schemas.get(urm.GetSchemaName());
-	TableInfo   table = schema.GetTable(urm.GetTableName());
-
-	if (!table.InitStmt(dbConn_))
-	    return 0;
-
-	switch(urm.GetOperatorType()) {
-	case "I":
-	    insertnum++;
-	    break;
-	case "U":
-	    updatenum++;
-	    break;
-	case "K":
-	    updkeynum++;
-	    break;
-	case "D":
-	    deletenum++;
-	    break;
-
-	default:
-	    log.error("operator [" + urm.GetOperatorType() + "]");
-	    return 0;
-	}
-
-	messagenum++;
-
-	return table.InsertMessageToTable(urm);
+    public synchronized void AddInsertNum(long insertNum_){
+	insertNum += insertNum_;
+	messageNum += insertNum_;
     }
 
-    public void CommitAllDatabase(Connection dbConn_)
-    {
-	log.trace("enter function");
+    public synchronized void AddUpdateNum(long updateNum_){
+	updateNum += updateNum_;
+	messageNum += updateNum_;
+    }
 
-	for (SchemaInfo schemaInfo : schemas.values()) {
-	    Map<String, TableInfo> tables = schemaInfo.GetTables();
-	    for (TableInfo tableinfo : tables.values()) {
-		tableinfo.CommitAllTable(dbConn_);
-	    }
-	}
+    public synchronized void AddUpdkeyNum(long updkeyNum_){
+	updkeyNum += updkeyNum_;
+	messageNum += updkeyNum_;
+    }
 
-	log.trace("exit function");
+    public synchronized void AddDeleteNum(long deleteNum_){
+	deleteNum += deleteNum_;
+	messageNum += deleteNum_;
     }
 
     public void DisplayDatabase()
@@ -386,17 +361,17 @@ public class EsgynDB
 	Long end = new Date().getTime();
 	Date endtime = new Date();
 	Float use_time = ((float) (end - begin))/1000;
-	long speed = (long)(messagenum/use_time);
+	long speed = (long)(messageNum/use_time);
 	DecimalFormat df = new DecimalFormat("####0.000");
 	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
-	log.info("consumer states, total message: " + messagenum + ", run: " 
+	log.info("consumer states, total message: " + messageNum + ", run: " 
 		 + df.format(use_time) + "s, speed: " + speed + "/s\n\t[start: "
 		 + sdf.format(starttime) + ", cur: " + sdf.format(endtime)
-		 + ", insert: " + insertnum + ", update: " + updatenum 
-		 + ", updkey: " + updkeynum  + ", delete: " + deletenum + "]");
-	for (SchemaInfo schemaInfo : schemas.values()) {
-	    schemaInfo.DisplaySchema();
+		 + ", insert: " + insertNum + ", update: " + updateNum 
+		 + ", updkey: " + updkeyNum  + ", delete: " + deleteNum + "]");
+	for (TableInfo tableInfo : tables.values()) {
+	    tableInfo.DisplayStat();
 	}
     }
 }

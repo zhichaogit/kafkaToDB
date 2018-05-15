@@ -17,14 +17,13 @@ public class TableInfo
 
     private long              insertNum  = 0;
     private long              updateNum  = 0;
+    private long              updkeyNum  = 0;
     private long              deleteNum  = 0;
 
     private long              cacheInsert= 0;
     private long              cacheUpdate= 0;
+    private long              cacheUpdkey= 0;
     private long              cacheDelete= 0;
-    private long              cacheRows  = 0;
-
-    private long              commitCount= 0;
 
     private Connection        dbConn     = null;
 
@@ -40,11 +39,10 @@ public class TableInfo
 
     private static Logger     log = Logger.getLogger(TableInfo.class);
 
-    public TableInfo(String schemaName_, String tableName_, long commitCount_)
+    public TableInfo(String schemaName_, String tableName_)
     {
 	schemaName = schemaName_;
 	tableName  = tableName_;
-	commitCount= commitCount_;
 
 	columns    = new ArrayList<ColumnInfo>(0);
 	keyColumns = new ArrayList<ColumnInfo>(0);
@@ -84,7 +82,7 @@ public class TableInfo
 	
 	insertSql += valueSql + ");";
 
-	log.debug ("[" + insertSql + "]");
+	log.debug ("insert prepare statement [" + insertSql + "]");
 	try {
 	    insertStmt = dbConn.prepareStatement(insertSql);
 	} catch (SQLException e) {
@@ -114,7 +112,7 @@ public class TableInfo
 
 	deleteSql += where_condition() + ";";
 
-	log.debug ("[" + deleteSql + "]");
+	log.debug ("delete prepare statement [" + deleteSql + "]");
 	try {
 	    deleteStmt = dbConn.prepareStatement(deleteSql);
 	} catch (SQLException e) {
@@ -196,7 +194,10 @@ public class TableInfo
 
 	cacheInsert++;
 
-	log.trace ("exit function cache insert [" + cacheInsert + "]");
+	log.trace ("exit function cache insert [rows: " + cacheInsert 
+		   + ", insert: " + insertRows.size()
+		   + ", update: " + updateRows.size()
+		   + ", delete: " + deleteRows.size() + "]");
 
 	return 1;
     }
@@ -210,6 +211,7 @@ public class TableInfo
 	String message = rowMessage.GetMessage();
 	String key = get_key_value(message, rowValues, false);
 
+	log.debug ("update row key [" + key + "], message [" + message + "]");
 	Map<Integer, ColumnValue> insertRow = insertRows.get(key);
 
 	if (insertRow != null){
@@ -221,36 +223,45 @@ public class TableInfo
 		insertRow.put(value.GetColumnID(), value);
 	    }
 
-	    log.debug("row key [" + key + "] in insert cache, message ["
-		      + message + "]");
+	    log.debug("update row key [" + key + "] is exist in insert cache");
 
 	    insertRows.put(key, insertRow);
 	} else {
 	    Map<Integer, ColumnValue> deleterow = deleteRows.get(key);
 	    if (deleterow != null){
-		log.error("update row is exist in delete map [" + key 
+		log.error("update row key is exist in delete cache [" + key 
 			  + "], the message [" + message + "]");
 		return 0;
 	    } else {
 		Map<Integer, ColumnValue> updateRow = updateRows.get(key);
 
 		if (updateRow != null) {
+		    ColumnValue cacheValue;
+
 		    for (ColumnValue value : rowValues.values()) {
+			cacheValue = updateRow.get(value.GetColumnID());
+			if (cacheValue != null) {
+			    value = new ColumnValue(value.GetColumnID(),
+						    value.GetCurValue(),
+						    cacheValue.GetOldValue());
+			}
+
 			updateRow.put(value.GetColumnID(), value);
 		    }
 		} else {
 		    updateRow = rowValues;
 		}
 
-		log.debug ("update row key [" + key + "], message [" 
-			   + message + "]");
 		updateRows.put(key, updateRow);
 	    }
 	}
 
 	cacheUpdate++;
 
-	log.trace ("exit function cache update [" + cacheUpdate + "]");
+	log.trace ("exit function cache update [rows: " + cacheUpdate 
+		   + ", insert: " + insertRows.size()
+		   + ", update: " + updateRows.size()
+		   + ", delete: " + deleteRows.size() + "]");
 
 	return 1;
     }
@@ -264,6 +275,8 @@ public class TableInfo
 	String oldkey = get_key_value(message, rowValues, false);
 	String newkey = get_key_value(message, rowValues, true);
 
+	log.debug ("updkey row key [old key: " + oldkey + ", new key: " 
+		   + newkey + "], message [" + message + "]");
 	Map<Integer, ColumnValue> insertRow = insertRows.get(oldkey);
 
 	if (insertRow != null){
@@ -275,8 +288,7 @@ public class TableInfo
 		insertRow.put(value.GetColumnID(), value);
 	    }
 
-	    log.debug("row key [" + oldkey + ":" + newkey 
-		      + "] in insert cache\n");
+	    log.debug("updkey row key [" + oldkey + "] exist in insert cache");
 	    // remove old key
 	    insertRows.remove(oldkey);
 
@@ -286,31 +298,42 @@ public class TableInfo
 	    Map<Integer, ColumnValue> deleterow = deleteRows.get(oldkey);
 
 	    if (deleterow != null){
-		log.error("update row is exist in delete map [" + oldkey 
+		log.error("update row key is exist in delete cache [" + oldkey 
 			  + "], the message [" + message + "]");
 		return 0;
 	    } else {
 		Map<Integer, ColumnValue> updateRow = updateRows.get(oldkey);
 
+		log.debug ("updkey row [key: " + oldkey + "] in update cache ["
+			   + updateRow + "]");
 		if (updateRow != null) {
+		    ColumnValue cacheValue;
+
 		    for (ColumnValue value : rowValues.values()) {
+			cacheValue = updateRow.get(value.GetColumnID());
+			if (cacheValue != null) {
+			    value = new ColumnValue(value.GetColumnID(),
+						    value.GetCurValue(),
+						    cacheValue.GetOldValue());
+			}
+
 			updateRow.put(value.GetColumnID(), value);
 		    }
 		} else {
 		    updateRow = rowValues;
 		}
 
-		log.debug ("updkey row key [" + oldkey + ":" + newkey 
-			   + "], message [" + message + "]");
-
-		// remove old key
 		updateRows.remove(oldkey);
+
 		updateRows.put(newkey, updateRow);
 	    }
 	}
 
-	cacheUpdate++;
-	log.trace ("exit function cache update key [" + cacheUpdate + "]");
+	cacheUpdkey++;
+	log.trace ("exit function cache updkey [rows: " + cacheUpdkey
+		   + ", insert: " + insertRows.size()
+		   + ", update: " + updateRows.size()
+		   + ", delete: " + deleteRows.size() + "]");
 
 	return 1;
     }
@@ -335,110 +358,126 @@ public class TableInfo
 
 	cacheDelete++;
 
-	log.trace ("exit function cache delete [" + cacheDelete + "]");
+	log.trace ("exit function cache delete [rows: " + cacheDelete 
+		   + ", insert: " + insertRows.size() 
+		   + ", update: " + updateRows.size()
+		   + ", delete: " + deleteRows.size() + "]");
 
 	return 1;
     }
 
-    private void check_flush_cache() {
-	if (cacheRows % commitCount == 0) {
-	    flush_cache();
+    public boolean CommitTable() {
+	try {
+	    insert_data();
+	    update_data();
+	    delete_data();
+
+	    dbConn.commit();
+	} catch (BatchUpdateException bue) {
+	    log.error ("batch update execute exception: " + bue.getMessage());
+	    SQLException se = bue;
+
+	    do{
+		se.printStackTrace();
+		se = se.getNextException();
+	    }while(se != null); 
+
+	    return false;
+	} catch (IndexOutOfBoundsException iobe) {
+	    log.error ("Index Out Of Bounds exception: " + iobe.getMessage());
+	    iobe.printStackTrace();
+
+	    return false;
+	} catch (SQLException se) {
+	    log.error ("batch update SQL exception: " + se.getMessage());
+	    do{
+		se.printStackTrace();
+		se = se.getNextException();
+	    }while(se != null); 
+
+	    return false;
+	} catch (Exception e) {
+	    log.error ("batch update exception: " + e.getMessage());
+	    e.printStackTrace();
+
+	    return false;
 	}
+
+	return true;
     }
 
-    private void flush_cache() {
-	insert_data();
-	update_data();
-	delete_data();
+    public void ClearCache() {
+	insertRows.clear();
+	updateRows.clear();
+	deleteRows.clear();
+
+	insertNum += cacheInsert;
+	updateNum += cacheUpdate;
+	updkeyNum += cacheUpdkey;
+	deleteNum += cacheDelete;
+
+	cacheInsert = 0;
+	cacheUpdate = 0;
+	cacheUpdkey = 0;
+	cacheDelete = 0;
     }
 
-    private long insert_row_data(Map<Integer, ColumnValue> row)
+    private long insert_row_data(Map<Integer, ColumnValue> row) throws Exception
     {
 	long result = 1;
 
 	log.trace("enter function");
 
-	try {
-	    for (int i = 0; i < columns.size(); i++) {
-		ColumnInfo columnInfo = columns.get(i);
-		ColumnValue columnValue = row.get(columnInfo.GetColumnID());
-		if (columnValue == null || columnValue.CurValueIsNull() ) {
-		    log.debug("\tcolumn: " + i + " [null]");
-		    insertStmt.setNull(i+1, columnInfo.GetColumnType()); 
-		} else {
-		    log.debug("\tcolumn: " + i + " ["+ columnValue.GetCurValue() 
-			      + "]");
-		    insertStmt.setString(i+1, columnValue.GetCurValue());
-		}
+	for (int i = 0; i < columns.size(); i++) {
+	    ColumnInfo columnInfo = columns.get(i);
+	    ColumnValue columnValue = row.get(columnInfo.GetColumnID());
+	    if (columnValue == null || columnValue.CurValueIsNull() ) {
+		log.debug("\tcolumn: " + i + " [null]");
+		insertStmt.setNull(i+1, columnInfo.GetColumnType()); 
+	    } else {
+		log.debug("\tcolumn: " + i + ", value [" 
+			  + columnValue.GetCurValue() + "]");
+		insertStmt.setString(i+1, columnValue.GetCurValue());
 	    }
-
-	    if (result == 1) {
-		insertStmt.addBatch();
-	    }
-	} catch (SQLException e) {
-	    log.error ("Prepare insert stmt exception");
-	    do{
-		e.printStackTrace();
-		e = e.getNextException();
-	    }while(e!=null); 
 	}
 
-	log.trace("enter function [" + result + "]");
+	if (result == 1) {
+	    insertStmt.addBatch();
+	}
+
+	log.trace("enter function insert row: [" + result + "]");
 
 	return result;
     }
 
-    private long insert_data()
+    private void insert_data() throws Exception
     {
-	long result = 0;
+	log.trace("enter function");
 
-	log.debug("enter function, insert rows: " + insertRows.size());
+	log.debug("insert rows [cache row: " + cacheInsert + ", cache: " 
+		  + insertRows.size() + "]");
 
-	try {
-	    int offset = 0;
-	    for (Map<Integer, ColumnValue> insertRow : insertRows.values()){
-		log.debug("insert row: " + cacheInsert + ", offset: " + offset
-			  + ", inserted: " + result);
-		offset++;
-		result += insert_row_data(insertRow);
-	    }
-
-	    int [] batchResult = insertStmt.executeBatch();
-	    dbConn.commit();
-	    insertRows.clear();
-	    insertNum += cacheInsert;
-	    cacheInsert = 0;
-	} catch (BatchUpdateException bue) {
-	    int[] insertCounts = bue.getUpdateCounts();
-	    int count = 1;
-
-	    for (int i : insertCounts) {
-		if ( i == Statement.EXECUTE_FAILED ) 
-		    log.error("error on request #" + count +" execute failed");
-		else 
-		    count++;
-	    }
-	    log.error(bue.getMessage());
-	    bue.printStackTrace();
-	} catch (IndexOutOfBoundsException iobe) {
-	    log.error ("IndexOutOfBounds exception");
-	    iobe.printStackTrace();
-	} catch (SQLException e) {
-	    log.error ("Execute batch insert stmt exception");
-	    do{
-		e.printStackTrace();
-		e = e.getNextException();
-	    }while(e!=null); 
+	int offset = 0;
+	for (Map<Integer, ColumnValue> insertRow : insertRows.values()){
+	    log.debug("insert row offset: " + offset);
+	    offset++;
+	    insert_row_data(insertRow);
 	}
 
-	log.debug("exit function [" + result + "]");
-	return result;
+	int [] batchResult = insertStmt.executeBatch();
+
+	log.trace("exit function");
     }
 
-    private long update_row_data(Map<Integer, ColumnValue> row) {
+    private long update_row_data(Map<Integer, ColumnValue> row) throws Exception
+    {
+	long        result = 0;
+
+	log.trace("enter function");
+
 	ColumnInfo  columnInfo  = null;
-	String      updateSql   = "UPDATE  " + schemaName + "." 
-	    + tableName + " SET ";
+	String      updateSql   = "UPDATE  " + schemaName + "." + tableName 
+	    + " SET ";
 	ColumnInfo  keyInfo     = null;
 	ColumnValue keyValue    = null;
 	String      whereSql    = " WHERE ";
@@ -458,164 +497,94 @@ public class TableInfo
 	    columnInfo = columns.get(columnValue.GetColumnID());
 	    updateSql += columnInfo.GetColumnName() + " = " 
 		+ columnValue.GetCurValueStr();
+	    log.debug("\tcolumn: " + columnInfo.GetColumnID() + ", value [" 
+		      + columnValue.GetCurValue() + "]");
 	}
 
 	updateSql += whereSql + ";";
 
-	log.debug ("update sql: [" + updateSql + "]");
+	log.debug ("update sql [" + updateSql + "]");
 
-	try {
-	    Statement st = dbConn.createStatement();
-	    st.executeUpdate(updateSql);
-	    st.cancel();
-	} catch (SQLException e) {
-	    log.error ("Prepare insert stmt exception");
-	    do{
-		e.printStackTrace();
-		e = e.getNextException();
-	    }while(e!=null); 
-	}
+	Statement st = dbConn.createStatement();
+	st.executeUpdate(updateSql);
+	st.cancel();
+	result = 1;
 
-	return 1;
-    }
+	log.trace("enter function insert row: [" + result + "]");
 
-    public long update_data()
-    {
-	long             result = 0;
-
-	log.debug("enter function");
-
-	try {
-	    int offset = 0;
-	    for (Map<Integer, ColumnValue> updateRow : updateRows.values()){
-		log.debug("update row: " + cacheUpdate + ", offset: " + offset
-			  + ", updated: " + result + ", row: " + updateRow);
-		if (updateRow != null) {
-		    offset++;
-		    result += update_row_data(updateRow);
-		}
-	    }
-
-	    dbConn.commit();
-	    updateRows.clear();
-	    updateNum += cacheUpdate;
-	    cacheUpdate = 0;
-	} catch (BatchUpdateException bue) {
-	    int[] updateCounts = bue.getUpdateCounts();
-	    int count = 1;
-
-	    for (int i : updateCounts) {
-		if ( i == Statement.EXECUTE_FAILED ) 
-		    log.error("error on request #" + count +" execute failed");
-		else 
-		    count++;
-	    }
-	    log.error(bue.getMessage());
-	    bue.printStackTrace();
-	} catch (IndexOutOfBoundsException iobe) {
-	    log.error ("IndexOutOfBounds exception");
-	    iobe.printStackTrace();
-	} catch (SQLException e) {
-	    log.error ("Execute update stmt exception");
-	    do{
-		e.printStackTrace();
-		e = e.getNextException();
-	    }while(e!=null); 
-	}
-
-	log.debug("exit function [" + result + "]");
 	return result;
     }
 
-    private long delete_row_data(Map<Integer, ColumnValue> row)
+    public void update_data()  throws Exception
+    {
+	log.trace("enter function");
+
+	log.debug("update rows [cache update row: " + cacheUpdate
+		  + ", cache updkey row: " + cacheUpdkey + ", cache: "
+		  + updateRows.size() + "]");
+
+	int  offset = 0;
+	for (Map<Integer, ColumnValue> updateRow : updateRows.values()){
+	    log.debug("update row offset: " + offset);
+	    if (updateRow != null) {
+		offset++;
+		update_row_data(updateRow);
+	    }
+	}
+
+	log.trace("exit function");
+    }
+
+    private long delete_row_data(Map<Integer, ColumnValue> row)  throws Exception
     {
 	long result = 1;
 
 	log.trace("enter function");
 
-	try {
-	    StringBuffer strBuffer = new StringBuffer();
-
-	    for (int i = 0; i < keyColumns.size(); i++) {
-		ColumnInfo keyInfo = keyColumns.get(i);
-		ColumnValue keyValue = row.get(keyInfo.GetColumnID());
-		if (keyValue.OldValueIsNull()) {
-		    String key = get_key_value(null, row, false);
-		    log.error("the primary key value is null [table:" 
-			      + schemaName + "." + tableName + ", column:"
-			      + keyInfo.GetColumnName() + "]");
-		    result = 0;
-		    break;
-		} else {
-		    strBuffer.append("\tkey id:" + i + ", column id:" + keyInfo.GetColumnID()
-				     + " ["+ keyValue.GetOldValue() + "]");
-		    deleteStmt.setString(i+1, keyValue.GetOldValue());
-		}
+	for (int i = 0; i < keyColumns.size(); i++) {
+	    ColumnInfo keyInfo = keyColumns.get(i);
+	    ColumnValue keyValue = row.get(keyInfo.GetColumnID());
+	    if (keyValue.OldValueIsNull()) {
+		String key = get_key_value(null, row, false);
+		log.error("the primary key value is null [table:" 
+			  + schemaName + "." + tableName + ", column:"
+			  + keyInfo.GetColumnName() + "]");
+		result = 0;
+		break;
+	    } else {
+		log.debug("\tkey id:" + i + ", column id:" 
+			  + keyInfo.GetColumnID() + ", key ["
+			  + keyValue.GetOldValue() + "]");
+		deleteStmt.setString(i+1, keyValue.GetOldValue());
 	    }
-
-	    log.debug(strBuffer);
-
-	    if (result == 1) {
-		deleteStmt.addBatch();
-	    }
-	} catch (SQLException e) {
-	    log.error ("Prepare insert stmt exception");
-	    do{
-		e.printStackTrace();
-		e = e.getNextException();
-	    }while(e!=null); 
 	}
 
-	log.trace("enter function [" + result + "]");
+	if (result == 1) {
+	    deleteStmt.addBatch();
+	}
+
+	log.trace("enter function delete row [" + result + "]");
 
 	return result;
     }
 
-    private long delete_data()
+    private void delete_data() throws Exception
     {
-	long result = 0;
+	log.trace("enter function");
 
-	log.debug("enter function");
+	log.debug("delete rows [cache row: " + cacheDelete + ", cache: " 
+		  + deleteRows.size() + "]");
 
-	try {
-	    int offset = 0;
-	    for (Map<Integer, ColumnValue> deleteRow : deleteRows.values()){
-		log.debug("delete row: " + cacheDelete + ", offset: " + offset
-			  + ", result: " + result);
-		offset++;
-		result += delete_row_data(deleteRow);
-	    }
-
-	    int [] batchResult = deleteStmt.executeBatch();
-	    dbConn.commit();
-	    deleteRows.clear();
-	    deleteNum += cacheDelete;
-	    cacheDelete = 0;
-	} catch (BatchUpdateException bue) {
-	    int[] deleteCounts = bue.getUpdateCounts();
-	    int count = 1;
-
-	    for (int i : deleteCounts) {
-		if ( i == Statement.EXECUTE_FAILED ) 
-		    log.error("error on request #" + count +" execute failed");
-		else 
-		    count++;
-	    }
-	    log.error(bue.getMessage());
-	    bue.printStackTrace();
-	} catch (IndexOutOfBoundsException iobe) {
-	    log.error ("IndexOutOfBounds exception");
-	    iobe.printStackTrace();
-	} catch (SQLException e) {
-	    log.error ("Execute batch delete stmt exception");
-	    do{
-		e.printStackTrace();
-		e = e.getNextException();
-	    }while(e!=null); 
+	int offset = 0;
+	for (Map<Integer, ColumnValue> deleteRow : deleteRows.values()){
+	    log.debug("delete row offset: " + offset);
+	    offset++;
+	    delete_row_data(deleteRow);
 	}
 
-	log.debug("exit function [" + result + "]");
-	return result;
+	int [] batchResult = deleteStmt.executeBatch();
+
+	log.trace("exit function");
     }
 
     public String GetTableName()
@@ -658,57 +627,57 @@ public class TableInfo
 	return keyColumns.size();
     }
 
-    public long GetCacheRows()
+    public long GetCacheInsert()
     {
-	return cacheRows;
+	return cacheInsert;
+    }
+
+    public long GetCacheUpdate()
+    {
+	return cacheUpdate;
+    }
+
+    public long GetCacheUpdkey()
+    {
+	return cacheUpdkey;
+    }
+
+    public long GetCacheDelete()
+    {
+	return cacheDelete;
     }
 
     public long InsertMessageToTable(RowMessage urm)
     {
-	long        num = 0;
 	log.trace("enter function");
 
 	switch(urm.GetOperatorType()) {
 	case "I":
-	    num = InsertRow(urm);
+	    InsertRow(urm);
 	    break;
 	case "U":
-	    num = UpdateRow(urm);
+	    UpdateRow(urm);
 	    break;
 	case "K":
-	    num = UpdateRow(urm);
+	    UpdateRowWithKey(urm);
 	    break;
 	case "D":
-	    num = DeleteRow(urm);
+	    DeleteRow(urm);
 	    break;
 
 	default:
 	    log.error("operator [" + urm.GetOperatorType() + "]");
-	    return num;
+	    return 0;
 	}
 
-	cacheRows++;
-
-	check_flush_cache();
-
 	log.trace("exit function");
-	return num;
-    }
-
-    public void CommitAllTable(Connection dbConn_)
-    {
-	log.debug("enter function [" + dbConn + ":" + dbConn_ + "]");
-
-	flush_cache();
-
-	log.debug("exit function");
+	return 1;
     }
 
     public void DisplayStat()
     {
-	log.info("Table " + schemaName + "." + tableName + " state [insert: "
-		 + insertNum + ", update: " + updateNum + ", delete: " 
-		 + deleteNum + "]");
+	log.info("Table " + schemaName + "." + tableName 
+		 + " state [insert: " + insertNum + ", update: " + updateNum
+		 + ", updkey: " + updkeyNum + ", delete: " + deleteNum + "]");
     }    
 }
-
