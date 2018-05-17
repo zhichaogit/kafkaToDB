@@ -206,6 +206,28 @@ public class TableInfo
 	return 1;
     }
 
+    public long check_update_key(Map<Integer, ColumnValue> rowValues,
+				 String message)
+    {
+	ColumnValue cacheValue = null;
+
+	for(int i = 0; i < keyColumns.size(); i++) {
+	    ColumnInfo keyInfo = keyColumns.get(i);
+	    cacheValue = rowValues.get(keyInfo.GetColumnID());
+	    String oldValue = cacheValue.GetOldValue();
+	    String curValue = cacheValue.GetCurValue();
+	    log.debug("update the keys [" + oldValue + "] to [" + curValue 
+		      + "]");
+	    if (!curValue.equals(oldValue)) {
+		log.error("U message cann't update the keys," 
+			  + " message [" + message + "]");
+		return 0;
+	    }
+	}
+
+	return 1;
+    }
+
     public long UpdateRow(RowMessage rowMessage)
     {
 	log.trace ("enter function");
@@ -213,6 +235,9 @@ public class TableInfo
 	Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
 
 	String message = rowMessage.GetMessage();
+	if (check_update_key(rowValues, message) == 0)
+	    return 0;
+
 	String key = get_key_value(message, rowValues, false);
 
 	log.debug ("update row key [" + key + "], message [" + message + "]");
@@ -251,17 +276,6 @@ public class TableInfo
 			}
 
 			rowValues.put(value.GetColumnID(), value);
-		    }
-
-		    for(int i = 0; i < keyColumns.size(); i++) {
-			ColumnInfo keyInfo = keyColumns.get(i);
-			cacheValue = rowValues.get(keyInfo.GetColumnID());
-			String oldValue = cacheValue.GetOldValue();
-			if (!cacheValue.GetCurValue().equals(oldValue)) {
-			    log.error("U message cann't update the keys," 
-				      + " message [" + message + "]");
-			    return 0;
-			}
 		    }
 		}
 
