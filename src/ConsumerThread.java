@@ -227,7 +227,7 @@ public class ConsumerThread extends Thread
 	String    tableName = urm.GetSchemaName() + "." + urm.GetTableName();
 	TableInfo tableInfo = esgyndb.GetTableInfo(tableName);
 
-	if (!tableInfo.InitStmt(dbConn))
+	if (tableInfo == null || !tableInfo.InitStmt(dbConn))
 	    return;
 
 	tableInfo.InsertMessageToTable(urm);
