@@ -717,12 +717,12 @@ public class TableInfo
 	return 1;
     }
 
-    public void DisplayStat()
+    public void DisplayStat(StringBuffer strBuffer)
     {
-	log.info("Table " + schemaName + "." + tableName + " messages [I: " 
+	strBuffer.append("\t" + schemaName + "." + tableName + " messages [I: " 
 		 + insMsgNum + ", U: " + updMsgNum + ", K: " + keyMsgNum
 		 + ", D: " + delMsgNum + "], table operator [insert: "
 		 + insertNum + ", update: " + updateNum + ", delete: "
-		 + deleteNum + "]");
+		 + deleteNum + "]\n");
     }    
 }

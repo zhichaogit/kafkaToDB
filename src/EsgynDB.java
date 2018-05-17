@@ -382,15 +382,18 @@ public class EsgynDB
 	DecimalFormat df = new DecimalFormat("####0.000");
 	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
-	log.info("consumer states, total message: " + messageNum + ", run: " 
-		 + df.format(use_time) + "s, speed: " + speed + "/s\n\tstart: "
-		 + sdf.format(starttime) + ", cur: " + sdf.format(endtime) 
-		 + "messages [I: " + insMsgNum + ", U: " + updMsgNum + ", K: "
-		 + keyMsgNum  + ", D: " + delMsgNum + "], database operator "
-		 + "[insert: " + insertNum + ", update: " + updateNum 
-		 + ", delete: " + deleteNum + "]");
+	StringBuffer strBuffer = new StringBuffer();
+	strBuffer.append("consumer states, total message: " + messageNum 
+			 + ", run: " + df.format(use_time) + "s, speed: "
+			 + speed + "/s\n\tstart: " + sdf.format(starttime)
+			 + ", cur: " + sdf.format(endtime) + "\n\tmessages [I: "
+			 + insMsgNum + ", U: " + updMsgNum + ", K: " + keyMsgNum
+			 + ", D: " + delMsgNum + "]\n\tdatabase operator " 
+			 + "[insert: " + insertNum + ", update: " + updateNum 
+			 + ", delete: " + deleteNum + "]\n");
 	for (TableInfo tableInfo : tables.values()) {
-	    tableInfo.DisplayStat();
+	    tableInfo.DisplayStat(strBuffer);
 	}
+	log.info(strBuffer.toString());
     }
 }
