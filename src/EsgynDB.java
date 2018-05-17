@@ -127,9 +127,10 @@ public class EsgynDB
 
 		tableRS = dbmd.getTables("Trafodion", schemaName, "%", null);
 		while (tableRS.next()) {
-		    String  tableName = schemaName + "." 
-			+ tableRS.getString("TABLE_NAME");
-		    tableInfo = new TableInfo(schemaName, tableName);
+		    String  tableNameStr = tableRS.getString("TABLE_NAME");
+		    String  tableName = schemaName + "." + tableNameStr;
+
+		    tableInfo = new TableInfo(schemaName, tableNameStr);
 		    
 		    log.info("start to init table [" + tableName + "]");
 		    if (init_culumns(tableInfo) <= 0) {
@@ -189,8 +190,8 @@ public class EsgynDB
 
             ResultSet       columnRS = psmt.executeQuery();
 	    StringBuffer    strBuffer = new StringBuffer();
-	    strBuffer.append("Get table \"" + table.GetSchemaName() + "." 
-			     + table.GetTableName() + "\" columns \n[\n");
+	    strBuffer.append("get table \"" + table.GetSchemaName() + "." 
+			     + table.GetTableName() + "\" column sql \"" + getTableColumns + "\"\n columns [\n");
 
 	    while (columnRS.next()) {
 		String      colname = columnRS.getString("COLUMN_NAME");
@@ -239,7 +240,7 @@ public class EsgynDB
 
             ResultSet       keysRS = psmt.executeQuery();
 	    StringBuffer    strBuffer = new StringBuffer();
-	    strBuffer.append("Get primakey of \"" + table.GetSchemaName() 
+	    strBuffer.append("get primakey of \"" + table.GetSchemaName() 
 			     + "\".\"" + table.GetTableName() 
 			     + "\" key columns\n[\n");
 
