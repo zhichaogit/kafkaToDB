@@ -29,6 +29,8 @@ public class TableInfo
     private long              cacheUpdkey= 0;
     private long              cacheDelete= 0;
 
+    private boolean           commited   = true;
+
     private Connection        dbConn     = null;
 
     private PreparedStatement insertStmt = null;
@@ -36,6 +38,7 @@ public class TableInfo
 
     ArrayList<ColumnInfo>     keyColumns = null;
     ArrayList<ColumnInfo>     columns    = null;
+    Map<Integer, ColumnInfo>  columnMap  = null;
 
     Map<String, Map<Integer, ColumnValue>> insertRows = null;
     Map<String, Map<Integer, ColumnValue>> updateRows = null;
@@ -50,6 +53,7 @@ public class TableInfo
 
 	columns    = new ArrayList<ColumnInfo>(0);
 	keyColumns = new ArrayList<ColumnInfo>(0);
+	columnMap  = new HashMap<Integer, ColumnInfo>(0);
 
 	insertRows = new HashMap<String, Map<Integer, ColumnValue>>(0);
 	updateRows = new HashMap<String, Map<Integer, ColumnValue>>(0);
@@ -135,7 +139,7 @@ public class TableInfo
 
 	for(int i = 0; i < keyColumns.size(); i++) {
 	    ColumnInfo  keyInfo = keyColumns.get(i);
-	    ColumnValue column  = rowValues.get(keyInfo.GetColumnID());
+	    ColumnValue column  = rowValues.get(keyInfo.GetColumnOff());
 
 	    if (cur) {
 		if (column.CurValueIsNull()){
@@ -213,7 +217,7 @@ public class TableInfo
 
 	for(int i = 0; i < keyColumns.size(); i++) {
 	    ColumnInfo keyInfo = keyColumns.get(i);
-	    cacheValue = rowValues.get(keyInfo.GetColumnID());
+	    cacheValue = rowValues.get(keyInfo.GetColumnOff());
 	    String oldValue = cacheValue.GetOldValue();
 	    String curValue = cacheValue.GetCurValue();
 	    log.debug("update the keys [" + oldValue + "] to [" + curValue 
@@ -401,6 +405,7 @@ public class TableInfo
 
 	    dbConn.commit();
 	} catch (BatchUpdateException bue) {
+	    commited = false;
 	    log.error ("batch update execute exception: " + bue.getMessage());
 	    SQLException se = bue;
 
@@ -411,11 +416,13 @@ public class TableInfo
 
 	    return false;
 	} catch (IndexOutOfBoundsException iobe) {
+	    commited = false;
 	    log.error ("Index Out Of Bounds exception: " + iobe.getMessage());
 	    iobe.printStackTrace();
 
 	    return false;
 	} catch (SQLException se) {
+	    commited = false;
 	    log.error ("batch update SQL exception: " + se.getMessage());
 	    do{
 		se.printStackTrace();
@@ -424,6 +431,7 @@ public class TableInfo
 
 	    return false;
 	} catch (Exception e) {
+	    commited = false;
 	    log.error ("batch update exception: " + e.getMessage());
 	    e.printStackTrace();
 
@@ -434,18 +442,20 @@ public class TableInfo
     }
 
     public void ClearCache() {
-	insertNum += insertRows.size();
-	updateNum += updateRows.size();
-	deleteNum += deleteRows.size();
+	if (commited) {
+	    insertNum += insertRows.size();
+	    updateNum += updateRows.size();
+	    deleteNum += deleteRows.size();
+
+	    insMsgNum += cacheInsert;
+	    updMsgNum += cacheUpdate;
+	    keyMsgNum += cacheUpdkey;
+	    delMsgNum += cacheDelete;
+	}
 
 	insertRows.clear();
 	updateRows.clear();
 	deleteRows.clear();
-
-	insMsgNum += cacheInsert;
-	updMsgNum += cacheUpdate;
-	keyMsgNum += cacheUpdkey;
-	delMsgNum += cacheDelete;
 
 	cacheInsert = 0;
 	cacheUpdate = 0;
@@ -461,7 +471,7 @@ public class TableInfo
 
 	for (int i = 0; i < columns.size(); i++) {
 	    ColumnInfo columnInfo = columns.get(i);
-	    ColumnValue columnValue = row.get(columnInfo.GetColumnID());
+	    ColumnValue columnValue = row.get(columnInfo.GetColumnOff());
 	    if (columnValue == null || columnValue.CurValueIsNull() ) {
 		log.debug("\tcolumn: " + i + " [null]");
 		insertStmt.setNull(i+1, columnInfo.GetColumnType()); 
@@ -517,7 +527,7 @@ public class TableInfo
 	    keyInfo = keyColumns.get(i);
 	    if (keyValue != null)
 		whereSql += " AND ";
-	    keyValue  = row.get(keyInfo.GetColumnID());
+	    keyValue  = row.get(keyInfo.GetColumnOff());
 	    whereSql += keyInfo.GetColumnName() + keyValue.GetOldCondStr();
 	}
 
@@ -528,7 +538,7 @@ public class TableInfo
 	    columnInfo = columns.get(columnValue.GetColumnID());
 	    updateSql += columnInfo.GetColumnName() + " = " 
 		+ columnValue.GetCurValueStr();
-	    log.debug("\tcolumn: " + columnInfo.GetColumnID() + ", value [" 
+	    log.debug("\tcolumn: " + columnInfo.GetColumnOff() + ", value [" 
 		      + columnValue.GetCurValue() + "]");
 	}
 
@@ -574,7 +584,7 @@ public class TableInfo
 
 	for (int i = 0; i < keyColumns.size(); i++) {
 	    ColumnInfo keyInfo = keyColumns.get(i);
-	    ColumnValue keyValue = row.get(keyInfo.GetColumnID());
+	    ColumnValue keyValue = row.get(keyInfo.GetColumnOff());
 	    if (keyValue.OldValueIsNull()) {
 		String key = get_key_value(null, row, false);
 		log.error("the primary key value is null [table:" 
@@ -584,7 +594,7 @@ public class TableInfo
 		break;
 	    } else {
 		log.debug("\tkey id:" + i + ", column id:" 
-			  + keyInfo.GetColumnID() + ", key ["
+			  + keyInfo.GetColumnOff() + ", key ["
 			  + keyValue.GetOldValue() + "]");
 		deleteStmt.setString(i+1, keyValue.GetOldValue());
 	    }
@@ -631,11 +641,17 @@ public class TableInfo
     public void AddColumn(ColumnInfo column)
     {
 	columns.add(column);
+	columnMap.put(column.GetColumnID(), column);
     }
 
     public ColumnInfo GetColumn(int index)
     {
 	return columns.get(index);
+    }
+
+    public ColumnInfo GetColumnFromMap(int colid)
+    {
+	return columnMap.get(colid);
     }
 
     public long GetColumnCount()
@@ -660,34 +676,34 @@ public class TableInfo
 
     public long GetCacheInsert()
     {
-	return cacheInsert;
+	return commited ? cacheInsert : 0;
     }
 
     public long GetCacheUpdate()
     {
-	return cacheUpdate;
+	return commited ? cacheUpdate : 0;
     }
 
     public long GetCacheUpdkey()
     {
-	return cacheUpdkey;
+	return commited ? cacheUpdkey : 0;
     }
 
     public long GetCacheDelete()
     {
-	return cacheDelete;
+	return commited ? cacheDelete : 0;
     }
 
     public long GetInsertRows() {
-	return insertRows.size();
+	return commited ? insertRows.size() : 0;
     }
 
     public long GetUpdateRows() {
-	return updateRows.size();
+	return commited ? updateRows.size() : 0;
     }
 
     public long GetDeleteRows() {
-	return deleteRows.size();
+	return commited ? deleteRows.size() : 0;
     }
 
     public long InsertMessageToTable(RowMessage urm)

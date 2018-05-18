@@ -191,19 +191,26 @@ public class EsgynDB
             ResultSet       columnRS = psmt.executeQuery();
 	    StringBuffer    strBuffer = new StringBuffer();
 	    strBuffer.append("get table \"" + table.GetSchemaName() + "." 
-			     + table.GetTableName() + "\" column sql \"" + getTableColumns + "\"\n columns [\n");
+			     + table.GetTableName() + "\" column sql \"" 
+			     + getTableColumns + "\"\n columns [\n");
 
+	    int   colOff = 0;
+	    int   colid  = 0;
 	    while (columnRS.next()) {
 		String      colname = columnRS.getString("COLUMN_NAME");
 		String      typename = columnRS.getString("TYPE_NAME");
 		String      coltype = columnRS.getString("DATA_TYPE");
-		String      colid = columnRS.getString("ORDINAL_POSITION");
-		ColumnInfo  column = new ColumnInfo(colid, coltype, typename, colname);
+		
+		colid = Integer.parseInt(columnRS.getString("ORDINAL_POSITION"));
+		ColumnInfo  column = new ColumnInfo(colid, colOff, coltype,
+						    typename, colname);
 
-		strBuffer.append("\tName: " + colname + ", Type: " + typename.trim() 
-				 + ", Type ID: " + coltype + "\n");
+		strBuffer.append("\t" + colname + "[id: " + colid + ", off: " 
+				 + colOff +  ", Type: " + typename.trim() 
+				 + ", Type ID: " + coltype + "]\n");
 
 		table.AddColumn(column);
+		colOff++;
 	    }
 	    strBuffer.append("]"); 
 	    log.debug(strBuffer.toString());
@@ -243,16 +250,16 @@ public class EsgynDB
 	    strBuffer.append("get primakey of \"" + table.GetSchemaName() 
 			     + "\".\"" + table.GetTableName() 
 			     + "\" key columns\n[\n");
-
+	    int  colid = 0;
 	    while (keysRS.next()) {
-		String      colname  = keysRS.getString("COLUMN_NAME");
-		String      typename = keysRS.getString("TYPE_NAME");
-		String      coltype  = keysRS.getString("DATA_TYPE");
-		String      colid    = keysRS.getString("KEY_COLUMN_ID");
-		ColumnInfo  column   = new ColumnInfo(colid, coltype, typename, colname);
-
-		strBuffer.append("\tName: " + colname + ", Type: " + typename.trim() 
-				 + ", Type ID: " + coltype + "\n");
+		colid    =  Integer.parseInt(keysRS.getString("KEY_COLUMN_ID"));
+		ColumnInfo  column = table.GetColumnFromMap(colid);
+		
+		strBuffer.append("\t" + column.GetColumnName() + " [id: " 
+				 + column.GetColumnID() + ", Off: "
+				 + column.GetColumnOff() + ", Type: "
+				 + column.GetTypeName() + ", Type ID: " 
+				 + column.GetColumnType() + "]\n");
 
 		table.AddKey(column);
 	    }
