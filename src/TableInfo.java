@@ -120,7 +120,10 @@ public class TableInfo
 
 	deleteSql += where_condition() + ";";
 
-	log.debug ("delete prepare statement [" + deleteSql + "]");
+	if(log.isDebugEnabled()){
+	    log.debug ("delete prepare statement [" + deleteSql + "]");
+	}
+
 	try {
 	    deleteStmt = dbConn.prepareStatement(deleteSql);
 	} catch (SQLException e) {
@@ -183,14 +186,18 @@ public class TableInfo
 
     public long InsertRow(RowMessage rowMessage)
     {
-	log.trace ("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace ("enter function");
+	}
 
 	Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
 
 	String message = rowMessage.GetMessage();
 	String key = get_key_value(message, rowValues, true);
 
-	log.debug ("insert row key [" + key + "], message [" + message + "]");
+	if(log.isDebugEnabled()){
+	    log.debug ("insert row key [" + key + "], message [" + message + "]");
+	}
 	// new row is inserted
 	insertRows.put(key, rowValues);
 
@@ -202,10 +209,12 @@ public class TableInfo
 
 	cacheInsert++;
 
-	log.trace ("exit function cache insert [rows: " + cacheInsert 
-		   + ", insert: " + insertRows.size()
-		   + ", update: " + updateRows.size()
-		   + ", delete: " + deleteRows.size() + "]");
+	if (log.isTraceEnabled()){
+	    log.trace ("exit function cache insert [rows: " + cacheInsert 
+		       + ", insert: " + insertRows.size()
+		       + ", update: " + updateRows.size()
+		       + ", delete: " + deleteRows.size() + "]");
+	}
 
 	return 1;
     }
@@ -220,8 +229,11 @@ public class TableInfo
 	    cacheValue = rowValues.get(keyInfo.GetColumnOff());
 	    String oldValue = cacheValue.GetOldValue();
 	    String curValue = cacheValue.GetCurValue();
-	    log.debug("update the keys [" + oldValue + "] to [" + curValue 
-		      + "]");
+	    if(log.isDebugEnabled()){
+		log.debug("update the keys [" + oldValue + "] to [" + curValue 
+			  + "]");
+	    }
+
 	    if (!curValue.equals(oldValue)) {
 		log.error("U message cann't update the keys," 
 			  + " message [" + message + "]");
@@ -234,7 +246,9 @@ public class TableInfo
 
     public long UpdateRow(RowMessage rowMessage)
     {
-	log.trace ("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace ("enter function");
+	}
 
 	Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
 
@@ -244,7 +258,9 @@ public class TableInfo
 
 	String key = get_key_value(message, rowValues, false);
 
-	log.debug ("update row key [" + key + "], message [" + message + "]");
+	if(log.isDebugEnabled()){
+	    log.debug ("update row key [" + key + "], message [" + message + "]");
+	}
 	Map<Integer, ColumnValue> insertRow = insertRows.get(key);
 
 	if (insertRow != null){
@@ -255,8 +271,9 @@ public class TableInfo
 	    for (ColumnValue value : rowValues.values()) {
 		insertRow.put(value.GetColumnID(), value);
 	    }
-
-	    log.debug("update row key [" + key + "] is exist in insert cache");
+	    if(log.isDebugEnabled()){
+		log.debug("update row key [" + key + "] is exist in insert cache");
+	    }
 
 	    insertRows.put(key, insertRow);
 	} else {
@@ -289,25 +306,31 @@ public class TableInfo
 
 	cacheUpdate++;
 
-	log.trace ("exit function cache update [rows: " + cacheUpdate 
-		   + ", insert: " + insertRows.size()
-		   + ", update: " + updateRows.size()
-		   + ", delete: " + deleteRows.size() + "]");
+	if (log.isTraceEnabled()){
+	    log.trace ("exit function cache update [rows: " + cacheUpdate 
+		       + ", insert: " + insertRows.size()
+		       + ", update: " + updateRows.size()
+		       + ", delete: " + deleteRows.size() + "]");
+	}
 
 	return 1;
     }
 
     public long UpdateRowWithKey(RowMessage rowMessage)
     {
-	log.trace ("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace ("exit function");
+	}
 
 	Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
 	String message = rowMessage.GetMessage();
 	String oldkey = get_key_value(message, rowValues, false);
 	String newkey = get_key_value(message, rowValues, true);
 
-	log.debug ("updkey row key [old key: " + oldkey + ", new key: " 
-		   + newkey + "], message [" + message + "]");
+	if(log.isDebugEnabled()){
+	    log.debug ("updkey row key [old key: " + oldkey + ", new key: " 
+		       + newkey + "], message [" + message + "]");
+	}
 	Map<Integer, ColumnValue> insertRow = insertRows.get(oldkey);
 
 	if (insertRow != null){
@@ -319,7 +342,9 @@ public class TableInfo
 		insertRow.put(value.GetColumnID(), value);
 	    }
 
-	    log.debug("updkey row key [" + oldkey + "] exist in insert cache");
+	    if(log.isDebugEnabled()){
+		log.debug("updkey row key [" + oldkey + "] exist in insert cache");
+	    }
 	    // remove old key
 	    insertRows.remove(oldkey);
 
@@ -335,8 +360,10 @@ public class TableInfo
 	    } else {
 		Map<Integer, ColumnValue> updateRow = updateRows.get(oldkey);
 
-		log.debug ("updkey row [key: " + oldkey + "] in update cache ["
-			   + updateRow + "]");
+		if(log.isDebugEnabled()){
+		    log.debug ("updkey row [key: " + oldkey + "] in update cache ["
+			       + updateRow + "]");
+		}
 		if (updateRow != null) {
 		    ColumnValue cacheValue;
 
@@ -361,24 +388,30 @@ public class TableInfo
 	}
 
 	cacheUpdkey++;
-	log.trace ("exit function cache updkey [rows: " + cacheUpdkey
-		   + ", insert: " + insertRows.size()
-		   + ", update: " + updateRows.size()
-		   + ", delete: " + deleteRows.size() + "]");
+	if (log.isTraceEnabled()){
+	    log.trace ("exit function cache updkey [rows: " + cacheUpdkey
+		       + ", insert: " + insertRows.size()
+		       + ", update: " + updateRows.size()
+		       + ", delete: " + deleteRows.size() + "]");
+	}
 
 	return 1;
     }
 
     public long DeleteRow(RowMessage rowMessage)
     {
-	log.trace ("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace ("exit function");
+	}
 
 	Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
 	String message = rowMessage.GetMessage();
 	String key = get_key_value(message, rowValues, false);
 
 	// delete cur row
-	log.debug ("delete row key [" + key + "], message [" + message + "]");
+	if(log.isDebugEnabled()){
+	    log.debug ("delete row key [" + key + "], message [" + message + "]");
+	}
 	deleteRows.put(key, rowValues);
 
 	// remove the insert messages
@@ -389,10 +422,12 @@ public class TableInfo
 
 	cacheDelete++;
 
-	log.trace ("exit function cache delete [rows: " + cacheDelete 
-		   + ", insert: " + insertRows.size() 
-		   + ", update: " + updateRows.size()
-		   + ", delete: " + deleteRows.size() + "]");
+	if (log.isTraceEnabled()){
+	    log.trace ("exit function cache delete [rows: " + cacheDelete 
+		       + ", insert: " + insertRows.size() 
+		       + ", update: " + updateRows.size()
+		       + ", delete: " + deleteRows.size() + "]");
+	}
 
 	return 1;
     }
@@ -467,17 +502,23 @@ public class TableInfo
     {
 	long result = 1;
 
-	log.trace("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
 
 	for (int i = 0; i < columns.size(); i++) {
 	    ColumnInfo columnInfo = columns.get(i);
 	    ColumnValue columnValue = row.get(columnInfo.GetColumnOff());
 	    if (columnValue == null || columnValue.CurValueIsNull() ) {
-		log.debug("\tcolumn: " + i + " [null]");
+		if(log.isDebugEnabled()){
+		    log.debug("\tcolumn: " + i + " [null]");
+		}
 		insertStmt.setNull(i+1, columnInfo.GetColumnType()); 
 	    } else {
-		log.debug("\tcolumn: " + i + ", value [" 
-			  + columnValue.GetCurValue() + "]");
+		if(log.isDebugEnabled()){
+		    log.debug("\tcolumn: " + i + ", value [" 
+			      + columnValue.GetCurValue() + "]");
+		}
 		insertStmt.setString(i+1, columnValue.GetCurValue());
 	    }
 	}
@@ -486,35 +527,47 @@ public class TableInfo
 	    insertStmt.addBatch();
 	}
 
-	log.trace("enter function insert row: [" + result + "]");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function insert row: [" + result + "]");
+	}
 
 	return result;
     }
 
     private void insert_data() throws Exception
     {
-	log.trace("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
 
-	log.debug("insert rows [cache row: " + cacheInsert + ", cache: " 
-		  + insertRows.size() + "]");
+	if(log.isDebugEnabled()){
+	    log.debug("insert rows [cache row: " + cacheInsert + ", cache: " 
+		      + insertRows.size() + "]");
+	}
 
 	int offset = 0;
 	for (Map<Integer, ColumnValue> insertRow : insertRows.values()){
-	    log.debug("insert row offset: " + offset);
+	    if(log.isDebugEnabled()){
+		log.debug("insert row offset: " + offset);
+	    }
 	    offset++;
 	    insert_row_data(insertRow);
 	}
 
 	int [] batchResult = insertStmt.executeBatch();
 
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
     }
 
     private long update_row_data(Map<Integer, ColumnValue> row) throws Exception
     {
 	long        result = 0;
 
-	log.trace("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
 
 	ColumnInfo  columnInfo  = null;
 	String      updateSql   = "UPDATE  " + schemaName + "." + tableName 
@@ -538,49 +591,65 @@ public class TableInfo
 	    columnInfo = columns.get(columnValue.GetColumnID());
 	    updateSql += columnInfo.GetColumnName() + " = " 
 		+ columnValue.GetCurValueStr();
-	    log.debug("\tcolumn: " + columnInfo.GetColumnOff() + ", value [" 
-		      + columnValue.GetCurValue() + "]");
+	    if(log.isDebugEnabled()){
+		log.debug("\tcolumn: " + columnInfo.GetColumnOff() + ", value [" 
+			  + columnValue.GetCurValue() + "]");
+	    }
 	}
 
 	updateSql += whereSql + ";";
 
-	log.debug ("update sql [" + updateSql + "]");
+	if(log.isDebugEnabled()){
+	    log.debug ("update sql [" + updateSql + "]");
+	}
 
 	Statement st = dbConn.createStatement();
 	st.executeUpdate(updateSql);
 	st.cancel();
 	result = 1;
 
-	log.trace("enter function insert row: [" + result + "]");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function insert row: [" + result + "]");
+	}
 
 	return result;
     }
 
     public void update_data()  throws Exception
     {
-	log.trace("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
 
-	log.debug("update rows [cache update row: " + cacheUpdate
-		  + ", cache updkey row: " + cacheUpdkey + ", cache: "
-		  + updateRows.size() + "]");
+	if(log.isDebugEnabled()){
+	    log.debug("update rows [cache update row: " + cacheUpdate
+		      + ", cache updkey row: " + cacheUpdkey + ", cache: "
+		      + updateRows.size() + "]");
+	}
 
 	int  offset = 0;
 	for (Map<Integer, ColumnValue> updateRow : updateRows.values()){
-	    log.debug("update row offset: " + offset);
+	    if(log.isDebugEnabled()){
+		log.debug("update row offset: " + offset);
+	    }
 	    if (updateRow != null) {
 		offset++;
 		update_row_data(updateRow);
 	    }
 	}
 
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
     }
 
     private long delete_row_data(Map<Integer, ColumnValue> row)  throws Exception
     {
 	long result = 1;
 
-	log.trace("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
 
 	for (int i = 0; i < keyColumns.size(); i++) {
 	    ColumnInfo keyInfo = keyColumns.get(i);
@@ -593,9 +662,11 @@ public class TableInfo
 		result = 0;
 		break;
 	    } else {
-		log.debug("\tkey id:" + i + ", column id:" 
-			  + keyInfo.GetColumnOff() + ", key ["
-			  + keyValue.GetOldValue() + "]");
+		if(log.isDebugEnabled()){
+		    log.debug("\tkey id:" + i + ", column id:" 
+			      + keyInfo.GetColumnOff() + ", key ["
+			      + keyValue.GetOldValue() + "]");
+		}
 		deleteStmt.setString(i+1, keyValue.GetOldValue());
 	    }
 	}
@@ -604,28 +675,38 @@ public class TableInfo
 	    deleteStmt.addBatch();
 	}
 
-	log.trace("enter function delete row [" + result + "]");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function delete row [" + result + "]");
+	}
 
 	return result;
     }
 
     private void delete_data() throws Exception
     {
-	log.trace("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
 
-	log.debug("delete rows [cache row: " + cacheDelete + ", cache: " 
-		  + deleteRows.size() + "]");
+	if(log.isDebugEnabled()){
+	    log.debug("delete rows [cache row: " + cacheDelete + ", cache: " 
+		      + deleteRows.size() + "]");
+	}
 
 	int offset = 0;
 	for (Map<Integer, ColumnValue> deleteRow : deleteRows.values()){
-	    log.debug("delete row offset: " + offset);
+	    if(log.isDebugEnabled()){
+		log.debug("delete row offset: " + offset);
+	    }
 	    offset++;
 	    delete_row_data(deleteRow);
 	}
 
 	int [] batchResult = deleteStmt.executeBatch();
 
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
     }
 
     public String GetTableName()
@@ -708,7 +789,9 @@ public class TableInfo
 
     public long InsertMessageToTable(RowMessage urm)
     {
-	log.trace("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
 
 	switch(urm.GetOperatorType()) {
 	case "I":
@@ -729,7 +812,9 @@ public class TableInfo
 	    return 0;
 	}
 
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
 	return 1;
     }
 

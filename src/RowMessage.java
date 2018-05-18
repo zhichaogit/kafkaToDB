@@ -18,9 +18,12 @@ public class RowMessage
     public RowMessage(String defschema_, String deftable_, String delimiter_,
 		      int thread_, String message_)
     {
-	log.trace("enter function [schema: " + defschema_ + ", table: " + deftable_
-		  + ", delimiter: \"" + delimiter_ + "\", thread id: " + thread_ 
-		  + ", message [" + message_ + "]");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function [schema: " + defschema_ + ", table: "
+		      + deftable_ + ", delimiter: \"" + delimiter_ 
+		      + "\", thread id: " + thread_ + ", message [" + message_ 
+		      + "]");
+	}
 
 	schemaName = defschema_;
 	tableName = deftable_;
@@ -29,32 +32,45 @@ public class RowMessage
 	thread = thread_;
 	message = message_;
 
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
     }
 
     public void AnalyzeMessage()
     {
-	log.trace("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
 
 	String[] formats = message.split("\\" + delimiter);
+	StringBuffer strBuffer = null;
 
-	StringBuffer strBuffer = new StringBuffer();
+	if(log.isDebugEnabled()){
+	    strBuffer = new StringBuffer();
 
-	strBuffer.append("RowMessage thread [" + thread + "]\n");
-	strBuffer.append("Raw message:[" + message + "]\n");
-	strBuffer.append("Operator Info: [Table Name: " + tableName 
-			 + ", Type: " + operatorType + "]");
+	    strBuffer.append("RowMessage thread [" + thread + "]\n");
+	    strBuffer.append("Raw message:[" + message + "]\n");
+	    strBuffer.append("Operator Info: [Table Name: " + tableName 
+			     + ", Type: " + operatorType + "]");
+	}
 
 	columns = new HashMap<Integer, ColumnValue>(0);
 	for (int i = 0; i < formats.length; i++) {
-	    strBuffer.append("\n\tColumn: " + formats[i]);
+	    if(log.isDebugEnabled()){
+		strBuffer.append("\n\tColumn: " + formats[i]);
+	    }
 	    ColumnValue columnValue = new ColumnValue(i, formats[i], null);
 	    columns.put(i, columnValue);
 	}
-	strBuffer.append("\nRowMessage end");
-	log.debug(strBuffer.toString());
+	if(log.isDebugEnabled()){
+	    strBuffer.append("\nRowMessage end");
+	    log.debug(strBuffer.toString());
+	}
 
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
     }
 
     public String GetTableName()

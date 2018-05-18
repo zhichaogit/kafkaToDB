@@ -67,7 +67,9 @@ public class ConsumerThread extends Thread
 		   long    zkTO_,
 		   long    commitCount_) 
     {
-	log.trace("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
 	esgyndb     = esgyndb_;
 	zookeeper   = zookeeper_; 
 	broker      = broker_;
@@ -113,12 +115,16 @@ public class ConsumerThread extends Thread
 	    // always start from beginning
 	    kafka.seekToBeginning(Arrays.asList(partition));
 	}
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
     }
 	
     public void run() 
     {
-	log.trace("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
 
 	try {
 	    dbConn = esgyndb.CreateConnection(false);
@@ -126,8 +132,9 @@ public class ConsumerThread extends Thread
 	    while(running.get()) {
 		// note that we don't commitSync to kafka - tho we should
 		ConsumerRecords<String, String> records = kafka.poll(streamTO);
-
-		log.debug("poll messages: " + records.count());
+		if(log.isDebugEnabled()){
+		    log.debug("poll messages: " + records.count());
+		}
 		if (records.isEmpty())
 		    break;               // timed out
 
@@ -157,7 +164,9 @@ public class ConsumerThread extends Thread
 	    kafka.close();
 	    running.set(false);
 	}
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
     }
 
     public void commit_tables() {
@@ -181,7 +190,9 @@ public class ConsumerThread extends Thread
 
     public void ProcessRecords(ConsumerRecords<String, String> records) 
     {
-	log.trace("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
 	for (ConsumerRecord<String, String> message : records) {
 	    try {
 		ProcessMessage(message);
@@ -191,12 +202,16 @@ public class ConsumerThread extends Thread
 		aiooe.printStackTrace();
 	    }
 	} // for each msg
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
     }
 
     public void ProcessMessage(ConsumerRecord<String, String> message) 
     {
-	log.trace("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
 	// position info for this message
 	long    partition = message.partition();
 	long    offset    = message.offset();
@@ -207,7 +222,9 @@ public class ConsumerThread extends Thread
 	    log.error("message info [topic: " + topic + ", partition: " 
 		      + partition + ", off: " + offset + "], current partition #" 
 		      + partitionID);
-	    log.trace("exit function");
+	    if (log.isTraceEnabled()){
+		log.trace("exit function");
+	    }
 	    return;
 	}
 
@@ -233,7 +250,9 @@ public class ConsumerThread extends Thread
 	tableInfo.InsertMessageToTable(urm);
 
 	tables.put(tableName, tableInfo);
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
     }
 
     public int GetConsumerID() 

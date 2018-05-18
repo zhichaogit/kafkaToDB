@@ -30,7 +30,9 @@ public class UnicomRowMessage extends RowMessage
     @Override
     public void AnalyzeMessage()
     {
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
 
 	String[] formats = message.split("");
 
@@ -60,28 +62,37 @@ public class UnicomRowMessage extends RowMessage
 	operatorType = formats[2];
 	timestamp = formats[3];
 
-	StringBuffer strBuffer = new StringBuffer();
+	StringBuffer strBuffer = null;
+	if(log.isDebugEnabled()){
+	    strBuffer = new StringBuffer();
 
-	strBuffer.append("Raw message:[" + message + "]\n");
-	strBuffer.append("Operator message: [pid: " + processID 
-			 + ", scn sign:" + scnSign + ", transaction id:" 
-			 + transactionID + ", local transaction id:" + localTID
-			 + ", transaction sign" + transactionSign
-			 + ", rebuild transaction id" + rebuildTID
-			 + ", transaction offset:"  + transactionOff + "]\n");
-	strBuffer.append("Operator Info: [Table Name: " + tableName + ", Type: "
-			 + operatorType + ", Timestamp: " + timestamp + "]");
+	    strBuffer.append("Raw message:[" + message + "]\n");
+	    strBuffer.append("Operator message: [pid: " + processID 
+			     + ", scn sign:" + scnSign + ", transaction id:" 
+			     + transactionID + ", local transaction id:" + localTID
+			     + ", transaction sign" + transactionSign
+			     + ", rebuild transaction id" + rebuildTID
+			     + ", transaction offset:"  + transactionOff + "]\n");
+	    strBuffer.append("Operator Info: [Table Name: " + tableName + ", Type: "
+			     + operatorType + ", Timestamp: " + timestamp + "]");
+	}
 
 	columns = new HashMap<Integer, ColumnValue>(0);
 	for (int i = 4; i < formats.length; i++) {
-	    strBuffer.append("\n\tColumn: " + formats[i]);
+	    if(log.isDebugEnabled()){
+		strBuffer.append("\n\tColumn: " + formats[i]);
+	    }
 	    offset = 0;
 	    ColumnValue column = get_column(formats[i].getBytes());
 	    columns.put(column.GetColumnID(), column);
 	}
-	log.debug(strBuffer.toString());
+	if(log.isDebugEnabled()){
+	    log.debug(strBuffer.toString());
+	}
 
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
     }
 
     private int byte_array_to_long(byte[] data, int start, int length) {

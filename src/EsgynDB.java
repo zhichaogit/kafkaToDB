@@ -50,10 +50,12 @@ public class EsgynDB
 		   String  dbpassword_,
 		   long    commitCount_) 
     {
-	log.trace("enter function [table: " + defschema_ + "." + deftable_ 
-		  + ", db url: " + dburl_ + ", db driver:" + dbdriver_ 
-		  + ", db user: " + dbuser_  + ", commit count:" 
-		  + commitCount_ + "]");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function [table: " + defschema_ + "." + deftable_ 
+		      + ", db url: " + dburl_ + ", db driver:" + dbdriver_ 
+		      + ", db user: " + dbuser_  + ", commit count:" 
+		      + commitCount_ + "]");
+	}
 
 	dburl       = dburl_;
 	dbdriver    = dbdriver_;
@@ -79,14 +81,19 @@ public class EsgynDB
 	log.info("start to init schemas"); 
 	init_schemas();
 
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
     }
 
     private void init_schemas()
     {
 	ResultSet            schemaRS = null;
 
-	log.trace("enter function");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
+
 	try {
 	    DatabaseMetaData dbmd = dbkeepconn.getMetaData();
 	    String           schemaName = null;
@@ -112,14 +119,19 @@ public class EsgynDB
             e.printStackTrace();
         }
 
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
     }
 
     public TableInfo init_schema(String schemaName)
     {
 	TableInfo tableInfo = null;
 
-	log.trace("enter function [schema: " + schemaName + "]");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function [schema: " + schemaName + "]");
+	}
+
 	try {
 	    if (deftable == null) {
 		ResultSet         tableRS = null;
@@ -162,13 +174,18 @@ public class EsgynDB
             e.printStackTrace();
         }
 
-	log.trace("exit function [table info: " + tableInfo + "]");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function [table info: " + tableInfo + "]");
+	}
+
 	return tableInfo;
     }
 
     public long init_culumns(TableInfo table)
     {
-	log.trace("enter function [table info: " + table + "]");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function [table info: " + table + "]");
+	}
 
 	try {
 	    String getTableColumns = "SELECT o.object_name TABLE_NAME, "
@@ -221,13 +238,19 @@ public class EsgynDB
 	    e.printStackTrace();
 	}
 
-	log.trace("exit function [column number:" + table.GetColumnCount() + "]");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function [column number:" + table.GetColumnCount()
+		      + "]");
+	}
+
 	return table.GetColumnCount();
     }
 
     public long init_keys(TableInfo table)
     {
-	log.trace("enter function [table info: " + table + "]");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function [table info: " + table + "]");
+	}
 
 	try {
 	    String getTableKeys = "SELECT k.COLUMN_NAME COLUMN_NAME, "
@@ -246,25 +269,31 @@ public class EsgynDB
 	    psmt.setString(2, table.GetTableName());
 
             ResultSet       keysRS = psmt.executeQuery();
-	    StringBuffer    strBuffer = new StringBuffer();
-	    strBuffer.append("get primakey of \"" + table.GetSchemaName() 
-			     + "\".\"" + table.GetTableName() 
-			     + "\" key columns\n[\n");
+	    StringBuffer    strBuffer = null;
+	    if(log.isDebugEnabled()){
+		strBuffer = new StringBuffer();
+		strBuffer.append("get primakey of \"" + table.GetSchemaName() 
+				 + "\".\"" + table.GetTableName() 
+				 + "\" key columns\n[\n");
+	    }
 	    int  colid = 0;
 	    while (keysRS.next()) {
 		colid    =  Integer.parseInt(keysRS.getString("KEY_COLUMN_ID"));
 		ColumnInfo  column = table.GetColumnFromMap(colid);
-		
-		strBuffer.append("\t" + column.GetColumnName() + " [id: " 
-				 + column.GetColumnID() + ", Off: "
-				 + column.GetColumnOff() + ", Type: "
-				 + column.GetTypeName() + ", Type ID: " 
-				 + column.GetColumnType() + "]\n");
+		if(log.isDebugEnabled()){
+		    strBuffer.append("\t" + column.GetColumnName() + " [id: " 
+				     + column.GetColumnID() + ", Off: "
+				     + column.GetColumnOff() + ", Type: "
+				     + column.GetTypeName() + ", Type ID: " 
+				     + column.GetColumnType() + "]\n");
+		}
 
 		table.AddKey(column);
 	    }
-	    strBuffer.append("]\n"); 
-	    log.debug(strBuffer.toString());
+	    if(log.isDebugEnabled()){
+		strBuffer.append("]\n"); 
+		log.debug(strBuffer.toString());
+	    }
 	    psmt.close();
 	} catch (SQLException sqle) {
 	    sqle.printStackTrace();
@@ -272,7 +301,11 @@ public class EsgynDB
 	    e.printStackTrace();
 	}
 
-	log.trace("exit function [key column number: " + table.GetKeyCount() + "]");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function [key column number: " + table.GetKeyCount()
+		      + "]");
+	}
+
 	return table.GetKeyCount();
     }
 
@@ -284,7 +317,9 @@ public class EsgynDB
     public Connection CreateConnection(boolean autocommit)
     {
 	Connection          dbConn = null;
-	log.trace("enter function [autocommit: " + autocommit + "]");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function [autocommit: " + autocommit + "]");
+	}
 
 	try {
 	    Class.forName(dbdriver);
@@ -301,13 +336,18 @@ public class EsgynDB
 	    e.printStackTrace();
 	}
 	
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
+
 	return dbConn;
     }
 
     public void CloseConnection(Connection  dbConn_)
     {
-	log.trace("enter function [db conn: " + dbConn_ + "]");
+	if (log.isTraceEnabled()){
+	    log.trace("enter function [db conn: " + dbConn_ + "]");
+	}
 
 	try {
 	    dbConn_.close();
@@ -315,7 +355,9 @@ public class EsgynDB
 	    e.printStackTrace();
 	}
 
-	log.trace("exit function");
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
     }
 
     public String GetDefaultSchema()
