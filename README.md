@@ -24,6 +24,7 @@ usage: Consumer Server
 *			 b. -p "0-4" : means this progress have five threads, process the partition 0 to 4
 *			 c. -p "0,3-5,6" : means process the partition 0,3,4,5 and 6
 *			 c. -p 5 : means process the partition 0 to 5
+*			 d. -p 4 : means process the partition 0,1,2 and 4
 * -s,--schema <arg>      default database schema, use the schema from data without this option, default: null
 * -t,--topic <arg>       REQUIRED. topic of subscription
 * -z,--zook <arg>        zookeeper connection list, ex: <node>:port[/kafka],...

@@ -34,7 +34,6 @@ public class KafkaCDC implements Runnable{
     String   broker       = DEFAULT_BROKER;
     String   format       = null;
     String   groupID      = null;
-    int      partitionNum = 0;
     int []   partitions   = null;
     String   topic        = null;
     String   zookeeper    = null;
@@ -95,7 +94,6 @@ public class KafkaCDC implements Runnable{
 
     public KafkaCDC() 
     {  
-	partitionNum = 0;
         Runtime.getRuntime().addShutdownHook(new KafkaCDCCtrlCThread());  
     }  
 
@@ -360,6 +358,7 @@ public class KafkaCDC implements Runnable{
 	    System.exit(0);
 	} else if (tempParts.size() == 1) {
 	    int partend   = tempParts.get(0).intValue();
+	    tempParts.clear();
 	    for (int cur = 0; cur < partend; cur++) {
 		tempParts.add(cur);
 	    }
@@ -378,7 +377,7 @@ public class KafkaCDC implements Runnable{
 	}
 
 	Arrays.sort(partitions);
-	for (i = 1; i < partitionNum; i++) {
+	for (i = 1; i < partitions.length; i++) {
 	    if (partitions[i-1] == partitions[i]){
 		HelpFormatter formatter = new HelpFormatter();
 		log.error ("partition parameter duplicate error [" + partString 
