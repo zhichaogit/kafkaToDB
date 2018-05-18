@@ -382,7 +382,7 @@ public class KafkaCDC implements Runnable{
 		HelpFormatter formatter = new HelpFormatter();
 		log.error ("partition parameter duplicate error [" + partString 
 			   + "], pre: " + partitions[i-1] + ", cur: " 
-			   + partitions[i] + ", total: " + partitionNum
+			   + partitions[i] + ", total: " + partitions.length
 			   + ", off: " + i);
 		formatter.printHelp("Consumer Server", exeOptions);
 		System.exit(0);
@@ -516,7 +516,7 @@ public class KafkaCDC implements Runnable{
 	    consumer.start();
 	}
 	
-	me.running = me.partitionNum;
+	me.running = me.partitions.length;
 	Thread ctrltrhead = new Thread(me);
         ctrltrhead.setName("CtrlCThread");
 
