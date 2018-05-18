@@ -9,6 +9,7 @@ import org.apache.commons.cli.ParseException;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Arrays;
 import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
@@ -19,6 +20,7 @@ public class KafkaCDC implements Runnable{
     private final long   DEFAULT_COMMIT_COUNT = 500;
     private final long   DEFAULT_PARALLE      = 16;
     private final long   DEFAULT_INTERVAL     = 10; // the unit is second, 10s
+    private final int    DEFAULT_MAX_PARTITION= 1000;
     private final String DEFAULT_BROKER       = "localhost:9092";
     private final String DEFAULT_IPADDR       = "localhost";
     private final String DEFAULT_PORT         = "23400";
@@ -32,7 +34,8 @@ public class KafkaCDC implements Runnable{
     String   broker       = DEFAULT_BROKER;
     String   format       = null;
     String   groupID      = null;
-    long     parallel     = DEFAULT_PARALLE;
+    int      partitionNum = 0;
+    int []   partitions   = null;
     String   topic        = null;
     String   zookeeper    = null;
 
@@ -54,7 +57,7 @@ public class KafkaCDC implements Runnable{
 
     String   tenantUser   = null;
 
-    private volatile long             running = 0;
+    private volatile int              running = 0;
     private EsgynDB                   esgyndb = null;
     private ArrayList<ConsumerThread> consumers = null;
     private class KafkaCDCCtrlCThread extends Thread 
@@ -92,6 +95,7 @@ public class KafkaCDC implements Runnable{
 
     public KafkaCDC() 
     {  
+	partitionNum = 0;
         Runtime.getRuntime().addShutdownHook(new KafkaCDCCtrlCThread());  
     }  
 
@@ -135,7 +139,7 @@ public class KafkaCDC implements Runnable{
 	 * -d --dbip <arg>     database server ip
 	 * -f,--format <arg>   format of data, default: unicom
 	 * -g --group <arg>    groupID
-	 * -p --parallel <arg> the parallel number (default is 16)
+	 * -p --partition <arg>the partition number (default is 16)
 	 * -s --schema <arg>   schema
 	 * -t --topic <arg>    topic
 	 * -z --zk <arg>       zookeeper connection (node:port[/kafka?]
@@ -184,12 +188,13 @@ public class KafkaCDC implements Runnable{
 	    .hasArg()
 	    .desc("group for this consumer, default: 0")
 	    .build();
-	Option parallelOption = Option.builder("p")
-	    .longOpt("parallel")
+	Option partitionOption = Option.builder("p")
+	    .longOpt("partition")
 	    .required(false)
 	    .hasArg()
-	    .desc("parallel thread number to process message, one thread only"
-		  + " process data from one partition, default: 16")
+	    .desc("partition number to process message, one thread only process "
+		  + " process the data from one partition, default: 16. the format"
+		  + " example: \"1,4-5,8\"")
 	    .build();
 	Option schemaOption = Option.builder("s")
 	    .longOpt("schema")
@@ -280,7 +285,7 @@ public class KafkaCDC implements Runnable{
 	exeOptions.addOption(dbipOption);
 	exeOptions.addOption(formatOption);
 	exeOptions.addOption(groupOption);
-	exeOptions.addOption(parallelOption);
+	exeOptions.addOption(partitionOption);
 	exeOptions.addOption(schemaOption);
 	exeOptions.addOption(topicOption);
 	exeOptions.addOption(zkOption);
@@ -322,9 +327,69 @@ public class KafkaCDC implements Runnable{
 	    : "normal";
 	groupID = cmdLine.hasOption("group") ? cmdLine.getOptionValue("group")
 	    : "group_0";
-	parallel = cmdLine.hasOption("parallel") ? 
-	    Long.parseLong(cmdLine.getOptionValue("parallel")) 
-	    : DEFAULT_PARALLE;
+	String partString = cmdLine.hasOption("partition") ? 
+	    cmdLine.getOptionValue("partition") : null;
+	String[] parts = partString.split(",");
+	ArrayList<Integer> tempParts = new ArrayList<Integer>(0);
+	for (String part : parts) {
+	    String[] items = part.split("-");
+	    if (items == null || items.length > 2 || items.length == 0) {
+		HelpFormatter formatter = new HelpFormatter();
+		log.error ("partition parameter format error [" + partString
+			   + "], the right format: \"id [, id] ...\", "
+			   + "id should be: \"id-id\"");
+		formatter.printHelp("Consumer Server", exeOptions);
+		System.exit(0);
+	    } else if (items.length == 2) {
+		int partstart = Integer.parseInt(items[0]);
+		int partend   = Integer.parseInt(items[1]);
+		for (int cur = partstart; cur <= partend; cur++) {
+		    tempParts.add(cur);
+		}
+	    } else {
+		tempParts.add(Integer.parseInt(items[0]));
+	    }
+	}
+
+	if (tempParts.size() < 1) {
+	    HelpFormatter formatter = new HelpFormatter();
+	    log.error ("partition parameter format error [" + partString
+		       + "], the right format: \"id [, id] ...\", "
+		       + "id should be: \"id-id\"");
+	    formatter.printHelp("Consumer Server", exeOptions);
+	    System.exit(0);
+	} else if (tempParts.size() == 1) {
+	    int partend   = tempParts.get(0).intValue();
+	    for (int cur = 0; cur < partend; cur++) {
+		tempParts.add(cur);
+	    }
+	}
+	if (tempParts.size() > DEFAULT_MAX_PARTITION) {
+	    HelpFormatter formatter = new HelpFormatter();
+	    log.error ("partition cann't more than [" + DEFAULT_MAX_PARTITION + "]");
+	    formatter.printHelp("Consumer Server", exeOptions);
+	    System.exit(0);
+	}
+
+	partitions = new int [tempParts.size()];
+	int i = 0;
+	for (Integer tempPart : tempParts){
+	    partitions[i++] = tempPart.intValue();  
+	}
+
+	Arrays.sort(partitions);
+	for (i = 1; i < partitionNum; i++) {
+	    if (partitions[i-1] == partitions[i]){
+		HelpFormatter formatter = new HelpFormatter();
+		log.error ("partition parameter duplicate error [" + partString 
+			   + "], pre: " + partitions[i-1] + ", cur: " 
+			   + partitions[i] + ", total: " + partitionNum
+			   + ", off: " + i);
+		formatter.printHelp("Consumer Server", exeOptions);
+		System.exit(0);
+	    }
+	}
+
 	defschema = cmdLine.hasOption("schema") ? cmdLine.getOptionValue("schema")
 	    : null;
 	topic = cmdLine.getOptionValue("topic");
@@ -412,7 +477,7 @@ public class KafkaCDC implements Runnable{
 	strBuffer.append("\n\tmode        = " + me.full);
 	strBuffer.append("\n\tgroup       = " + me.groupID);
 	strBuffer.append("\n\tinterval    = " + me.interval);
-	strBuffer.append("\n\tparallel    = " + me.parallel);
+	strBuffer.append("\n\tpartitions  = " + Arrays.toString(me.partitions));
 	strBuffer.append("\n\tskip        = " + me.skip);
 	strBuffer.append("\n\ttable       = " + me.deftable);
 	strBuffer.append("\n\ttopic       = " + me.topic);
@@ -432,7 +497,7 @@ public class KafkaCDC implements Runnable{
 				 me.commitCount);
 	me.consumers = new ArrayList<ConsumerThread>(0);
 
-        for (int i = 0; i <me.parallel; i++) {
+        for (int partition : me.partitions) {
 	    // connect to kafka w/ either zook setting
 	    ConsumerThread consumer = new ConsumerThread(me.esgyndb,
 							 me.full,
@@ -443,16 +508,16 @@ public class KafkaCDC implements Runnable{
 							 me.broker,
 							 me.topic,
 							 me.groupID,
-							 i,
+							 partition,
 							 me.streamTO,
 							 me.zkTO,
 							 me.commitCount);
-	    consumer.setName("ConsumerThread-" + i);
+	    consumer.setName("ConsumerThread-" + partition);
 	    me.consumers.add(consumer);
 	    consumer.start();
 	}
 	
-	me.running = me.parallel;
+	me.running = me.partitionNum;
 	Thread ctrltrhead = new Thread(me);
         ctrltrhead.setName("CtrlCThread");
 
