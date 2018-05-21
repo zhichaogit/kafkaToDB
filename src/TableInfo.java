@@ -94,7 +94,7 @@ public class TableInfo
 	try {
 	    insertStmt = dbConn.prepareStatement(insertSql);
 	} catch (SQLException e) {
-	    log.error ("Prepare insert stmt exception");
+	    log.error ("Prepare insert stmt exception, SQL:[" + insertSql + "]");
 	    do{
 		e.printStackTrace();
 		e = e.getNextException();
@@ -127,7 +127,7 @@ public class TableInfo
 	try {
 	    deleteStmt = dbConn.prepareStatement(deleteSql);
 	} catch (SQLException e) {
-	    log.error ("Prepare delete stmt exception");
+	    log.error ("Prepare delete stmt exception, SQL [" + deleteSql + "]");
 	    do{
 		e.printStackTrace();
 		e = e.getNextException();
