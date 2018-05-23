@@ -438,7 +438,8 @@ public class KafkaCDC implements Runnable{
 	    defschema = defschema.toUpperCase();
 	if (deftable != null)
 	    deftable = deftable.toUpperCase();
-	dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/catelog=Trafodion";
+	dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/catelog=Trafodion;"
+	    + "applicationName=KafkaCDC";
 	if (tenantUser != null)
 	    dburl += ";tenantName=" + tenantUser;
 
