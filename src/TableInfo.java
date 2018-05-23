@@ -479,7 +479,8 @@ public class TableInfo
 	    dbConn.commit();
 	} catch (BatchUpdateException bue) {
 	    commited = false;
-	    log.error ("batch update execute exception: " + bue.getMessage());
+	    log.error ("batch update table [" + schemaName + "." + tableName
+		       + "] throw BatchUpdateException: " + bue.getMessage());
 	    SQLException se = bue;
 
 	    do{
@@ -490,13 +491,16 @@ public class TableInfo
 	    return false;
 	} catch (IndexOutOfBoundsException iobe) {
 	    commited = false;
-	    log.error ("Index Out Of Bounds exception: " + iobe.getMessage());
+	    log.error ("batch update table [" + schemaName + "." + tableName
+		       + "] throw IndexOutOfBoundsException: " 
+		       + iobe.getMessage());
 	    iobe.printStackTrace();
 
 	    return false;
 	} catch (SQLException se) {
 	    commited = false;
-	    log.error ("batch update SQL exception: " + se.getMessage());
+	    log.error ("batch update table [" + schemaName + "." + tableName
+		       + "] throw SQLException: " + se.getMessage());
 	    do{
 		se.printStackTrace();
 		se = se.getNextException();
@@ -505,7 +509,8 @@ public class TableInfo
 	    return false;
 	} catch (Exception e) {
 	    commited = false;
-	    log.error ("batch update exception: " + e.getMessage());
+	    log.error ("batch update table [" + schemaName + "." + tableName
+		       + "] throw Exception: " + e.getMessage());
 	    e.printStackTrace();
 
 	    return false;
