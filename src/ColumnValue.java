@@ -28,6 +28,16 @@ public class ColumnValue
 	}
     }
 
+    public ColumnValue(ColumnValue value)
+    {
+	columnID = value.GetColumnID();
+	curValue = value.GetCurValue();
+	oldValue = value.GetOldValue();
+	curValueStr = value.GetCurValueStr();
+	oldValueStr = value.GetOldValueStr();
+	oldCondStr = value.GetOldCondStr();
+    }
+
     public int GetColumnID()
     {
 	return columnID;

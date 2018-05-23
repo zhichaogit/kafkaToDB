@@ -364,7 +364,7 @@ public class TableInfo
 	     * update the insert row in memory
 	     */
 	    for (ColumnValue value : rowValues.values()) {
-		insertRow.put(value.GetColumnID(), value);
+		insertRow.put(value.GetColumnID(), new ColumnValue(value));
 	    }
 
 	    if(log.isDebugEnabled()){
@@ -402,19 +402,22 @@ public class TableInfo
 			    value = new ColumnValue(value.GetColumnID(),
 						    value.GetCurValue(),
 						    cacheValue.GetOldValue());
+			    updateRow.put(value.GetColumnID(), value);
+			} else {
+			    updateRow.put(value.GetColumnID(), new ColumnValue(value));
 			}
-
-			updateRow.put(value.GetColumnID(), value);
 		    }
+		    // delete the old update message
+		    updateRows.remove(oldkey);
 		} else {
-		    updateRow = rowValues;
+		    updateRow = new HashMap<Integer, ColumnValue>(0);
+		    for (ColumnValue value : rowValues.values()) {
+			updateRow.put(value.GetColumnID(), new ColumnValue(value));
+		    }
 		}
 
-		// delete the old update message
-		updateRows.remove(oldkey);
-
 		// add new insert message
-		insertRows.put(newkey, updateRow);
+		updateRows.put(newkey, updateRow);
 
 		// delete the data on the disk
 		deleteRows.put(oldkey, rowValues);
