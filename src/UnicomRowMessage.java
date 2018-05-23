@@ -169,6 +169,9 @@ public class UnicomRowMessage extends RowMessage
 	// analyze old value
 	String oldValue = get_column_value(coldata);
 	    
+	if (log.isDebugEnabled()) {
+	    log.debug("cur value [" + currValue + "] old value [" + oldValue + "]");
+	}
 	return new ColumnValue(cid, currValue, oldValue);
     }
 }

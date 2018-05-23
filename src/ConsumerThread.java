@@ -13,6 +13,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.log4j.Logger; 
 
 import java.lang.ArrayIndexOutOfBoundsException;
+import java.io.UnsupportedEncodingException;
 import kafka.consumer.ConsumerTimeoutException;
 
 @SuppressWarnings("deprecation") 		
@@ -41,6 +42,8 @@ public class ConsumerThread extends Thread
     long    commitCount;
     long    cacheNum;
 
+    String  encoding;
+
     boolean full;
     boolean skip;
     String  delimiter;
@@ -62,6 +65,7 @@ public class ConsumerThread extends Thread
 		   String  broker_,
 		   String  topic_,
 		   String  groupid_,
+		   String  encoding_,
 		   int     partitionID_,
 		   long    streamTO_,
 		   long    zkTO_,
@@ -75,6 +79,7 @@ public class ConsumerThread extends Thread
 	broker      = broker_;
 	topic       = topic_;
 	groupid     = groupid_;
+	encoding    = encoding_;
 	partitionID = partitionID_;
 	streamTO    = streamTO_;
 	zkTO        = zkTO_;
@@ -200,6 +205,10 @@ public class ConsumerThread extends Thread
 		log.error ("table schema is not matched with data, raw data: [" 
 			   + message + "]");
 		aiooe.printStackTrace();
+	    } catch (UnsupportedEncodingException uee) {
+		log.error ("the encoding is not supported in java, raw data: [" 
+			   + message + "]");
+		uee.printStackTrace();
 	    }
 	} // for each msg
 	if (log.isTraceEnabled()){
@@ -208,6 +217,7 @@ public class ConsumerThread extends Thread
     }
 
     public void ProcessMessage(ConsumerRecord<String, String> message) 
+	throws UnsupportedEncodingException
     {
 	if (log.isTraceEnabled()){
 	    log.trace("enter function");
@@ -229,6 +239,8 @@ public class ConsumerThread extends Thread
 	}
 
 	RowMessage urm = null;
+	String     msgStr = message.value();
+	String     dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
 
 	if (format.equals("unicom"))
 	    urm = new UnicomRowMessage(esgyndb.GetDefaultSchema(),
@@ -244,8 +256,10 @@ public class ConsumerThread extends Thread
 	String    tableName = urm.GetSchemaName() + "." + urm.GetTableName();
 	TableInfo tableInfo = esgyndb.GetTableInfo(tableName);
 
-	if (tableInfo == null || !tableInfo.InitStmt(dbConn))
+	if (tableInfo == null || !tableInfo.InitStmt(dbConn)) {
+	    log.info("the table [" + tableName + "] is not exists!");
 	    return;
+	}
 
 	tableInfo.InsertMessageToTable(urm);
 

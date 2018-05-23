@@ -28,6 +28,8 @@ public class KafkaCDC implements Runnable{
     private final String DEFAULT_USER         = "db__root";
     private final String DEFAULT_PASSWORD     = "zz";
 
+    private final String DEFAULT_ENCODING     = "UTF8";
+
     private static Logger log = Logger.getLogger(KafkaCDC.class); 
 
     long     commitCount  = DEFAULT_COMMIT_COUNT;
@@ -55,6 +57,7 @@ public class KafkaCDC implements Runnable{
     String   dbpassword   = DEFAULT_PASSWORD;
 
     String   tenantUser   = null;
+    String   charEncoding = DEFAULT_ENCODING;
 
     private volatile int              running = 0;
     private EsgynDB                   esgyndb = null;
@@ -135,6 +138,7 @@ public class KafkaCDC implements Runnable{
 	 * -b --broker <arg>   broker location (node0:9092[,node1:9092])
 	 * -c --commit <arg>   num message per Kakfa synch (num recs, default is 500)
 	 * -d --dbip <arg>     database server ip
+	 * -e --encode <arg>   character encoding of data, default: utf8
 	 * -f,--format <arg>   format of data, default: unicom
 	 * -g --group <arg>    groupID
 	 * -p --partition <arg>the partition number (default is 16)
@@ -173,6 +177,12 @@ public class KafkaCDC implements Runnable{
 	    .required(false)
 	    .hasArg()
 	    .desc("database server ip, default: \"localhost\"")
+	    .build();
+	Option encodeOption = Option.builder("e")
+	    .longOpt("encode")
+	    .required(false)
+	    .hasArg()
+	    .desc("character encoding of data, default: \"utf8\"")
 	    .build();
 	Option formatOption = Option.builder("f")
 	    .longOpt("format")
@@ -281,6 +291,7 @@ public class KafkaCDC implements Runnable{
 	exeOptions.addOption(brokerOption);
 	exeOptions.addOption(commitOption);
 	exeOptions.addOption(dbipOption);
+	exeOptions.addOption(encodeOption);
 	exeOptions.addOption(formatOption);
 	exeOptions.addOption(groupOption);
 	exeOptions.addOption(partitionOption);
@@ -321,6 +332,8 @@ public class KafkaCDC implements Runnable{
 	    : DEFAULT_COMMIT_COUNT;
 	dbip = cmdLine.hasOption("dbip") ? cmdLine.getOptionValue("dbip")
 	    : DEFAULT_IPADDR;
+	charEncoding = cmdLine.hasOption("encode") ? cmdLine.getOptionValue("encode")
+	    : DEFAULT_ENCODING;
 	format= cmdLine.hasOption("format") ? cmdLine.getOptionValue("format")
 	    : "normal";
 	groupID = cmdLine.hasOption("group") ? cmdLine.getOptionValue("group")
@@ -507,6 +520,7 @@ public class KafkaCDC implements Runnable{
 							 me.broker,
 							 me.topic,
 							 me.groupID,
+							 me.charEncoding,
 							 partition,
 							 me.streamTO,
 							 me.zkTO,

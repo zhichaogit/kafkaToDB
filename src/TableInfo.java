@@ -144,6 +144,15 @@ public class TableInfo
 	    ColumnInfo  keyInfo = keyColumns.get(i);
 	    ColumnValue column  = rowValues.get(keyInfo.GetColumnOff());
 
+	    if (log.isDebugEnabled()){
+		log.debug("key id: " + i + ", type: " + cur + " column [id: " 
+			  + column.GetColumnID() + ", cur value: " 
+			  + column.GetCurValue() + ", old value: "
+			  + column.GetOldValue() + "] cur is null: [" 
+			  + column.CurValueIsNull() + "] old is null: ["
+			  + column.OldValueIsNull() + "]");
+	    }
+
 	    if (cur) {
 		if (column.CurValueIsNull()){
 		    log.error("the cur primarykey value is null. column name [" 
@@ -181,6 +190,10 @@ public class TableInfo
 	    }
 	}
 
+	if (log.isDebugEnabled()){
+	    log.debug("key string: [" + key + "]");
+	}
+
 	return key;
     }
 
@@ -194,10 +207,14 @@ public class TableInfo
 
 	String message = rowMessage.GetMessage();
 	String key = get_key_value(message, rowValues, true);
-
+	
 	if(log.isDebugEnabled()){
 	    log.debug ("insert row key [" + key + "], message [" + message + "]");
 	}
+
+	if (key == null)
+	    return 0;
+
 	// new row is inserted
 	insertRows.put(key, rowValues);
 
@@ -261,6 +278,10 @@ public class TableInfo
 	if(log.isDebugEnabled()){
 	    log.debug ("update row key [" + key + "], message [" + message + "]");
 	}
+
+	if (key == null)
+	    return 0;
+
 	Map<Integer, ColumnValue> insertRow = insertRows.get(key);
 
 	if (insertRow != null){
@@ -331,6 +352,10 @@ public class TableInfo
 	    log.debug ("updkey row key [old key: " + oldkey + ", new key: " 
 		       + newkey + "], message [" + message + "]");
 	}
+
+	if (oldkey == null || newkey == null)
+	    return 0;
+
 	Map<Integer, ColumnValue> insertRow = insertRows.get(oldkey);
 
 	if (insertRow != null){
@@ -345,11 +370,15 @@ public class TableInfo
 	    if(log.isDebugEnabled()){
 		log.debug("updkey row key [" + oldkey + "] exist in insert cache");
 	    }
+
 	    // remove old key
 	    insertRows.remove(oldkey);
 
 	    // insert the new key
 	    insertRows.put(newkey, insertRow);
+
+	    // delete the old key on disk
+	    deleteRows.put(oldkey, rowValues);
 	} else {
 	    Map<Integer, ColumnValue> deleterow = deleteRows.get(oldkey);
 
@@ -381,9 +410,14 @@ public class TableInfo
 		    updateRow = rowValues;
 		}
 
+		// delete the old update message
 		updateRows.remove(oldkey);
 
-		updateRows.put(newkey, updateRow);
+		// add new insert message
+		insertRows.put(newkey, updateRow);
+
+		// delete the data on the disk
+		deleteRows.put(oldkey, rowValues);
 	    }
 	}
 
@@ -412,6 +446,10 @@ public class TableInfo
 	if(log.isDebugEnabled()){
 	    log.debug ("delete row key [" + key + "], message [" + message + "]");
 	}
+
+	if (key == null)
+	    return 0;
+
 	deleteRows.put(key, rowValues);
 
 	// remove the insert messages
