@@ -198,7 +198,7 @@ public class KafkaCDC implements Runnable{
 	    .build();
 	Option partitionOption = Option.builder("p")
 	    .longOpt("partition")
-	    .required(false)
+	    .required(true)
 	    .hasArg()
 	    .desc("partition number to process message, one thread only process "
 		  + " process the data from one partition, default: 16. the format"
