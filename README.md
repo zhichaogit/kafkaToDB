@@ -18,7 +18,7 @@ usage: Consumer Server
 * -e --encode <arg>      character encoding of data, default: utf8
 * -f,--format <arg>      format of data, support "onicom" and "normal" now, default: normal
 * -g,--group <arg>       group for this consumer, default: 0
-* -p,--partition <arg>   partition parameter format: "id [, id] ...", id should be: "id-id"<br>                        one thread only process data from one partition, default: 16<br/>                        example:<br>			 a. -p "0,4" : means this progress have two threads, process the partition 0 and 4<br>			 b. -p "0-4" : means this progress have five threads, process the partition 0 to 4<br>			 c. -p "0,3-5,6" : means process the partition 0,3,4,5 and 6<br>			 d. -p 4 : means process the partition 0,1,2 and 4
+* -p,--partition <arg>   partition parameter format: "id [, id] ...", id should be: "id-id"<br>                        one thread only process data from one partition, default: 16<br/>                        example:<br>			 a. -p "0,4" : means this progress have two threads, process the partition 0 and 4<br>			 b. -p "0-4" : means this progress have five threads, process the partition 0 to 4<br>			 c. -p "0,3-5,6" : means process the partition 0,3,4,5 and 6<br>			 d. -p 4 : means process the partition 0,1,2 and 3
 * -s,--schema <arg>      default database schema, use the schema from data without this option, default: null
 * -t,--topic <arg>       REQUIRED. topic of subscription
 * -z,--zook <arg>        zookeeper connection list, ex: <node>:port[/kafka],...

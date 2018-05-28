@@ -111,7 +111,7 @@ public class EsgynDB
 		
 		if (tables.size() <= 0)
 		    log.error("init schema [" + defschema + 
-			      "] fail, cann't find!");
+			      "] fail, cann't find any table!");
 	    }
 	} catch (SQLException sqle) {
             sqle.printStackTrace();
@@ -151,8 +151,9 @@ public class EsgynDB
 		    }
 		    if (init_keys(tableInfo) <= 0) {
 			log.error("no primary key on table [" + tableName + "]");
+		    } else {
+			tables.put(tableName, tableInfo);
 		    }
-		    tables.put(tableName, tableInfo);
 		}
 	    } else {
 		String tableName = defschema + "." + deftable;
@@ -164,9 +165,9 @@ public class EsgynDB
 		}
 		if (init_keys(tableInfo) <= 0) {
 		    log.error("no primary key on table [" + tableName + "]");
+		} else {
+		    tables.put(tableName, tableInfo);
 		}
-
-		tables.put(tableName, tableInfo);
 	    }
 	} catch (SQLException sqle) {
             sqle.printStackTrace();
