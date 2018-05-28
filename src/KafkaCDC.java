@@ -342,40 +342,44 @@ public class KafkaCDC implements Runnable{
 	    cmdLine.getOptionValue("partition") : null;
 	String[] parts = partString.split(",");
 	ArrayList<Integer> tempParts = new ArrayList<Integer>(0);
-	for (String part : parts) {
-	    String[] items = part.split("-");
-	    if (items == null || items.length > 2 || items.length == 0) {
-		HelpFormatter formatter = new HelpFormatter();
-		log.error ("partition parameter format error [" + partString
-			   + "], the right format: \"id [, id] ...\", "
-			   + "id should be: \"id-id\"");
-		formatter.printHelp("Consumer Server", exeOptions);
-		System.exit(0);
-	    } else if (items.length == 2) {
-		int partstart = Integer.parseInt(items[0]);
-		int partend   = Integer.parseInt(items[1]);
-		for (int cur = partstart; cur <= partend; cur++) {
-		    tempParts.add(cur);
-		}
-	    } else {
-		tempParts.add(Integer.parseInt(items[0]));
-	    }
-	}
-
-	if (tempParts.size() < 1) {
+	if (parts.length < 1) {
 	    HelpFormatter formatter = new HelpFormatter();
 	    log.error ("partition parameter format error [" + partString
 		       + "], the right format: \"id [, id] ...\", "
 		       + "id should be: \"id-id\"");
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
-	} else if (tempParts.size() == 1) {
-	    int partend   = tempParts.get(0).intValue();
+	}
+
+	String[] items = parts[0].split("-");
+	if (parts.length == 1 && items.length <= 1) {
+	    int partend   = Integer.parseInt(items[0]);
 	    tempParts.clear();
 	    for (int cur = 0; cur < partend; cur++) {
 		tempParts.add(cur);
+	    }	    
+	} else {
+	    for (String part : parts) {
+		items = part.split("-");
+		if (items == null || items.length > 2 || items.length == 0) {
+		    HelpFormatter formatter = new HelpFormatter();
+		    log.error ("partition parameter format error [" + partString
+			       + "], the right format: \"id [, id] ...\", "
+			       + "id should be: \"id-id\"");
+		    formatter.printHelp("Consumer Server", exeOptions);
+		    System.exit(0);
+		} else if (items.length == 2) {
+		    int partstart = Integer.parseInt(items[0]);
+		    int partend   = Integer.parseInt(items[1]);
+		    for (int cur = partstart; cur <= partend; cur++) {
+			tempParts.add(cur);
+		    }
+		} else {
+		    tempParts.add(Integer.parseInt(items[0]));
+		}
 	    }
 	}
+
 	if (tempParts.size() > DEFAULT_MAX_PARTITION) {
 	    HelpFormatter formatter = new HelpFormatter();
 	    log.error ("partition cann't more than [" + DEFAULT_MAX_PARTITION + "]");

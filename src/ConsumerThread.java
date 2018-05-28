@@ -257,7 +257,9 @@ public class ConsumerThread extends Thread
 	TableInfo tableInfo = esgyndb.GetTableInfo(tableName);
 
 	if (tableInfo == null || !tableInfo.InitStmt(dbConn)) {
-	    log.info("the table [" + tableName + "] is not exists!");
+	    if (log.isDebugEnabled()) {
+		log.warn("the table [" + tableName + "] is not exists!");
+	    }
 	    return;
 	}
 
