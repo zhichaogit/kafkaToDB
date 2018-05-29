@@ -447,6 +447,14 @@ public class KafkaCDC implements Runnable{
 	if (tenantUser != null)
 	    dburl += ";tenantName=" + tenantUser;
 
+	if (delimiter != null && delimiter.length() != 1) {
+	    HelpFormatter formatter = new HelpFormatter();
+	    log.error ("the delimiter must be a single character. but it's ["
+		       + delimiter + "] now");
+	    formatter.printHelp("Consumer Server", exeOptions);
+	    System.exit(0);
+	}
+
 	if (!format.equals("Unicom") && !format.equals("")){
 	    HelpFormatter formatter = new HelpFormatter();
 	    log.error ("just support \"Unicom\" format now. "
@@ -489,7 +497,7 @@ public class KafkaCDC implements Runnable{
 	strBuffer.append("KafkaCDC start time: " + sdf.format(starttime));
 	strBuffer.append("\n\tbroker      = " + me.broker);
 	strBuffer.append("\n\tcommitCount = " + me.commitCount);
-	strBuffer.append("\n\tdelimiter   = " + me.groupID);
+	strBuffer.append("\n\tdelimiter   = " + me.delimiter);
 	strBuffer.append("\n\tformat      = " + me.format);
 	strBuffer.append("\n\tmode        = " + me.full);
 	strBuffer.append("\n\tgroup       = " + me.groupID);

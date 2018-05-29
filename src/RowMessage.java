@@ -7,7 +7,7 @@ public class RowMessage
     String                  message         = null;
     String                  schemaName      = null;
     String                  tableName       = null;
-    String                  delimiter       = ",";
+    String                  delimiter       = "\\,";
     String                  operatorType    = "I";
     int                     thread          = -1;
 
@@ -27,8 +27,13 @@ public class RowMessage
 
 	schemaName = defschema_;
 	tableName = deftable_;
-	if (delimiter_ != null)
-	    delimiter = delimiter_;
+	if (delimiter_ != null) {
+	    delimiter = "[" + delimiter_ + "]";
+
+	    if (log.isDebugEnabled()){
+		log.debug("delimiter is [" + delimiter + "]");
+	    }
+	} 
 	thread = thread_;
 	message = message_;
 
@@ -43,7 +48,7 @@ public class RowMessage
 	    log.trace("enter function");
 	}
 
-	String[] formats = message.split("\\" + delimiter);
+	String[] formats = message.split(delimiter);
 	StringBuffer strBuffer = null;
 
 	if(log.isDebugEnabled()){
