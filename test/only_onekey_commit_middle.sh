@@ -7,6 +7,7 @@ BROKER="$IPADDR:9092"
 SCHEMA="S1"
 DESTSCHEMA="SEABASE"
 TABLE="T1"
+TABLEEXP="T1EXP"
 
 PARTITION="1"
 
@@ -18,6 +19,28 @@ INSERT INTO $TABLE VALUES(5, 'delete', 'delete');
 INSERT INTO $TABLE VALUES(6, 'update', 'update');
 INSERT INTO $TABLE VALUES(7, 'insert', 'insert');
 INSERT INTO $TABLE VALUES(8, 'updkey', 'updkey');
+
+DROP TABLE IF EXISTS $TABLEEXP;
+CREATE TABLE $TABLEEXP(c1 INT NOT NULL, c2 VARCHAR(10), c3 VARCHAR(10), PRIMARY KEY (c1));
+INSERT INTO $TABLEEXP VALUES(5, 'delete', 'delete');
+INSERT INTO $TABLEEXP VALUES(6, 'update', 'update');
+INSERT INTO $TABLEEXP VALUES(7, 'insert', 'insert');
+INSERT INTO $TABLEEXP VALUES(8, 'updkey', 'updkey');
+
+UPSERT INTO $TABLEEXP VALUES(1, 'aaa', '(((');
+UPSERT INTO $TABLEEXP VALUES(2, 'bbb', ')))');
+UPSERT INTO $TABLEEXP VALUES(3, 'ccc', '???');
+UPSERT INTO $TABLEEXP VALUES(3, 'ddd', '+++');
+UPSERT INTO $TABLEEXP VALUES(4, 'eee', '---');
+DELETE FROM $TABLEEXP WHERE c1 = 2 AND c2 = 'bbb' AND c3 = ')))';
+UPDATE $TABLEEXP SET c1 = '4',c2 = 'uuu1' WHERE c1 = 4 AND c2 = 'eee';
+UPDATE $TABLEEXP SET c1 = '4',c3 = 'uuu2' WHERE c1 = 4 AND c3 = '---';
+UPSERT INTO $TABLEEXP VALUES(7, 'insert1', 'insert2');
+DELETE FROM $TABLEEXP WHERE c1 = 5 AND c2 = 'delete' AND c3 = 'delete';
+UPDATE $TABLEEXP SET c1 = '6', c3 = 'uuu1' WHERE c1 = 6 AND c3 = 'update';
+UPDATE $TABLEEXP SET c1 = '10', c2 = 'updkey', c3 = 'kkk1' WHERE c1 = 8 AND c2 = 'updkey' and c3 = 'updkey';
+UPDATE $TABLEEXP SET c1 = '9', c2 = 'kkk2', c3 = 'kkk1' WHERE c1 = 10 AND c2 = 'updkey' and c3 = 'kkk1';
+UPDATE $TABLEEXP SET c1 = '6', c2 = 'uuu2' WHERE c1 = 6 AND c2 = 'update';
 EOF
 
 DATAFILE=/tmp/$TOPIC.data
@@ -52,24 +75,11 @@ java -cp $KAFKA_CDC/bin/:$KAFKA_CDC/libs/* KafkaCDC -p $PARTITION -b $BROKER -d 
 # clean the environment
 sqlci <<EOF
 SET SCHEMA SEABASE;
-SELECT * FROM $TABLE;
+SELECT * FROM $TABLE ORDER BY c1;
+SELECT * FROM $TABLEEXP ORDER BY c1;
 DROP TABLE IF EXISTS $TABLE;
+DROP TABLE IF EXISTS $TABLEEXP;
 EOF
-
-# result set：
-echo "expect results:
-
-C1           C2          C3
------------  ----------  ----------
-
-          1  aaa         (((
-          3  ddd         +++
-          4  uuu1        uuu2
-          6  uuu2        uuu1
-          7  insert1     insert2
-          8  kkk2        kkk1
-
---- 6 row(s) selected."
 
 $KAFKA/bin/kafka-topics.sh --delete --zookeeper $ZOOKEEPER --topic $TOPIC
 rm -f $DATAFILE

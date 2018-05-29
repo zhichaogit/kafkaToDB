@@ -158,11 +158,7 @@ public class EsgynDB
 			log.error("init table [" + tableName 
 				  + "] is not exist!");
 		    } else {
-			if (init_keys(tableInfo) <= 0) {
-			    log.warn("no primary key on table [" + tableName 
-				     + "]");
-			}
-
+			init_keys(tableInfo);
 			tables.put(tableName, tableInfo);
 		    }
 		}
@@ -174,10 +170,7 @@ public class EsgynDB
 		if (init_culumns(tableInfo) <= 0) {
 		    log.error("init table [" + tableName + "] is not exist!");
 		} else {
-		    if (init_keys(tableInfo) <= 0) {
-			log.warn("no primary key on table [" + tableName + "]");
-		    } 
-		    
+		    init_keys(tableInfo);
 		    tables.put(tableName, tableInfo);
 		}
 	    }
@@ -263,6 +256,18 @@ public class EsgynDB
     {
 	if (log.isTraceEnabled()){
 	    log.trace("enter function [table info: " + table + "]");
+	}
+
+	ColumnInfo  firstColumn = table.GetColumn(0);
+	if (firstColumn.GetColumnID() != 0) {
+	    log.warn("no primary key on table [" + table.GetSchemaName() + "."
+		     + table.GetTableName() + "], use all of columns.");
+
+	    for (int i = 0; i < table.GetColumnCount(); i++){
+		table.AddKey(table.GetColumn(i));
+	    }
+
+	    return table.GetKeyCount();
 	}
 
 	try {

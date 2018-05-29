@@ -144,6 +144,9 @@ public class TableInfo
 	    ColumnInfo  keyInfo = keyColumns.get(i);
 	    ColumnValue column  = rowValues.get(keyInfo.GetColumnOff());
 
+	    if (column == null)
+		continue;
+
 	    if (log.isDebugEnabled()){
 		log.debug("key id: " + i + ", type: " + cur + " column [id: " 
 			  + column.GetColumnID() + ", cur value: " 
@@ -244,6 +247,9 @@ public class TableInfo
 	for(int i = 0; i < keyColumns.size(); i++) {
 	    ColumnInfo keyInfo = keyColumns.get(i);
 	    cacheValue = rowValues.get(keyInfo.GetColumnOff());
+	    if (cacheValue == null)
+		continue;
+
 	    String oldValue = cacheValue.GetOldValue();
 	    String curValue = cacheValue.GetCurValue();
 	    if(log.isDebugEnabled()){
@@ -251,7 +257,7 @@ public class TableInfo
 			  + "]");
 	    }
 
-	    if (!curValue.equals(oldValue)) {
+	    if (columns.get(0).GetColumnID() == 0 && !curValue.equals(oldValue)) {
 		log.error("U message cann't update the keys," 
 			  + " message [" + message + "]");
 		return 0;
@@ -651,13 +657,20 @@ public class TableInfo
 	    + " SET ";
 	ColumnInfo  keyInfo     = null;
 	ColumnValue keyValue    = null;
-	String      whereSql    = " WHERE ";
+	String      whereSql    = null;
 
 	for(int i = 0; i < keyColumns.size(); i++) {
 	    keyInfo = keyColumns.get(i);
-	    if (keyValue != null)
+	    keyValue = row.get(keyInfo.GetColumnOff());
+	    if (keyValue == null)
+		continue;
+
+	    if (whereSql == null) {
+		whereSql = " WHERE ";
+	    } else {
 		whereSql += " AND ";
-	    keyValue  = row.get(keyInfo.GetColumnOff());
+	    }
+
 	    whereSql += keyInfo.GetColumnName() + keyValue.GetOldCondStr();
 	}
 
@@ -734,6 +747,7 @@ public class TableInfo
 	for (int i = 0; i < keyColumns.size(); i++) {
 	    ColumnInfo keyInfo = keyColumns.get(i);
 	    ColumnValue keyValue = row.get(keyInfo.GetColumnOff());
+
 	    if (keyValue.OldValueIsNull()) {
 		String key = get_key_value(null, row, false);
 		log.error("the primary key value is null [table:" 
