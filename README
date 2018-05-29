@@ -4,7 +4,7 @@ usage: Consumer Server
                         default: "localhost:9092"
  -c,--commit <arg>      num message per Kakfa synch, default: 500
  -e --encode <arg>      character encoding of data, default: utf8
- -f,--format <arg>      format of data, support "onicom" now, default: ""
+ -f,--format <arg>      format of data, support "Unicom" now, default: ""
  -g,--group <arg>       group for this consumer, default: 0
  -p,--partition <arg>   partition parameter format: "id [, id] ...", id should be: "id-id"
                         one thread only process data from one partition, default: 16

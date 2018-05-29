@@ -157,10 +157,12 @@ public class EsgynDB
 		    if (init_culumns(tableInfo) <= 0) {
 			log.error("init table [" + tableName 
 				  + "] is not exist!");
-		    }
-		    if (init_keys(tableInfo) <= 0) {
-			log.error("no primary key on table [" + tableName + "]");
 		    } else {
+			if (init_keys(tableInfo) <= 0) {
+			    log.warn("no primary key on table [" + tableName 
+				     + "]");
+			}
+
 			tables.put(tableName, tableInfo);
 		    }
 		}
@@ -171,10 +173,11 @@ public class EsgynDB
 		log.info("start to init table [" + tableName + "]");
 		if (init_culumns(tableInfo) <= 0) {
 		    log.error("init table [" + tableName + "] is not exist!");
-		}
-		if (init_keys(tableInfo) <= 0) {
-		    log.error("no primary key on table [" + tableName + "]");
 		} else {
+		    if (init_keys(tableInfo) <= 0) {
+			log.warn("no primary key on table [" + tableName + "]");
+		    } 
+		    
 		    tables.put(tableName, tableInfo);
 		}
 	    }

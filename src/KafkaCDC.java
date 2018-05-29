@@ -447,9 +447,9 @@ public class KafkaCDC implements Runnable{
 	if (tenantUser != null)
 	    dburl += ";tenantName=" + tenantUser;
 
-	if (!format.equals("unicom") && !format.equals("normal")){
+	if (!format.equals("Unicom") && !format.equals("")){
 	    HelpFormatter formatter = new HelpFormatter();
-	    log.error ("just support \"unicom\" and \"normal\" format now. "
+	    log.error ("just support \"Unicom\" format now. "
 		       + "cur format: \"" + format + "\"");
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);

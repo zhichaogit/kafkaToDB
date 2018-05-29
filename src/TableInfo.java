@@ -488,11 +488,19 @@ public class TableInfo
 	    log.error ("batch update table [" + schemaName + "." + tableName
 		       + "] throw BatchUpdateException: " + bue.getMessage());
 	    SQLException se = bue;
-
-	    do{
+	    
+	    if (log.isDebugEnabled()) {
+		do{
+		    se.printStackTrace();
+		    se = se.getNextException();
+		}while(se != null); 
+	    } else {
 		se.printStackTrace();
 		se = se.getNextException();
-	    }while(se != null); 
+		if (se != null) {
+		    se.printStackTrace();
+		}
+	    }
 
 	    return false;
 	} catch (IndexOutOfBoundsException iobe) {
@@ -507,10 +515,18 @@ public class TableInfo
 	    commited = false;
 	    log.error ("batch update table [" + schemaName + "." + tableName
 		       + "] throw SQLException: " + se.getMessage());
-	    do{
+	    if (log.isDebugEnabled()) {
+		do{
+		    se.printStackTrace();
+		    se = se.getNextException();
+		}while(se != null); 
+	    } else {
 		se.printStackTrace();
 		se = se.getNextException();
-	    }while(se != null); 
+		if (se != null) {
+		    se.printStackTrace();
+		}
+	    }
 
 	    return false;
 	} catch (Exception e) {
@@ -520,6 +536,15 @@ public class TableInfo
 	    e.printStackTrace();
 
 	    return false;
+	} finally {
+	    if (commited) {
+		try {
+		     dbConn.rollback();
+		} catch (SQLException se){
+		    log.error ("batch update table [" + schemaName + "." + tableName
+			       + "] rollback throw SQLException: " + se.getMessage());
+		}
+	    }
 	}
 
 	return true;
@@ -593,6 +618,9 @@ public class TableInfo
 	    log.debug("insert rows [cache row: " + cacheInsert + ", cache: " 
 		      + insertRows.size() + "]");
 	}
+
+	if (insertRows.size() <= 0)
+	    return;
 
 	int offset = 0;
 	for (Map<Integer, ColumnValue> insertRow : insertRows.values()){
@@ -676,6 +704,9 @@ public class TableInfo
 		      + updateRows.size() + "]");
 	}
 
+	if (updateRows.size() <= 0)
+	    return;
+
 	int  offset = 0;
 	for (Map<Integer, ColumnValue> updateRow : updateRows.values()){
 	    if(log.isDebugEnabled()){
@@ -741,6 +772,9 @@ public class TableInfo
 	    log.debug("delete rows [cache row: " + cacheDelete + ", cache: " 
 		      + deleteRows.size() + "]");
 	}
+
+	if (deleteRows.size() <= 0)
+	    return;
 
 	int offset = 0;
 	for (Map<Integer, ColumnValue> deleteRow : deleteRows.values()){

@@ -176,7 +176,9 @@ public class ConsumerThread extends Thread
 
     public void commit_tables() {
 	for (TableInfo tableinfo : tables.values()) {
-	    tableinfo.CommitTable();
+	    if (!tableinfo.CommitTable()){
+		return;
+	    }
 	}
 
 	kafka.commitSync();
@@ -246,7 +248,7 @@ public class ConsumerThread extends Thread
 	String     msgStr = message.value();
 	String     dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
 
-	if (format.equals("unicom"))
+	if (format.equals("Unicom"))
 	    urm = new UnicomRowMessage(esgyndb.GetDefaultSchema(),
 				       esgyndb.GetDefaultTable(),
 				       delimiter, partitionID, message.value());
