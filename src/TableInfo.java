@@ -866,10 +866,11 @@ public class TableInfo
 
     public void DisplayStat(StringBuffer strBuffer)
     {
-	strBuffer.append("\t" + schemaName + "." + tableName + " messages [I: " 
-		 + insMsgNum + ", U: " + updMsgNum + ", K: " + keyMsgNum
-		 + ", D: " + delMsgNum + "], table operator [insert: "
-		 + insertNum + ", update: " + updateNum + ", delete: "
-		 + deleteNum + "]\n");
+	String tableString = 
+	    String.format("\t%-32s messages [I: %d, U: %d, K: %d, D: %d], table"
+			  + " operators [insert: %d, update: %d, delete: %d]\n"
+			  , schemaName + "." + tableName, insMsgNum, updMsgNum
+			  , keyMsgNum, delMsgNum, insertNum, updateNum, deleteNum);
+	strBuffer.append(tableString);
     }    
 }

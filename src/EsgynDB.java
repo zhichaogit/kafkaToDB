@@ -35,12 +35,17 @@ public class EsgynDB
     private long keyMsgNum  = 0;
     private long delMsgNum  = 0;
 
+    private long oldMsgNum = 0;
+
     private long insertNum  = 0;
     private long updateNum  = 0;
     private long deleteNum  = 0;
 
+    private long maxSpeed   = 0;
+    private long interval   = 0;
+
     private long begin;
-    private Date starttime;
+    private Date startTime;
 
     public EsgynDB(String  defschema_,
 		   String  deftable_,
@@ -48,6 +53,7 @@ public class EsgynDB
 		   String  dbdriver_, 
 		   String  dbuser_, 
 		   String  dbpassword_,
+		   long    interval_,
 		   long    commitCount_) 
     {
 	if (log.isTraceEnabled()){
@@ -63,10 +69,11 @@ public class EsgynDB
 	dbpassword  = dbpassword_;
 	defschema   = defschema_;
 	deftable    = deftable_;
+	interval    = interval_;
 	commitCount = commitCount_;
 
 	begin = new Date().getTime();
-	starttime = new Date();
+	startTime = new Date();
 	
 	tables = new HashMap<String, TableInfo>(); 
 	dbkeepconn = CreateConnection(true);
@@ -426,24 +433,32 @@ public class EsgynDB
     public void DisplayDatabase()
     {
 	Long end = new Date().getTime();
-	Date endtime = new Date();
-	Float use_time = ((float) (end - begin))/1000;
-	long speed = (long)(messageNum/use_time);
+	Date endTime = new Date();
+	Float useTime = ((float) (end - begin))/1000;
+	long avgSpeed = (long)(messageNum/useTime);
+	long incMessage = (messageNum-oldMsgNum);
+	long curSpeed = (long)(incMessage/(interval/1000));
+	if (curSpeed > maxSpeed)
+	    maxSpeed = curSpeed;
 	DecimalFormat df = new DecimalFormat("####0.000");
 	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
 	StringBuffer strBuffer = new StringBuffer();
-	strBuffer.append("consumer states, total message: " + messageNum 
-			 + ", run: " + df.format(use_time) + "s, speed: "
-			 + speed + "/s\n\tstart: " + sdf.format(starttime)
-			 + ", cur: " + sdf.format(endtime) + "\n\tmessages [I: "
+	strBuffer.append("consumer states: \n\tmessages [total: " + messageNum 
+			 + ", inc: " + incMessage + "], speed [max: " + maxSpeed
+			 + "/s, avg: " + avgSpeed + "/s, cur: " + curSpeed
+			 + "/s]\n\ttime [run: " + df.format(useTime) 
+			 + "s, start: " + sdf.format(startTime) + ", cur: " 
+			 + sdf.format(endTime) + "]\n\tmessages [I: "
 			 + insMsgNum + ", U: " + updMsgNum + ", K: " + keyMsgNum
-			 + ", D: " + delMsgNum + "]\n\tdatabase operator " 
+			 + ", D: " + delMsgNum + "]\tdatabase opertors " 
 			 + "[insert: " + insertNum + ", update: " + updateNum 
 			 + ", delete: " + deleteNum + "]\n");
 	for (TableInfo tableInfo : tables.values()) {
 	    tableInfo.DisplayStat(strBuffer);
 	}
 	log.info(strBuffer.toString());
+
+	oldMsgNum = messageNum;
     }
 }

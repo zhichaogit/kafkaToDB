@@ -493,15 +493,15 @@ public class KafkaCDC implements Runnable{
 	strBuffer.append("\n\tformat      = " + me.format);
 	strBuffer.append("\n\tmode        = " + me.full);
 	strBuffer.append("\n\tgroup       = " + me.groupID);
-	strBuffer.append("\n\tinterval    = " + me.interval);
+	strBuffer.append("\n\tinterval    = " + (me.interval / 1000) + "ms");
 	strBuffer.append("\n\tpartitions  = " + Arrays.toString(me.partitions));
 	strBuffer.append("\n\tskip        = " + me.skip);
 	strBuffer.append("\n\ttable       = " + me.deftable);
 	strBuffer.append("\n\ttopic       = " + me.topic);
 	strBuffer.append("\n\tzookeeper   = " + me.zookeeper); 
 
-	strBuffer.append("\n\tstreamTO    = " + me.streamTO);
-	strBuffer.append("\n\tzkTO        = " + me.zkTO);
+	strBuffer.append("\n\tstreamTO    = " + (me.streamTO / 1000) + "ms");
+	strBuffer.append("\n\tzkTO        = " + (me.zkTO / 1000) + "ms");
 	strBuffer.append("\n\tdburl       = " + me.dburl);
 	log.info(strBuffer.toString());
 			
@@ -511,6 +511,7 @@ public class KafkaCDC implements Runnable{
 				 me.dbdriver, 
 				 me.dbuser, 
 				 me.dbpassword, 
+				 me.interval, 
 				 me.commitCount);
 	me.consumers = new ArrayList<ConsumerThread>(0);
 
