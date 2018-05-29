@@ -474,6 +474,9 @@ public class TableInfo
     }
 
     public boolean CommitTable() {
+	log.info("commit table [" + schemaName + "." + tableName + ", insert: " 
+		 + insertRows.size() + ", update: " + updateRows.size() 
+		 + ", delete: " + deleteRows.size() + "] ");
 	try {
 	    insert_data();
 	    update_data();

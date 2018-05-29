@@ -139,7 +139,7 @@ public class KafkaCDC implements Runnable{
 	 * -c --commit <arg>   num message per Kakfa synch (num recs, default is 500)
 	 * -d --dbip <arg>     database server ip
 	 * -e --encode <arg>   character encoding of data, default: utf8
-	 * -f,--format <arg>   format of data, default: unicom
+	 * -f,--format <arg>   format of data, default: ""
 	 * -g --group <arg>    groupID
 	 * -p --partition <arg>the partition number (default is 16)
 	 * -s --schema <arg>   schema
@@ -188,7 +188,7 @@ public class KafkaCDC implements Runnable{
 	    .longOpt("format")
 	    .required(false)
 	    .hasArg()
-	    .desc("format of data, default: \"unicom\"")
+	    .desc("format of data, default: \"\"")
 	    .build();
 	Option groupOption = Option.builder("g")
 	    .longOpt("group")
@@ -335,7 +335,7 @@ public class KafkaCDC implements Runnable{
 	charEncoding = cmdLine.hasOption("encode") ? cmdLine.getOptionValue("encode")
 	    : DEFAULT_ENCODING;
 	format= cmdLine.hasOption("format") ? cmdLine.getOptionValue("format")
-	    : "normal";
+	    : "";
 	groupID = cmdLine.hasOption("group") ? cmdLine.getOptionValue("group")
 	    : "group_0";
 	String partString = cmdLine.hasOption("partition") ? 

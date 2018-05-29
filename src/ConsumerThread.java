@@ -93,7 +93,7 @@ public class ConsumerThread extends Thread
 
 	tables = new HashMap<String, TableInfo>(0);
 	Properties props = new Properties();
-	
+
 	if (zookeeper != null){
 	    props.put("zookeeper.connect", zookeeper);
 	} else {
@@ -178,6 +178,7 @@ public class ConsumerThread extends Thread
 	for (TableInfo tableinfo : tables.values()) {
 	    tableinfo.CommitTable();
 	}
+
 	kafka.commitSync();
 	for (TableInfo tableinfo : tables.values()) {
 	    esgyndb.AddInsMsgNum(tableinfo.GetCacheInsert());
@@ -188,6 +189,9 @@ public class ConsumerThread extends Thread
 	    esgyndb.AddInsertNum(tableinfo.GetInsertRows());
 	    esgyndb.AddUpdateNum(tableinfo.GetUpdateRows());
 	    esgyndb.AddDeleteNum(tableinfo.GetDeleteRows());
+
+	    esgyndb.AddTotalNum(cacheNum);
+	    cacheNum = 0;
 
 	    tableinfo.ClearCache();
 	}
