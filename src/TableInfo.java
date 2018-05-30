@@ -158,10 +158,18 @@ public class TableInfo
 
 	    if (cur) {
 		if (column.CurValueIsNull()){
-		    log.error("the cur primarykey value is null. column name [" 
-			      + keyInfo.GetColumnName() + "] message [" 
-			      + message + "]");
-		    return null;
+		    if (columns.get(0).GetColumnID() == 0){
+			log.error("the cur primary key value is null. column name [" 
+				  + keyInfo.GetColumnName() + "] message [" 
+				  + message + "]");
+			return null;
+		    } else {
+			if (key == null){
+			    key = "";
+			} else {
+			    key += "";
+			}
+		    }
 		} else {
 		    /* 
 		     * column is splited by "", in order to support
@@ -175,10 +183,17 @@ public class TableInfo
 		}
 	    } else {
 		if (column.OldValueIsNull()){
-		    log.error("the old primary key value is null. column name [" 
-			      + keyInfo.GetColumnName() + "] message [" 
-			      + message + "]");
-		    return null;
+		    if (columns.get(0).GetColumnID() == 0){
+			log.error("the old primary key value is null. column name ["
+			      + keyInfo.GetColumnName() + "] message [" + message + "]");
+			return null;
+		    } else {
+			if (key == null){
+			    key = "";
+			} else {
+			    key += "";
+			}
+		    }
 		} else {
 		    /* 
 		     * column is splited by "", in order to support
