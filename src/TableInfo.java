@@ -30,6 +30,7 @@ public class TableInfo
     private long              cacheDelete= 0;
 
     private boolean           commited   = true;
+    private boolean           havePK     = false;
 
     private Connection        dbConn     = null;
 
@@ -62,6 +63,9 @@ public class TableInfo
 
     public boolean InitStmt(Connection dbConn_)
     {
+	if (columns.get(0).GetColumnID() == 0)
+	    havePK = true;
+
 	if (dbConn == null) {
 	    dbConn = dbConn_;
 	    init_insert_stmt();
@@ -158,7 +162,7 @@ public class TableInfo
 
 	    if (cur) {
 		if (column.CurValueIsNull()){
-		    if (columns.get(0).GetColumnID() == 0){
+		    if (havePK){
 			log.error("the cur primary key value is null. column name [" 
 				  + keyInfo.GetColumnName() + "] message [" 
 				  + message + "]");
@@ -183,7 +187,7 @@ public class TableInfo
 		}
 	    } else {
 		if (column.OldValueIsNull()){
-		    if (columns.get(0).GetColumnID() == 0){
+		    if (havePK){
 			log.error("the old primary key value is null. column name ["
 			      + keyInfo.GetColumnName() + "] message [" + message + "]");
 			return null;
@@ -272,9 +276,9 @@ public class TableInfo
 			  + "]");
 	    }
 
-	    if (columns.get(0).GetColumnID() == 0 && !curValue.equals(oldValue)) {
-		log.error("U message cann't update the keys," 
-			  + " message [" + message + "]");
+	    if (havePK && !curValue.equals(oldValue)) {
+		log.error("U message cann't update the keys," + " message [" 
+			  + message + "]");
 		return 0;
 	    }
 	}
@@ -321,8 +325,10 @@ public class TableInfo
 	} else {
 	    Map<Integer, ColumnValue> deleterow = deleteRows.get(key);
 	    if (deleterow != null){
-		log.error("update row key is exist in delete cache [" + key 
-			  + "], the message [" + message + "]");
+		if (log.isDebugEnabled()) {
+		    log.error("update row key is exist in delete cache [" + key
+			      + "], the message [" + message + "]");
+		}
 		return 0;
 	    } else {
 		Map<Integer, ColumnValue> updateRow = updateRows.get(key);
@@ -404,8 +410,10 @@ public class TableInfo
 	    Map<Integer, ColumnValue> deleterow = deleteRows.get(oldkey);
 
 	    if (deleterow != null){
-		log.error("update row key is exist in delete cache [" + oldkey 
-			  + "], the message [" + message + "]");
+		if (log.isDebugEnabled()) {
+		    log.error("update row key is exist in delete cache [" 
+			      + oldkey + "], the message [" + message + "]");
+		}
 		return 0;
 	    } else {
 		Map<Integer, ColumnValue> updateRow = updateRows.get(oldkey);
@@ -767,13 +775,16 @@ public class TableInfo
 	    ColumnInfo keyInfo = keyColumns.get(i);
 	    ColumnValue keyValue = row.get(keyInfo.GetColumnOff());
 
-	    if (keyValue.OldValueIsNull()) {
-		String key = get_key_value(null, row, false);
-		log.error("the primary key value is null [table:" 
-			  + schemaName + "." + tableName + ", column:"
-			  + keyInfo.GetColumnName() + "]");
-		result = 0;
-		break;
+	    if (keyValue == null || keyValue.OldValueIsNull()) {
+		if (havePK) {
+		    String key = get_key_value(null, row, false);
+		    log.error("the primary key value is null [table:" 
+			      + schemaName + "." + tableName + ", column:"
+			      + keyInfo.GetColumnName() + "]");
+		    result = 0;
+		    break;
+		}
+		deleteStmt.setNull(i+1, keyInfo.GetColumnType()); 
 	    } else {
 		if(log.isDebugEnabled()){
 		    log.debug("\tkey id:" + i + ", column id:" 
