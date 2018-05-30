@@ -7,6 +7,7 @@ BROKER="$IPADDR:9092"
 SCHEMA="S1"
 DESTSCHEMA="SEABASE"
 TABLE="T1"
+TABLEEXP="T1EXP"
 
 PARTITION="1"
 
@@ -18,6 +19,18 @@ INSERT INTO $TABLE VALUES(1, 'aaa', 'delete', 111);
 INSERT INTO $TABLE VALUES(2, 'bbb', 'update', 222);
 INSERT INTO $TABLE VALUES(3, 'ccc', 'insert', 333);
 INSERT INTO $TABLE VALUES(4, 'ddd', 'updkey', 444);
+
+DROP TABLE IF EXISTS $TABLEEXP;
+CREATE TABLE $TABLEEXP(c1 INT NOT NULL, c2 VARCHAR(10) NOT NULL, c3 VARCHAR(10), c4 INT, PRIMARY KEY (c2, c1));
+INSERT INTO $TABLEEXP VALUES(1, 'aaa', 'delete', 111);
+INSERT INTO $TABLEEXP VALUES(2, 'bbb', 'update', 222);
+INSERT INTO $TABLEEXP VALUES(3, 'ccc', 'insert', 333);
+INSERT INTO $TABLEEXP VALUES(4, 'ddd', 'updkey', 444);
+
+DELETE FROM $TABLEEXP WHERE c1 = 1 AND c2 = 'aaa';
+UPDATE $TABLEEXP SET c1 = 2, c2 = 'bbb', c3 = 'update1', c4 = '2222' WHERE c1 = 2 AND c2 = 'bbb';
+UPSERT INTO $TABLEEXP VALUES(3, 'ccc', '(((', null);
+UPDATE $TABLEEXP SET c1 = 5, c2 = 'eee', c3 = 'updkey1' WHERE c1 = 4 AND c2 = 'ddd';
 EOF
 
 DATAFILE=/tmp/$TOPIC.data
@@ -43,20 +56,10 @@ java -cp $KAFKA_CDC/bin/:$KAFKA_CDC/libs/* KafkaCDC -p $PARTITION -b $BROKER -d 
 sqlci <<EOF
 SET SCHEMA SEABASE;
 SELECT * FROM $TABLE;
+SELECT * FROM $TABLEEXP;
 DROP TABLE IF EXISTS $TABLE;
+DROP TABLE IF EXISTS $TABLEEXP;
 EOF
-
-# result set：
-echo "expect results:
-
-C1           C2          C3          C4
------------  ----------  ----------  -----------
-
-          2  bbb         update1            2222
-          3  ccc         (((                   ?
-          5  eee         updkey1             444
-
---- 3 row(s) selected."
 
 $KAFKA/bin/kafka-topics.sh --delete --zookeeper $ZOOKEEPER --topic $TOPIC
 rm -f $DATAFILE

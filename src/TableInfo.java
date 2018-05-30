@@ -175,7 +175,7 @@ public class TableInfo
 		}
 	    } else {
 		if (column.OldValueIsNull()){
-		    log.error("the old primarykey value is null. column name [" 
+		    log.error("the old primary key value is null. column name [" 
 			      + keyInfo.GetColumnName() + "] message [" 
 			      + message + "]");
 		    return null;
@@ -480,9 +480,13 @@ public class TableInfo
     }
 
     public boolean CommitTable() {
-	log.info("commit table [" + schemaName + "." + tableName + ", insert: " 
-		 + insertRows.size() + ", update: " + updateRows.size() 
-		 + ", delete: " + deleteRows.size() + "] ");
+	if (log.isDebugEnabled()) {
+	    log.info("commit table [" + schemaName + "." + tableName 
+		     + ", insert: " + insertRows.size() + ", update: "
+		     + updateRows.size() + ", delete: " + deleteRows.size()
+		     + "] ");
+	}
+
 	try {
 	    insert_data();
 	    update_data();

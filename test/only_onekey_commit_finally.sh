@@ -32,15 +32,15 @@ UPSERT INTO $TABLEEXP VALUES(2, 'bbb', ')))');
 UPSERT INTO $TABLEEXP VALUES(3, 'ccc', '???');
 UPSERT INTO $TABLEEXP VALUES(3, 'ddd', '+++');
 UPSERT INTO $TABLEEXP VALUES(4, 'eee', '---');
-DELETE FROM $TABLEEXP WHERE c1 = 2 AND c2 = 'bbb' AND c3 = ')))';
-UPDATE $TABLEEXP SET c1 = '4',c2 = 'uuu1' WHERE c1 = 4 AND c2 = 'eee';
-UPDATE $TABLEEXP SET c1 = '4',c3 = 'uuu2' WHERE c1 = 4 AND c3 = '---';
+DELETE FROM $TABLEEXP WHERE c1 = 2;
+UPDATE $TABLEEXP SET c1 = '4',c2 = 'uuu1' WHERE c1 = 4;
+UPDATE $TABLEEXP SET c1 = '4',c3 = 'uuu2' WHERE c1 = 4;
 UPSERT INTO $TABLEEXP VALUES(7, 'insert1', 'insert2');
-DELETE FROM $TABLEEXP WHERE c1 = 5 AND c2 = 'delete' AND c3 = 'delete';
-UPDATE $TABLEEXP SET c1 = '6', c3 = 'uuu1' WHERE c1 = 6 AND c3 = 'update';
-UPDATE $TABLEEXP SET c1 = '10', c2 = 'updkey', c3 = 'kkk1' WHERE c1 = 8 AND c2 = 'updkey' and c3 = 'updkey';
-UPDATE $TABLEEXP SET c1 = '9', c2 = 'kkk2', c3 = 'kkk1' WHERE c1 = 10 AND c2 = 'updkey' and c3 = 'kkk1';
-UPDATE $TABLEEXP SET c1 = '6', c2 = 'uuu2' WHERE c1 = 6 AND c2 = 'update';
+DELETE FROM $TABLEEXP WHERE c1 = 5;
+UPDATE $TABLEEXP SET c1 = '6', c3 = 'uuu1' WHERE c1 = 6;
+UPDATE $TABLEEXP SET c1 = '10', c2 = 'updkey', c3 = 'kkk1' WHERE c1 = 8;
+UPDATE $TABLEEXP SET c1 = '9', c2 = 'kkk2', c3 = 'kkk1' WHERE c1 = 10;
+UPDATE $TABLEEXP SET c1 = '6', c2 = 'uuu2' WHERE c1 = 6;
 EOF
 
 DATAFILE=/tmp/$TOPIC.data
