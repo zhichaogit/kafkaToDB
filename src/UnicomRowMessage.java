@@ -46,18 +46,16 @@ public class UnicomRowMessage extends RowMessage
 	rebuildTID = tranFormats[5];
 	transactionOff = tranFormats[6];
 
-	String[] names = formats[1].split("\\.");
+	String[] names = formats[1].split("[.]");
 	if (names.length == 3){
 	    catlogName = names[0];
 	    if (schemaName == null)
 		schemaName = names[1];
-	    if (tableName == null)
-		tableName = names[2];
+	    tableName = names[2];
 	} else {
 	    if (schemaName == null)
 		schemaName = names[0];
-	    if (tableName == null)
-		tableName = names[1];
+	    tableName = names[1];
 	}
 	operatorType = formats[2];
 	timestamp = formats[3];

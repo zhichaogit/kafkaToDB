@@ -246,16 +246,34 @@ public class ConsumerThread extends Thread
 
 	RowMessage urm = null;
 	String     msgStr = message.value();
-	String     dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
 
-	if (format.equals("Unicom"))
+	if (format.equals("Unicom")) {
+	    String     dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
 	    urm = new UnicomRowMessage(esgyndb.GetDefaultSchema(),
 				       esgyndb.GetDefaultTable(),
-				       delimiter, partitionID, message.value());
-	else
+				       delimiter, partitionID, dbMsg);
+	} else if (format.equals("HongQuan")) {
+	    StringBuffer strBuffer = new StringBuffer();
+	    strBuffer.append("message [" + msgStr + "] length: " + msgStr.length() 
+			     + "\nraw data [");
+	    for (int i = 0; i < msgStr.length(); i++) {
+		String temp = Integer.toHexString(msgStr.charAt(i) & 0xFF);  
+		if(temp.length() == 1){  
+		    temp = "0" + temp;  
+		}  
+		strBuffer.append(" " + temp);
+	    }
+	    strBuffer.append("]");
+	    log.debug(strBuffer);
+	    urm = new HongQuanRowMessage(esgyndb.GetDefaultSchema(),
+					 esgyndb.GetDefaultTable(),
+					 delimiter, partitionID, msgStr);
+	} else {
+	    String     dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
 	    urm = new RowMessage(esgyndb.GetDefaultSchema(), 
 				 esgyndb.GetDefaultTable(),
-				 delimiter, partitionID, message.value());
+				 delimiter, partitionID, dbMsg);
+	}
 
 	urm.AnalyzeMessage();
 

@@ -144,6 +144,9 @@ public class TableInfo
     {
 	String key = null;
 
+	if (rowValues == null)
+	    return key;
+
 	for(int i = 0; i < keyColumns.size(); i++) {
 	    ColumnInfo  keyInfo = keyColumns.get(i);
 	    ColumnValue column  = rowValues.get(keyInfo.GetColumnOff());

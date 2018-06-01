@@ -144,6 +144,7 @@ public class KafkaCDC implements Runnable{
 	 * -p --partition <arg>the partition number (default is 16)
 	 * -s --schema <arg>   schema
 	 * -t --topic <arg>    topic
+	 * -v --version        print version info
 	 * -z --zk <arg>       zookeeper connection (node:port[/kafka?]
 	 *
 	 * --dbport <arg>      database server port
@@ -213,7 +214,7 @@ public class KafkaCDC implements Runnable{
 	    .build();
 	Option topicOption = Option.builder("t")
 	    .longOpt("topic")
-	    .required(true)
+	    .required(false)
 	    .hasArg()
 	    .desc("REQUIRED. topic of subscription")
 	    .build();
@@ -222,6 +223,12 @@ public class KafkaCDC implements Runnable{
 	    .required(false)
 	    .hasArg()
 	    .desc("zookeeper connection list, ex: <node>:port[/kafka],...")
+	    .build();
+	Option versionOption = Option.builder("v")
+	    .longOpt("version")
+	    .required(false)
+	    .hasArg()
+	    .desc("print the version of KafkaCDC")
 	    .build();
 	Option dbportOption = Option.builder()
 	    .longOpt("dbport")
@@ -297,6 +304,7 @@ public class KafkaCDC implements Runnable{
 	exeOptions.addOption(partitionOption);
 	exeOptions.addOption(schemaOption);
 	exeOptions.addOption(topicOption);
+	exeOptions.addOption(versionOption);
 	exeOptions.addOption(zkOption);
 
 	exeOptions.addOption(dbportOption);
@@ -323,6 +331,14 @@ public class KafkaCDC implements Runnable{
 	     
 	CommandLineParser parser = new DefaultParser();
 	CommandLine cmdLine = parser.parse(exeOptions, args);
+
+	String version = cmdLine.hasOption("version") ? 
+	    cmdLine.getOptionValue("version") : null;
+
+	if (version != null){
+	    System.out.println("KafkaCDC current version is KafkaCDC-R1.0.0");
+	    System.exit(0);
+	}
 
 	// for the required options, move the value
 	broker = cmdLine.hasOption("broker") ?  cmdLine.getOptionValue("broker")
@@ -408,7 +424,8 @@ public class KafkaCDC implements Runnable{
 
 	defschema = cmdLine.hasOption("schema") ? cmdLine.getOptionValue("schema")
 	    : null;
-	topic = cmdLine.getOptionValue("topic");
+	topic = cmdLine.hasOption("topic") ? cmdLine.getOptionValue("topic")
+	    : null;
 	zookeeper = cmdLine.hasOption("zook") ? cmdLine.getOptionValue("zook") 
 	    : null;
 
@@ -447,18 +464,19 @@ public class KafkaCDC implements Runnable{
 	if (tenantUser != null)
 	    dburl += ";tenantName=" + tenantUser;
 
-	if (delimiter != null && delimiter.length() != 1) {
+	if (!format.equals("Unicom") && !format.equals("HongQuan") 
+	    && !format.equals("")){
 	    HelpFormatter formatter = new HelpFormatter();
-	    log.error ("the delimiter must be a single character. but it's ["
-		       + delimiter + "] now");
+	    log.error ("just support \"Unicom\" and \"HongQuan\" format now. "
+		       + "cur format: \"" + format + "\"");
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
 	}
 
-	if (!format.equals("Unicom") && !format.equals("")){
+	if ((format.equals("") && delimiter != null && delimiter.length() != 1)) {
 	    HelpFormatter formatter = new HelpFormatter();
-	    log.error ("just support \"Unicom\" format now. "
-		       + "cur format: \"" + format + "\"");
+	    log.error ("the delimiter must be a single character. but it's ["
+		       + delimiter + "] now");
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
 	}
