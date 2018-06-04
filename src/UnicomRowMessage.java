@@ -52,10 +52,12 @@ public class UnicomRowMessage extends RowMessage
 	    if (schemaName == null)
 		schemaName = names[1];
 	    tableName = names[2];
-	} else {
+	} else if(names.length == 2) {
 	    if (schemaName == null)
 		schemaName = names[0];
 	    tableName = names[1];
+	} else {
+	    tableName = names[0];
 	}
 	operatorType = formats[2];
 	timestamp = formats[3];

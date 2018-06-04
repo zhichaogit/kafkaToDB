@@ -43,6 +43,8 @@ public class ConsumerThread extends Thread
     long    cacheNum;
 
     String  encoding;
+    String  key;
+    String  value;
 
     boolean full;
     boolean skip;
@@ -66,6 +68,8 @@ public class ConsumerThread extends Thread
 		   String  topic_,
 		   String  groupid_,
 		   String  encoding_,
+		   String  key_,
+		   String  value_,
 		   int     partitionID_,
 		   long    streamTO_,
 		   long    zkTO_,
@@ -88,6 +92,8 @@ public class ConsumerThread extends Thread
 
 	format      = format_;
 	delimiter   = delimiter_;
+	key         = key_;
+	value       = value_;
 	full        = full_;
 	skip        = skip_;
 
@@ -102,24 +108,18 @@ public class ConsumerThread extends Thread
 	props.put("group.id", groupid);
 	props.put("enable.auto.commit", "true");
 	props.put("auto.commit.interval.ms", "1000");
+	if (full) {
+	    props.put("auto.offset.reset", "earliest");
+	}
 	props.put("session.timeout.ms", "30000");
-	props.put("key.deserializer", 
-		  "org.apache.kafka.common.serialization.StringDeserializer");
-	props.put("value.deserializer", 
-		  "org.apache.kafka.common.serialization.StringDeserializer");
+	props.put("key.deserializer", key);
+	props.put("value.deserializer", value);
 
-	kafka = new KafkaConsumer<>(props);
+	kafka = new KafkaConsumer<String, String>(props);
 
-	//kafka.subscribe(Arrays.asList(topic));
 	TopicPartition partition = new TopicPartition(topic, partitionID);
 	kafka.assign(Arrays.asList(partition));
 
-	if (full) {
-	    // priming poll
-	    kafka.poll(100);
-	    // always start from beginning
-	    kafka.seekToBeginning(Arrays.asList(partition));
-	}
 	if (log.isTraceEnabled()){
 	    log.trace("exit function");
 	}

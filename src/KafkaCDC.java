@@ -29,6 +29,8 @@ public class KafkaCDC implements Runnable{
     private final String DEFAULT_PASSWORD     = "zz";
 
     private final String DEFAULT_ENCODING     = "UTF8";
+    private final String DEFAULT_KEY          = "org.apache.kafka.common.serialization.StringDeserializer";
+    private final String DEFAULT_VALUE        = "org.apache.kafka.common.serialization.StringDeserializer";
 
     private static Logger log = Logger.getLogger(KafkaCDC.class); 
 
@@ -58,6 +60,8 @@ public class KafkaCDC implements Runnable{
 
     String   tenantUser   = null;
     String   charEncoding = DEFAULT_ENCODING;
+    String   key          = DEFAULT_KEY;
+    String   value        = DEFAULT_VALUE;
 
     private volatile int              running = 0;
     private EsgynDB                   esgyndb = null;
@@ -151,12 +155,14 @@ public class KafkaCDC implements Runnable{
 	 * --dbuser <arg>      database server user
 	 * --dbpw <arg>        database server password
 	 * --delim <arg>       field delimiter, default: ','(comma)
-	 * --interval <arg>    the print state time interval
 	 * --full              pull data from beginning
+	 * --interval <arg>    the print state time interval
+	 * --key <arg>         key deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer
 	 * --sto <arg>         stream T/O (default is 60000ms)
 	 * --skip              skip the data error
 	 * --table <arg>       table name, default: null
 	 * --tenant <arg>      database tenant user
+	 * --value <arg>       value  deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer
 	 * --zkto <arg>        zk T/O (default is 10000ms)
 	 */
 	Options exeOptions = new Options();
@@ -254,16 +260,22 @@ public class KafkaCDC implements Runnable{
 	    .hasArg()
 	    .desc("field delimiter, default: ','(comma)")
 	    .build();
+	Option fullOption = Option.builder()
+	    .longOpt("full")
+	    .required(false)
+	    .desc("pull data from beginning, default: false")
+	    .build();
 	Option intervalOption = Option.builder()
 	    .longOpt("interval")
 	    .required(false)
 	    .hasArg()
 	    .desc("the print state time interval, default: 10000ms")
 	    .build();
-	Option fullOption = Option.builder()
-	    .longOpt("full")
+	Option keyOption = Option.builder()
+	    .longOpt("key")
 	    .required(false)
-	    .desc("pull data from beginning, default: false")
+	    .hasArg()
+	    .desc("key deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer")
 	    .build();
 	Option skipOption = Option.builder()
 	    .longOpt("skip")
@@ -287,6 +299,12 @@ public class KafkaCDC implements Runnable{
 	    .required(false)
 	    .hasArg()
 	    .desc("tanent user name, default: null")
+	    .build();
+	Option valueOption = Option.builder()
+	    .longOpt("value")
+	    .required(false)
+	    .hasArg()
+	    .desc("value deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer")
 	    .build();
 	Option zktoOption = Option.builder()
 	    .longOpt("zkto")
@@ -312,12 +330,14 @@ public class KafkaCDC implements Runnable{
 	exeOptions.addOption(dbpwOption);
 
 	exeOptions.addOption(delimOption);
-	exeOptions.addOption(intervalOption);
 	exeOptions.addOption(fullOption);
+	exeOptions.addOption(intervalOption);
+	exeOptions.addOption(keyOption);
 	exeOptions.addOption(skipOption);
 	exeOptions.addOption(stoOption);
 	exeOptions.addOption(tableOption);
 	exeOptions.addOption(tenantOption);
+	exeOptions.addOption(valueOption);
 	exeOptions.addOption(zktoOption);
 		
 	// With required options, can't have HELP option to display help as it will only 
@@ -438,9 +458,11 @@ public class KafkaCDC implements Runnable{
 
 	delimiter = cmdLine.hasOption("delim") ? cmdLine.getOptionValue("delim")
 	    : null;
+	full = cmdLine.hasOption("full") ? true : false;
 	interval = cmdLine.hasOption("interval") ?
             Long.parseLong(cmdLine.getOptionValue("interval")) : DEFAULT_INTERVAL;
-	full = cmdLine.hasOption("full") ? true : false;
+	key = cmdLine.hasOption("key") ? cmdLine.getOptionValue("key")
+	    : DEFAULT_KEY;
 	skip= cmdLine.hasOption("skip") ? true : false;
 	streamTO = cmdLine.hasOption("sto") ? 
 	    Long.parseLong(cmdLine.getOptionValue("sto")) : DEFAULT_STREAM_TO_MS;
@@ -448,6 +470,8 @@ public class KafkaCDC implements Runnable{
 	    : null;
 	deftable = cmdLine.hasOption("table") ? cmdLine.getOptionValue("table")
 	    : null;
+	value = cmdLine.hasOption("value") ? cmdLine.getOptionValue("value")
+	    : DEFAULT_VALUE;
 	zkTO = cmdLine.hasOption("zkto") ? 
 	    Long.parseLong(cmdLine.getOptionValue("zkto")) : DEFAULT_ZOOK_TO_MS;
 
@@ -525,6 +549,8 @@ public class KafkaCDC implements Runnable{
 	strBuffer.append("\n\ttable       = " + me.deftable);
 	strBuffer.append("\n\ttopic       = " + me.topic);
 	strBuffer.append("\n\tzookeeper   = " + me.zookeeper); 
+	strBuffer.append("\n\tkey         = " + me.key); 
+	strBuffer.append("\n\tvalue       = " + me.value); 
 
 	strBuffer.append("\n\tstreamTO    = " + (me.streamTO / 1000) + "ms");
 	strBuffer.append("\n\tzkTO        = " + (me.zkTO / 1000) + "ms");
@@ -553,6 +579,8 @@ public class KafkaCDC implements Runnable{
 							 me.topic,
 							 me.groupID,
 							 me.charEncoding,
+							 me.key,
+							 me.value,
 							 partition,
 							 me.streamTO,
 							 me.zkTO,
