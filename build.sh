@@ -26,4 +26,5 @@ rm -rf KafkaCDC
 #java -cp bin:bin/*:libs/* KafkaCDC -p 1 -b 192.168.0.71:9092 -d 192.168.0.71 -g 1 -s SEABASE --table TF_F_USER_ITEM -e GBK -t test1 -f Unicom --full --sto 3 --interval 2
 #java -cp bin:bin/*:libs/* KafkaCDC -p 2 -b 192.168.0.71:9092 -d 192.168.0.71 -g 1 -s SEABASE --table TF_F_USER_ITEM -t test -f Unicom --full
 #java -cp bin:bin/*:libs/* KafkaCDC -p 1 -b 192.168.0.71:9092 -d 192.168.0.71 -g 1 -s SEABASE --table TD_B_PARTY_PRODUCT -t test3 -f Unicom --full
-java -cp bin:bin/*:libs/* KafkaCDC -p 1 -b 192.168.0.71:9092 -d 192.168.0.71 -g 1 -s SEABASE --table g_ad -t g_ad --delim "4|1|4|1|1|4|4" -f HongQuan --full --sto 5 --interval 2
+#java -cp bin:bin/*:libs/* KafkaCDC -p 1 -b gy11.esgyncn.local:6667 -d 192.168.0.71 -g 1 -s SEABASE --table g_ad -t g_can --delim "4|1|4|1|1|4|4" -f HongQuan --full --sto 5 --interval 2
+#java -cp bin:bin/*:libs/* KafkaCDC -p 1 -z 10.10.12.12:2181 -d 192.168.0.71 -g 1 -s SEABASE --table g_ad -t t_can --delim "4|1|4|1|1|4|4" -f HongQuan --full --sto 5 --interval 2

@@ -517,8 +517,6 @@ public class TableInfo
 	    insert_data();
 	    update_data();
 	    delete_data();
-
-	    dbConn.commit();
 	} catch (BatchUpdateException bue) {
 	    commited = false;
 	    log.error ("batch update table [" + schemaName + "." + tableName
@@ -573,13 +571,15 @@ public class TableInfo
 
 	    return false;
 	} finally {
-	    if (commited) {
-		try {
-		     dbConn.rollback();
-		} catch (SQLException se){
-		    log.error ("batch update table [" + schemaName + "." + tableName
-			       + "] rollback throw SQLException: " + se.getMessage());
+	    try {
+		if (commited) {
+		    dbConn.commit();
+		} else {
+		    dbConn.rollback();
 		}
+	    } catch (SQLException se){
+		log.error ("batch update table [" + schemaName + "." + tableName
+			   + "] rollback throw SQLException: " + se.getMessage());
 	    }
 	}
 
@@ -725,7 +725,8 @@ public class TableInfo
 
 	Statement st = dbConn.createStatement();
 	st.executeUpdate(updateSql);
-	st.cancel();
+	st.close();
+
 	result = 1;
 
 	if (log.isTraceEnabled()){

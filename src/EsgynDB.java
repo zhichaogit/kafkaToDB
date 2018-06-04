@@ -395,14 +395,23 @@ public class EsgynDB
 
     public boolean KeepAlive()
     {
+	ResultSet columnRS = null;
+
 	try {
-            ResultSet columnRS = keepStmt.executeQuery();
+            columnRS = keepStmt.executeQuery();
 	    while (columnRS.next()) {
                 columnRS.getString("(EXPR)");
             }
-
 	} catch (SQLException e) {
 	    return false;
+	} finally {
+	    if (columnRS != null) {
+		try {
+		    columnRS.close();
+		} catch (SQLException e) {
+		    return false;
+		}
+	    }
 	}
 
 	return true;
