@@ -119,9 +119,9 @@ public class ConsumerThread extends Thread
 
 	if (full) {
 	    // priming poll
-	    kafkaConsumer.poll(100);
+	    kafka.poll(100);
 	    // always start from beginning
-	    kafkaConsumer.seekToBeginning(Arrays.asList(partition));
+	    kafka.seekToBeginning(Arrays.asList(partition));
 	}
 
 	if (log.isTraceEnabled()){
