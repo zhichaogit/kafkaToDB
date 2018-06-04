@@ -108,9 +108,6 @@ public class ConsumerThread extends Thread
 	props.put("group.id", groupid);
 	props.put("enable.auto.commit", "true");
 	props.put("auto.commit.interval.ms", "1000");
-	if (full) {
-	    props.put("auto.offset.reset", "earliest");
-	}
 	props.put("session.timeout.ms", "30000");
 	props.put("key.deserializer", key);
 	props.put("value.deserializer", value);
@@ -119,6 +116,13 @@ public class ConsumerThread extends Thread
 
 	TopicPartition partition = new TopicPartition(topic, partitionID);
 	kafka.assign(Arrays.asList(partition));
+
+	if (full) {
+	    // priming poll
+	    kafkaConsumer.poll(100);
+	    // always start from beginning
+	    kafkaConsumer.seekToBeginning(Arrays.asList(partition));
+	}
 
 	if (log.isTraceEnabled()){
 	    log.trace("exit function");
