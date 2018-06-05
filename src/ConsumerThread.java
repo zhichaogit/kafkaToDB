@@ -52,7 +52,8 @@ public class ConsumerThread extends Thread
     String  format;
 
     Map<String, TableInfo>  tables = null;
-    KafkaConsumer<String, String> kafka;
+    KafkaConsumer<String, String> kafkaString;
+    KafkaConsumer<Long, byte []>  kafkaByte;
     private final AtomicBoolean running = new AtomicBoolean(true);
     Connection  dbConn = null;
 
@@ -112,16 +113,29 @@ public class ConsumerThread extends Thread
 	props.put("key.deserializer", key);
 	props.put("value.deserializer", value);
 
-	kafka = new KafkaConsumer<String, String>(props);
+	if (format.equals("HongQuan")) {
+	    kafkaByte = new KafkaConsumer<Long, byte []>(props);
+	} else {
+	    kafkaString = new KafkaConsumer<String, String>(props);
+	}
 
 	TopicPartition partition = new TopicPartition(topic, partitionID);
-	kafka.assign(Arrays.asList(partition));
+	if (format.equals("HongQuan")) {
+	    kafkaByte.assign(Arrays.asList(partition));
+	} else {
+	    kafkaString.assign(Arrays.asList(partition));
+	}
 
 	if (full) {
-	    // priming poll
-	    kafka.poll(100);
-	    // always start from beginning
-	    kafka.seekToBeginning(Arrays.asList(partition));
+	    if (format.equals("HongQuan")) {
+		kafkaByte.poll(100);
+		kafkaByte.seekToBeginning(Arrays.asList(partition));
+	    } else {
+		// priming poll
+		kafkaString.poll(100);
+		// always start from beginning
+		kafkaString.seekToBeginning(Arrays.asList(partition));
+	    }
 	}
 
 	if (log.isTraceEnabled()){
@@ -139,19 +153,12 @@ public class ConsumerThread extends Thread
 	    dbConn = esgyndb.CreateConnection(false);
 	    log.info("consumer server started.");
 	    while(running.get()) {
-		// note that we don't commitSync to kafka - tho we should
-		ConsumerRecords<String, String> records = kafka.poll(streamTO);
-		if(log.isDebugEnabled()){
-		    log.debug("poll messages: " + records.count());
-		}
-		if (records.isEmpty())
-		    break;               // timed out
-
-		cacheNum += records.count();
-		ProcessRecords(records);
-		
-		if (cacheNum > commitCount) {
-		    commit_tables();
+		if (format.equals("HongQuan")) {
+		    if (!ProcessByteRecord())
+			break;
+		} else {
+		    if (!ProcessStringRecord())
+			break;
 		}
 	    } // while true
 
@@ -170,7 +177,11 @@ public class ConsumerThread extends Thread
 	    log.info("close connection");
 	    esgyndb.CloseConnection(dbConn);
 	    esgyndb.DisplayDatabase();
-	    kafka.close();
+	    if (format.equals("HongQuan")) {
+		kafkaByte.close();
+	    } else {
+		kafkaString.close();
+	    }
 	    running.set(false);
 	}
 	if (log.isTraceEnabled()){
@@ -185,7 +196,11 @@ public class ConsumerThread extends Thread
 	    }
 	}
 
-	kafka.commitSync();
+	if (format.equals("HongQuan")) {
+	    kafkaByte.commitSync();
+	} else {
+	    kafkaString.commitSync();
+	}
 	for (TableInfo tableinfo : tables.values()) {
 	    esgyndb.AddInsMsgNum(tableinfo.GetCacheInsert());
 	    esgyndb.AddUpdMsgNum(tableinfo.GetCacheUpdate());
@@ -203,14 +218,134 @@ public class ConsumerThread extends Thread
 	}
     }
 
-    public void ProcessRecords(ConsumerRecords<String, String> records) 
+    public boolean ProcessStringRecord() 
+    {
+	// note that we don't commitSync to kafka - tho we should
+	ConsumerRecords<String, String> records = kafkaString.poll(streamTO);
+	if(log.isDebugEnabled()){
+	    log.debug("poll messages: " + records.count());
+	}
+	if (records.isEmpty())
+	    return false;               // timed out
+
+	cacheNum += records.count();
+	ProcessStringMessages(records);
+		
+	if (cacheNum > commitCount) {
+	    commit_tables();
+	}
+
+	return true;
+    }
+
+    public void ProcessStringMessages(ConsumerRecords<String, String> records) 
     {
 	if (log.isTraceEnabled()){
 	    log.trace("enter function");
 	}
-	for (ConsumerRecord<String, String> message : records) {
+	for (ConsumerRecord<String, String> record : records) {
 	    try {
-		ProcessMessage(message);
+		ProcessStringMessage(record);
+	    } catch (ArrayIndexOutOfBoundsException aiooe) {
+		log.error ("table schema is not matched with data, raw data: [" 
+			   + record + "]");
+		aiooe.printStackTrace();
+	    } catch (UnsupportedEncodingException uee) {
+		log.error ("the encoding is not supported in java, raw data: [" 
+			   + record + "]");
+		uee.printStackTrace();
+	    }
+	} // for each msg
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
+    }
+
+    public void ProcessStringMessage(ConsumerRecord<String, String> record) 
+	throws UnsupportedEncodingException
+    {
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
+	// position info for this message
+	long    partition = record.partition();
+	long    offset    = record.offset();
+	String  topic     = record.topic();
+	long    num       = 0;
+
+	if (partition != partitionID) {
+	    log.error("message info [topic: " + topic + ", partition: " 
+		      + partition + ", off: " + offset + "], current partition #" 
+		      + partitionID);
+	    if (log.isTraceEnabled()){
+		log.trace("exit function");
+	    }
+	    return;
+	}
+
+	RowMessage urm = null;
+	String     msgStr = record.value();
+
+	if (format.equals("Unicom")) {
+	    String     dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
+	    urm = new UnicomRowMessage(esgyndb.GetDefaultSchema(),
+				       esgyndb.GetDefaultTable(),
+				       delimiter, partitionID, dbMsg);
+	} else {
+	    String     dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
+	    urm = new RowMessage(esgyndb.GetDefaultSchema(), 
+				 esgyndb.GetDefaultTable(),
+				 delimiter, partitionID, dbMsg);
+	}
+
+	urm.AnalyzeMessage();
+
+	String    tableName = urm.GetSchemaName() + "." + urm.GetTableName();
+	TableInfo tableInfo = esgyndb.GetTableInfo(tableName);
+
+	if (tableInfo == null || !tableInfo.InitStmt(dbConn)) {
+	    if (log.isDebugEnabled()) {
+		log.warn("the table [" + tableName + "] is not exists!");
+	    }
+	    return;
+	}
+
+	tableInfo.InsertMessageToTable(urm);
+
+	tables.put(tableName, tableInfo);
+	if (log.isTraceEnabled()){
+	    log.trace("exit function");
+	}
+    }
+
+    public boolean ProcessByteRecord() 
+    {
+	// note that we don't commitSync to kafka - tho we should
+	ConsumerRecords<Long, byte[]> records = kafkaByte.poll(streamTO);
+	if(log.isDebugEnabled()){
+	    log.debug("poll messages: " + records.count());
+	}
+	if (records.isEmpty())
+	    return false;               // timed out
+
+	cacheNum += records.count();
+	ProcessByteMessages(records);
+		
+	if (cacheNum > commitCount) {
+	    commit_tables();
+	}
+
+	return true;
+    }
+
+    public void ProcessByteMessages(ConsumerRecords<Long, byte[]> records) 
+    {
+	if (log.isTraceEnabled()){
+	    log.trace("enter function");
+	}
+	for (ConsumerRecord<Long, byte[]> message : records) {
+	    try {
+		ProcessByteMessage(message);
 	    } catch (ArrayIndexOutOfBoundsException aiooe) {
 		log.error ("table schema is not matched with data, raw data: [" 
 			   + message + "]");
@@ -226,22 +361,22 @@ public class ConsumerThread extends Thread
 	}
     }
 
-    public void ProcessMessage(ConsumerRecord<String, String> message) 
+    public void ProcessByteMessage(ConsumerRecord<Long, byte[]> record) 
 	throws UnsupportedEncodingException
     {
 	if (log.isTraceEnabled()){
 	    log.trace("enter function");
 	}
 	// position info for this message
-	long    partition = message.partition();
-	long    offset    = message.offset();
-	String  topic     = message.topic();
+	long    partition = record.partition();
+	long    offset    = record.offset();
+	String  topic     = record.topic();
 	long    num       = 0;
 
 	if (partition != partitionID) {
 	    log.error("message info [topic: " + topic + ", partition: " 
-		      + partition + ", off: " + offset + "], current partition #" 
-		      + partitionID);
+		      + partition + ", off: " + offset
+		      + "], current partition #" + partitionID);
 	    if (log.isTraceEnabled()){
 		log.trace("exit function");
 	    }
@@ -249,34 +384,32 @@ public class ConsumerThread extends Thread
 	}
 
 	RowMessage urm = null;
-	String     msgStr = message.value();
+	byte[]     msgByte = record.value();
 
-	if (format.equals("Unicom")) {
-	    String     dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
-	    urm = new UnicomRowMessage(esgyndb.GetDefaultSchema(),
-				       esgyndb.GetDefaultTable(),
-				       delimiter, partitionID, dbMsg);
-	} else if (format.equals("HongQuan")) {
-	    StringBuffer strBuffer = new StringBuffer();
-	    strBuffer.append("message [" + msgStr + "] length: " + msgStr.length() 
-			     + "\nraw data [");
-	    for (int i = 0; i < msgStr.length(); i++) {
-		String temp = Integer.toHexString(msgStr.charAt(i) & 0xFF);  
-		if(temp.length() == 1){  
-		    temp = "0" + temp;  
-		}  
-		strBuffer.append(" " + temp);
+	if (format.equals("HongQuan")) {
+	    if (log.isDebugEnabled()){
+		StringBuffer strBuffer = new StringBuffer();
+		strBuffer.append("message [" + msgByte + "] length: " 
+				 + msgByte.length + "\nraw data [");
+
+		for (int i = 0; i < msgByte.length; i++) {
+		    String temp = Integer.toHexString(msgByte[i] & 0xFF);
+		    if(temp.length() == 1){  
+			temp = "0" + temp;  
+		    }  
+		    strBuffer.append(" " + temp);
+		}
+
+		strBuffer.append("]");
+		log.debug(strBuffer);
 	    }
-	    strBuffer.append("]");
-	    log.debug(strBuffer);
+
 	    urm = new HongQuanRowMessage(esgyndb.GetDefaultSchema(),
 					 esgyndb.GetDefaultTable(),
-					 delimiter, partitionID, msgStr);
+					 delimiter, partitionID, msgByte);
 	} else {
-	    String     dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
-	    urm = new RowMessage(esgyndb.GetDefaultSchema(), 
-				 esgyndb.GetDefaultTable(),
-				 delimiter, partitionID, dbMsg);
+	    log.error("format is error [" + format + "]");
+	    return;
 	}
 
 	urm.AnalyzeMessage();
@@ -312,6 +445,11 @@ public class ConsumerThread extends Thread
     public synchronized void Close() 
     {
 	running.set(false);
-	kafka.wakeup();
+	
+	if (format.equals("HongQuan")) {
+	    kafkaByte.wakeup();
+	} else {
+	    kafkaString.wakeup();
+	}
     }
 }

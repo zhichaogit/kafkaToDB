@@ -5,13 +5,15 @@ import org.apache.log4j.Logger;
 public class HongQuanRowMessage extends RowMessage
 {
     private int             length          = 0;
+    private byte[]          data            = null;
     private int []          fieldSizes      = null;
 
     public HongQuanRowMessage(String defschema_, String deftable_, String delimiter_,
-			      int thread_, String message_)
+			      int thread_, byte [] message_)
     {
-	super(defschema_, deftable_, delimiter_, thread_, message_);
+	super(defschema_, deftable_, delimiter_, thread_, null);
 
+	data = message_;
 	if (delimiter_ == null && delimiter_.length() == 0){
 	    log.error("the delimiter is error [" + delimiter_ + "]");
 	    return;
@@ -50,19 +52,21 @@ public class HongQuanRowMessage extends RowMessage
 	    strBuffer = new StringBuffer();
 
 	    strBuffer.append("RowMessage thread [" + thread + "]\n");
-	    strBuffer.append("Raw message:[" + message + "]\n");
+	    strBuffer.append("Raw message:[" + data + "]\n");
 	    strBuffer.append("Operator Info: [Table Name: " + tableName 
 			     + ", Type: " + operatorType + "]");
 	}
 
 	columns = new HashMap<Integer, ColumnValue>(0);
 	for (int i = 0; i < fieldSizes.length; i++) {
-	    log.debug("i: " + i + ", offset: " + offset + ", field: " + fieldSizes[i]);
-	    String raw = message.substring(offset, offset + fieldSizes[i] - 1);
-	    ColumnValue columnValue = new ColumnValue(i, get_column(raw), null);
+	    log.debug("i: " + i + ", offset: " + offset + ", field: " 
+		      + fieldSizes[i]);
+	    ColumnValue columnValue = new ColumnValue(i, get_column(data, offset, fieldSizes[i]), null);
+
 	    if(log.isDebugEnabled()){
-		strBuffer.append("\n\tColumn: " + raw);
+		strBuffer.append("\n\tColumn: " + columnValue.GetCurValue());
 	    }
+
 	    columns.put(i, columnValue);
 	    offset += fieldSizes[i];
 	}
@@ -77,15 +81,13 @@ public class HongQuanRowMessage extends RowMessage
 	}
     }
 
-    private String get_column(String raw)
+    private String get_column(byte [] data, int offset, int size)
     {
 	long   value = 0;
-	byte[] data = raw.getBytes();
 
-	for (int i = 0; i < data.length; i++){
-	    byte b = data[i]; 
+	for (int i = offset; i < offset + size; i++){
 	    value *= 10;
-	    value += b;
+	    value += (data[i] & 0xFF);
 	}
 
 	return Long.toString(value);
