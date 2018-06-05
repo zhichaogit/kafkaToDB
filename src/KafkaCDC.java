@@ -495,6 +495,13 @@ public class KafkaCDC implements Runnable{
 		       + "cur format: \"" + format + "\"");
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
+	} else if (format.equals("HongQuan")) {
+	    if (!cmdLine.hasOption("key") || !cmdLine.hasOption("value")) {
+		HelpFormatter formatter = new HelpFormatter();
+		log.error ("\"HongQuan\" format must need key and value parameter. ");
+		formatter.printHelp("Consumer Server", exeOptions);
+		System.exit(0);
+	    }
 	}
 
 	if ((format.equals("") && delimiter != null && delimiter.length() != 1)) {
