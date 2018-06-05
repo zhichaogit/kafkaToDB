@@ -26,9 +26,9 @@ public class HongQuanRowMessage extends RowMessage
 	    length += fieldSizes[i];
 	}
 
-	if (length > message.length()) {
-	    log.error("message error [" + message + "] message length: " 
-		      + message.length() + ", length: " + length);
+	if (length > message_.length) {
+	    log.error("message error [" + message_ + "] message length: " 
+		      + message_.length + ", length: " + length);
 	    return;
 	}
 
@@ -44,7 +44,7 @@ public class HongQuanRowMessage extends RowMessage
 	int          offset    = 0;
 	StringBuffer strBuffer = null;
 
-	if (length > message.length()) {
+	if (length > data.length) {
 	    return;
 	}
 
@@ -85,9 +85,11 @@ public class HongQuanRowMessage extends RowMessage
     {
 	long   value = 0;
 
-	for (int i = offset; i < offset + size; i++){
-	    value *= 10;
-	    value += (data[i] & 0xFF);
+	for (int i = offset + size - 1; i >= offset; i--){
+	    value *= 256;
+	    long b = data[i] & 0xFF;
+	    
+	    value += b;
 	}
 
 	return Long.toString(value);

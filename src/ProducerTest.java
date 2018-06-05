@@ -29,7 +29,7 @@ public class ProducerTest{
 
         String topic="g_ad";
 
-        byte[] msg = new byte[]{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18};
+        byte[] msg = new byte[]{0,1,2,3,(byte)155,5,6,7,8,9,10,11,12,13,14,15,16,17,18};
 
 
         ProducerRecord<Long, byte[]> record = new ProducerRecord<Long, byte[]>(topic, msg);

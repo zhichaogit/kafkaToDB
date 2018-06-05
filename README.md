@@ -27,12 +27,14 @@ usage: Consumer Server
 *    --dbuser <arg>      database server user, default: db__root
 *    --dbpw <arg>        database server password, default: zz
 *    --delim <arg>       field delimiter, default: ','(comma)
-*    --interval <arg>    the print state time interval, default: 10s
 *    --full              pull data from beginning, default: false
+*    --interval <arg>    the print state time interval, default: 10s
+*    --key <arg>         key deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer
 *    --skip              skip all error of data, default: false
 *    --sto <arg>         kafka poll time-out limit, default: 60s
 *    --table <arg>       kafka poll time-out limit, default: null
 *    --tenant <arg>      database tenant user
+*    --value <arg>       value  deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer
 *    --zkto <arg>        zookeeper time-out limit, default: 10s
 
 Must create the schema and tables first of all.
@@ -44,3 +46,4 @@ Must create the schema and tables first of all.
 
 * java -cp bin:bin/\*:libs/\* KafkaCDC -p 1 -b 192.168.0.71:9092 -d 192.168.0.71 -g 1 -s SEABASE --table tab -t test
 * java -cp bin:bin/\*:libs/\* KafkaCDC -p 1 -b 192.168.0.71:9092 -d 192.168.0.71 -g 1 -s SEABASE --table tab -full -t test
+* java -cp bin:bin/*:libs/* KafkaCDC -p 1 -b 192.168.0.71:9092 -d 192.168.0.71 -g 1 -f HongQuan -s SEABASE --table tab -full -t test --key org.apache.kafka.common.serialization.LongDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer

@@ -27,7 +27,8 @@ public class ConsumerTest {
 	System.out.println("nothing available end: " + records);
 	for(ConsumerRecord<Long, byte[]> record : records){
 	    byte[] msg = record.value();
-	    System.out.printf("key = %d, offset = %d, value = %s\n", record.key(), record.offset(), msg);
+	    System.out.printf("key = %d, offset = %d, value = %s, length:%d\n", 
+			      record.key(), record.offset(), msg, msg.length);
 	}
     }
 }
