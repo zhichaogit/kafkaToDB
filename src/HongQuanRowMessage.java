@@ -8,21 +8,16 @@ public class HongQuanRowMessage extends RowMessage
     private byte[]          data            = null;
     private int []          fieldSizes      = null;
 
-    public HongQuanRowMessage(String defschema_, String deftable_, String delimiter_,
-			      int thread_, byte [] message_)
+    public HongQuanRowMessage(TableInfo tableInfo_, int thread_, byte[] message_)
     {
-	super(defschema_, deftable_, delimiter_, thread_, null);
+	super(tableInfo_.GetSchemaName(), tableInfo_.GetTableName(), null, thread_, null);
 
 	data = message_;
-	if (delimiter_ == null && delimiter_.length() == 0){
-	    log.error("the delimiter is error [" + delimiter_ + "]");
-	    return;
-	}
 
-	String[] fieldDelims = delimiter_.split("[|]");
-	fieldSizes = new int[fieldDelims.length];
-	for (int i = 0; i < fieldDelims.length; i++) {
-	    fieldSizes[i] = Integer.parseInt(fieldDelims[i]);
+	fieldSizes = new int[(int)tableInfo_.GetColumnCount()];
+	for (int i = 0; i < tableInfo_.GetColumnCount(); i++) {
+	    ColumnInfo column = tableInfo_.GetColumn(i);
+	    fieldSizes[i] = column.GetColumnSize();
 	    length += fieldSizes[i];
 	}
 

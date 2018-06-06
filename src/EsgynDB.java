@@ -222,19 +222,21 @@ public class EsgynDB
 			     + getTableColumns + "\"\n columns [\n");
 
 	    int   colOff = 0;
-	    int   colid  = 0;
+	    int   colId  = 0;
 	    while (columnRS.next()) {
-		String      colname = columnRS.getString("COLUMN_NAME");
-		String      typename = columnRS.getString("TYPE_NAME");
-		String      coltype = columnRS.getString("DATA_TYPE");
+		String      colName = columnRS.getString("COLUMN_NAME");
+		String      typeName = columnRS.getString("TYPE_NAME");
+		String      colType = columnRS.getString("DATA_TYPE");
+		int         colSize = 
+		    Integer.parseInt(columnRS.getString("COLUMN_SIZE"));
 		
-		colid = Integer.parseInt(columnRS.getString("ORDINAL_POSITION"));
-		ColumnInfo  column = new ColumnInfo(colid, colOff, coltype,
-						    typename, colname);
+		colId = Integer.parseInt(columnRS.getString("ORDINAL_POSITION"));
+		ColumnInfo  column = new ColumnInfo(colId, colOff, colSize, 
+						    colType, typeName, colName);
 
-		strBuffer.append("\t" + colname + "[id: " + colid + ", off: " 
-				 + colOff +  ", Type: " + typename.trim() 
-				 + ", Type ID: " + coltype + "]\n");
+		strBuffer.append("\t" + colName + "[id: " + colId + ", off: " 
+				 + colOff +  ", Type: " + typeName.trim() 
+				 + ", Type ID: " + colType + "]\n");
 
 		table.AddColumn(column);
 		colOff++;
@@ -298,10 +300,10 @@ public class EsgynDB
 				 + "\".\"" + table.GetTableName() 
 				 + "\" key columns\n[\n");
 	    }
-	    int  colid = 0;
+	    int  colId = 0;
 	    while (keysRS.next()) {
-		colid    =  Integer.parseInt(keysRS.getString("KEY_COLUMN_ID"));
-		ColumnInfo  column = table.GetColumnFromMap(colid);
+		colId    =  Integer.parseInt(keysRS.getString("KEY_COLUMN_ID"));
+		ColumnInfo  column = table.GetColumnFromMap(colId);
 		if(log.isDebugEnabled()){
 		    strBuffer.append("\t" + column.GetColumnName() + " [id: " 
 				     + column.GetColumnID() + ", Off: "

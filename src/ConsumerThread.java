@@ -392,6 +392,9 @@ public class ConsumerThread extends Thread
 	RowMessage urm = null;
 	byte[]     msgByte = record.value();
 
+	String    tableName = 
+	    esgyndb.GetDefaultSchema() + "." + esgyndb.GetDefaultTable();
+	TableInfo tableInfo = esgyndb.GetTableInfo(tableName);
 	if (format.equals("HongQuan")) {
 	    if (log.isDebugEnabled()){
 		StringBuffer strBuffer = new StringBuffer();
@@ -410,18 +413,13 @@ public class ConsumerThread extends Thread
 		log.debug(strBuffer);
 	    }
 
-	    urm = new HongQuanRowMessage(esgyndb.GetDefaultSchema(),
-					 esgyndb.GetDefaultTable(),
-					 delimiter, partitionID, msgByte);
+	    urm = new HongQuanRowMessage(tableInfo, partitionID, msgByte);
 	} else {
 	    log.error("format is error [" + format + "]");
 	    return;
 	}
 
 	urm.AnalyzeMessage();
-
-	String    tableName = urm.GetSchemaName() + "." + urm.GetTableName();
-	TableInfo tableInfo = esgyndb.GetTableInfo(tableName);
 
 	if (tableInfo == null || !tableInfo.InitStmt(dbConn)) {
 	    if (log.isDebugEnabled()) {

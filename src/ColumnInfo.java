@@ -3,17 +3,20 @@ public class ColumnInfo
     int         columnID   = -1;
     int         columnOff  = -1;
     int         columnType = -1;
+    int         columnSize = -1;
     String      typeName   = null;
     String      columnName = null;
 
     public ColumnInfo(int    columnID_,
 		      int    columnOff_,
+		      int    columnSize_,
 		      String columnType_,
 		      String typeName_,
 		      String columnName_) 
     {
 	columnID   = columnID_;
 	columnOff  = columnOff_;
+	columnSize = columnSize_;
 	columnType = Integer.parseInt(columnType_);
 	typeName   = typeName_;
 	columnName = "\"" + columnName_ + "\"";
@@ -32,6 +35,11 @@ public class ColumnInfo
     public int GetColumnType()
     {
 	return columnType;
+    }
+
+    public int GetColumnSize()
+    {
+	return columnSize;
     }
 
     public int GetColumnID()
