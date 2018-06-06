@@ -35,6 +35,7 @@ public class ProducerTest{
         ProducerRecord<Long, byte[]> record = new ProducerRecord<Long, byte[]>(topic, msg);
 
         producer.send(record);
+        producer.send(record);
 
         producer.close();
     }

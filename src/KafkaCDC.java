@@ -563,7 +563,7 @@ public class KafkaCDC implements Runnable{
 	strBuffer.append("\n\tzkTO        = " + (me.zkTO / 1000) + "ms");
 	strBuffer.append("\n\tdburl       = " + me.dburl);
 	log.info(strBuffer.toString());
-			
+	
 	me.esgyndb = new EsgynDB(me.defschema,
 				 me.deftable,
 				 me.dburl, 
@@ -571,7 +571,8 @@ public class KafkaCDC implements Runnable{
 				 me.dbuser, 
 				 me.dbpassword, 
 				 me.interval, 
-				 me.commitCount);
+				 me.commitCount,
+				 me.format.equals("HongQuan"));
 	me.consumers = new ArrayList<ConsumerThread>(0);
 
         for (int partition : me.partitions) {

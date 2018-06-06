@@ -37,7 +37,7 @@ public class EsgynDB
     private long keyMsgNum  = 0;
     private long delMsgNum  = 0;
 
-    private long oldMsgNum = 0;
+    private long oldMsgNum  = 0;
 
     private long insertNum  = 0;
     private long updateNum  = 0;
@@ -45,6 +45,8 @@ public class EsgynDB
 
     private long maxSpeed   = 0;
     private long interval   = 0;
+
+    private boolean multiable = false;
 
     private long begin;
     private Date startTime;
@@ -56,7 +58,8 @@ public class EsgynDB
 		   String  dbuser_, 
 		   String  dbpassword_,
 		   long    interval_,
-		   long    commitCount_) 
+		   long    commitCount_,
+		   boolean multiable_) 
     {
 	if (log.isTraceEnabled()){
 	    log.trace("enter function [table: " + defschema_ + "." + deftable_ 
@@ -73,6 +76,7 @@ public class EsgynDB
 	deftable    = deftable_;
 	interval    = interval_;
 	commitCount = commitCount_;
+	multiable   = multiable_;
 
 	begin = new Date().getTime();
 	startTime = new Date();
@@ -151,7 +155,7 @@ public class EsgynDB
 		    String  tableNameStr = tableRS.getString("TABLE_NAME");
 		    String  tableName = schemaName + "." + tableNameStr;
 
-		    tableInfo = new TableInfo(schemaName, tableNameStr);
+		    tableInfo = new TableInfo(schemaName, tableNameStr, multiable);
 		    
 		    log.info("start to init table [" + tableName + "]");
 		    if (init_culumns(tableInfo) <= 0) {
@@ -164,7 +168,7 @@ public class EsgynDB
 		}
 	    } else {
 		String tableName = defschema + "." + deftable;
-		tableInfo = new TableInfo(defschema, deftable);
+		tableInfo = new TableInfo(defschema, deftable, multiable);
 
 		log.info("start to init table [" + tableName + "]");
 		if (init_culumns(tableInfo) <= 0) {

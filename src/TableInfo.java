@@ -7,6 +7,7 @@ import java.lang.IndexOutOfBoundsException;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.ArrayList;
 import org.apache.log4j.Logger; 
  
@@ -31,6 +32,7 @@ public class TableInfo
 
     private boolean           commited   = true;
     private boolean           havePK     = false;
+    private boolean           multiable  = false;;
 
     private Connection        dbConn     = null;
 
@@ -47,16 +49,21 @@ public class TableInfo
 
     private static Logger     log = Logger.getLogger(TableInfo.class);
 
-    public TableInfo(String schemaName_, String tableName_)
+    public TableInfo(String schemaName_, String tableName_, boolean multiable_)
     {
 	schemaName = schemaName_;
 	tableName  = tableName_;
+	multiable  = multiable_;
 
 	columns    = new ArrayList<ColumnInfo>(0);
 	keyColumns = new ArrayList<ColumnInfo>(0);
 	columnMap  = new HashMap<Integer, ColumnInfo>(0);
 
-	insertRows = new HashMap<String, Map<Integer, ColumnValue>>(0);
+	if (multiable) {
+	    insertRows = new IdentityHashMap<String, Map<Integer, ColumnValue>>(0);
+	} else {
+	    insertRows = new HashMap<String, Map<Integer, ColumnValue>>(0);
+	}
 	updateRows = new HashMap<String, Map<Integer, ColumnValue>>(0);
 	deleteRows = new HashMap<String, Map<Integer, ColumnValue>>(0);
     }
@@ -242,10 +249,10 @@ public class TableInfo
 
 	// new row is inserted
 	insertRows.put(key, rowValues);
-
+	    
 	// remove the update messages
 	updateRows.remove(key);
-
+	    
 	// remove the delete messages
 	deleteRows.remove(key);
 
@@ -646,6 +653,9 @@ public class TableInfo
 
     private void insert_data() throws Exception
     {
+	if (insertRows.size() <= 0)
+	    return;
+
 	if (log.isTraceEnabled()){
 	    log.trace("enter function");
 	}
@@ -654,9 +664,6 @@ public class TableInfo
 	    log.debug("insert rows [cache row: " + cacheInsert + ", cache: " 
 		      + insertRows.size() + "]");
 	}
-
-	if (insertRows.size() <= 0)
-	    return;
 
 	int offset = 0;
 	for (Map<Integer, ColumnValue> insertRow : insertRows.values()){
