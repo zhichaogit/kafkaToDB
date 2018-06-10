@@ -4,6 +4,7 @@ import java.util.Properties;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 
 public class ConsumerTest {
 
@@ -20,7 +21,8 @@ public class ConsumerTest {
         props.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
 
         KafkaConsumer<Long, byte[]> kafkaConsumer = new KafkaConsumer<Long, byte[]>(props);
-        kafkaConsumer.subscribe(Arrays.asList("g_ad"));
+	TopicPartition partition = new TopicPartition("g_ad", 0);
+	kafkaConsumer.assign(Arrays.asList(partition));
 
 	System.out.println("nothing available...");
 	ConsumerRecords<Long, byte[]> records = kafkaConsumer.poll(1000);

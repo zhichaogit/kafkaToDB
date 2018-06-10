@@ -7,6 +7,7 @@ public class HongQuanRowMessage extends RowMessage
     private int             length          = 0;
     private byte[]          data            = null;
     private int []          fieldSizes      = null;
+    private int []          fieldTypes      = null;
 
     public HongQuanRowMessage(TableInfo tableInfo_, int thread_, byte[] message_)
     {
@@ -15,9 +16,11 @@ public class HongQuanRowMessage extends RowMessage
 	data = message_;
 
 	fieldSizes = new int[(int)tableInfo_.GetColumnCount()];
+	fieldTypes = new int[(int)tableInfo_.GetColumnCount()];
 	for (int i = 0; i < tableInfo_.GetColumnCount(); i++) {
 	    ColumnInfo column = tableInfo_.GetColumn(i);
 	    fieldSizes[i] = column.GetColumnSize();
+	    fieldTypes[i] = column.GetColumnType();
 	    length += fieldSizes[i];
 	}
 
@@ -56,7 +59,28 @@ public class HongQuanRowMessage extends RowMessage
 	for (int i = 0; i < fieldSizes.length; i++) {
 	    log.debug("i: " + i + ", offset: " + offset + ", field: " 
 		      + fieldSizes[i]);
-	    ColumnValue columnValue = new ColumnValue(i, get_column(data, offset, fieldSizes[i]), null);
+	    ColumnValue columnValue = null;
+	    switch(fieldTypes[i]){
+	    case 137:  		// UNSIGNED TINYINT
+	    case 130:		// SIGNED SMALLINT
+	    case 132:		// SIGNED INTEGER
+	    case 134:		// SIGNED LARGEINT
+		columnValue = new ColumnValue(i, get_column(data, offset, fieldSizes[i]), null);
+		break;
+
+	    case 64:		// VARCHAR
+	    case 0:		// CHAR
+		columnValue = new ColumnValue(i, bytes2HexString(data, offset, fieldSizes[i]), null);
+		break;
+
+	    default:
+		columns = null;
+		log.error("don't support data type [" + fieldTypes[i] 
+			  + "], column id [" + i + "] message [" 
+			  + bytes2HexString(data, 0, data.length)
+			  + "] message length: " + data.length);
+		return;
+	    }
 
 	    if(log.isDebugEnabled()){
 		strBuffer.append("\n\tColumn: " + columnValue.GetCurValue());
@@ -89,4 +113,20 @@ public class HongQuanRowMessage extends RowMessage
 
 	return Long.toString(value);
     }
+
+    public static String bytes2HexString(byte[] b, int offset, int size) {  
+	int start = offset;
+
+	if (start < 0){
+	    start = 0;
+	} else if (start > b.length) {
+	    start = b.length;
+	}
+
+	if (start + size > b.length){
+	    size = b.length - start;
+	}
+
+	return new String(b, start, size);  
+    }  
 }
