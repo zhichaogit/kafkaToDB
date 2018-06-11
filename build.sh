@@ -1,6 +1,8 @@
-rm -rf bin/*.class bin/*.jar *.jar
+rm -rf bin
+mkdir bin
 cp src/log4j.* bin/
 javac -d bin -cp src:libs/* -Xlint:deprecation src/*.java
+javac -d bin -cp example:libs/* -Xlint:deprecation example/*.java
 
 # package
 rm -rf KafkaCDC.tar.gz
@@ -10,7 +12,9 @@ mkdir -p KafkaCDC/log
 cp -r libs KafkaCDC/
 cp bin/*.class KafkaCDC/bin
 cp bin/log4j.* KafkaCDC/bin
+cp -r example KafkaCDC/
 cp README KafkaCDC/
+echo "javac -d ../bin -cp ../libs/* -Xlint:deprecation *.java" > KafkaCDC/example/compile.sh
 
 tar zcvf KafkaCDC.tar.gz KafkaCDC
 rm -rf KafkaCDC
