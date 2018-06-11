@@ -29,15 +29,20 @@ public class ProducerTest{
 
         String topic="g_ad";
 
-        byte[] msg = new byte[]{0,1,2,3,(byte)155,5,6,7,8,9,10,11,12,13,14,15,16,17,18};
+        byte[] msg1 = new byte[]{0,1,2,3,(byte)155,5,6,7,8,9,10,11,12,13,14,'a','a'};
+        byte[] msg2 = new byte[]{0,1,2,3,(byte)155,5,6,7,8,9,10,11,12,13,14,'a','a','a','a','a'};
+        byte[] msg3 = new byte[]{0,1,2,3,(byte)155,5,6,7,8,9,10,11,12,13,14,'a','a','a','a','a','a'};
 
-
-        ProducerRecord<Long, byte[]> record = new ProducerRecord<Long, byte[]>(topic, msg);
-
-        producer.send(record);
-        producer.send(record);
+	send_msg(producer, topic, msg1);
+	send_msg(producer, topic, msg2);
+	send_msg(producer, topic, msg3);
 
         producer.close();
+    }
+
+    public static void send_msg(KafkaProducer<Long, byte[]> producer, String topic, byte[] msg){
+	ProducerRecord<Long, byte[]> record = new ProducerRecord<Long, byte[]>(topic, msg);
+	producer.send(record);
     }
 }
 
