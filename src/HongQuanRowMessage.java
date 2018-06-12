@@ -25,7 +25,7 @@ public class HongQuanRowMessage extends RowMessage
 	    case 136:  		// TINYINT
 	    case 137:  		// UNSIGNED TINYINT
 	    case 130:		// SIGNED SMALLINT
-	    case 130:		// UNSIGNED SMALLINT
+	    case 131:		// UNSIGNED SMALLINT
 	    case 132:		// SIGNED INTEGER
 	    case 133:		// UNSIGNED INTEGER
 	    case 134:		// SIGNED LARGEINT
@@ -80,7 +80,7 @@ public class HongQuanRowMessage extends RowMessage
 	    case 136:  		// TINYINT
 	    case 137:  		// UNSIGNED TINYINT
 	    case 130:		// SIGNED SMALLINT
-	    case 130:		// UNSIGNED SMALLINT
+	    case 131:		// UNSIGNED SMALLINT
 	    case 132:		// SIGNED INTEGER
 	    case 133:		// UNSIGNED INTEGER
 	    case 134:		// SIGNED LARGEINT
