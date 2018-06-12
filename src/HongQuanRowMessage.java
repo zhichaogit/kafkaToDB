@@ -22,13 +22,18 @@ public class HongQuanRowMessage extends RowMessage
 	    fieldSizes[i] = column.GetColumnSize();
 	    fieldTypes[i] = column.GetColumnType();
 	    switch(fieldTypes[i]){
+	    case 136:  		// TINYINT
 	    case 137:  		// UNSIGNED TINYINT
 	    case 130:		// SIGNED SMALLINT
+	    case 130:		// UNSIGNED SMALLINT
 	    case 132:		// SIGNED INTEGER
+	    case 133:		// UNSIGNED INTEGER
 	    case 134:		// SIGNED LARGEINT
+	    case 138:		// UNSIGNED LARGEINT
 		break;
 
 	    case 64:		// VARCHAR
+	    case 2:		// NCHAR
 	    case 0:		// CHAR
 		allFixTypes = false;
 		break;
@@ -72,14 +77,19 @@ public class HongQuanRowMessage extends RowMessage
 		      + fieldSizes[i]);
 	    ColumnValue columnValue = null;
 	    switch(fieldTypes[i]){
+	    case 136:  		// TINYINT
 	    case 137:  		// UNSIGNED TINYINT
 	    case 130:		// SIGNED SMALLINT
+	    case 130:		// UNSIGNED SMALLINT
 	    case 132:		// SIGNED INTEGER
+	    case 133:		// UNSIGNED INTEGER
 	    case 134:		// SIGNED LARGEINT
+	    case 138:		// UNSIGNED LARGEINT
 		columnValue = new ColumnValue(i, get_column(data, offset, fieldSizes[i]), null);
 		break;
 
 	    case 64:		// VARCHAR
+	    case 2:		// NCHAR
 	    case 0:		// CHAR
 		columnValue = new ColumnValue(i, bytes2HexString(data, offset, fieldSizes[i]), null);
 		break;
