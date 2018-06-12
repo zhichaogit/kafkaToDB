@@ -328,11 +328,14 @@ public class ConsumerThread extends Thread
 	if (records.isEmpty())
 	    return false;               // timed out
 
-        for(ConsumerRecord<Long, byte[]> record : records){
-            byte[] msg = record.value();
-            System.out.printf("key = %d, offset = %d, value = %s, length:%d\n",
-                              record.key(), record.offset(), msg, msg.length);
-        }
+	if (log.isTraceEnabled()){
+	    for(ConsumerRecord<Long, byte[]> record : records){
+		byte[] msg = record.value();
+		log.trace("key = " + record.key() + ", offset = " 
+			  + record.offset() + ", value = " + msg 
+			  + ", length:%d" + msg.length);
+	    }
+	}
 
 	cacheNum += records.count();
 	ProcessByteMessages(records);

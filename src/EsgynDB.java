@@ -23,10 +23,8 @@ public class EsgynDB
     String      defschema   = null;
     String      deftable    = null;
     long        commitCount = 500;
-    Connection  dbkeepconn  = null;
     String      keepQuery   = "values(1);";
     Map<String, TableInfo>  tables   = null;
-    PreparedStatement       keepStmt = null;
     private static Logger   log = Logger.getLogger(EsgynDB.class);
 
     private long totalMsgNum = 0;
@@ -82,14 +80,6 @@ public class EsgynDB
 	startTime = new Date();
 	
 	tables = new HashMap<String, TableInfo>(); 
-	dbkeepconn = CreateConnection(true);
-	try {
-	    log.info("prepare the keepalive stmt, query:" + keepQuery); 
-	    keepStmt = dbkeepconn.prepareStatement(keepQuery);
-	} catch (SQLException e) {
-	    log.error("prepare the keepalive stmt error.");
-            e.printStackTrace();
-	}
 
 	log.info("start to init schemas"); 
 	init_schemas();
@@ -101,14 +91,15 @@ public class EsgynDB
 
     private void init_schemas()
     {
-	ResultSet            schemaRS = null;
+	ResultSet   schemaRS = null;
+	Connection  dbconn = CreateConnection(true);
 
 	if (log.isTraceEnabled()){
 	    log.trace("enter function");
 	}
 
 	try {
-	    DatabaseMetaData dbmd = dbkeepconn.getMetaData();
+	    DatabaseMetaData dbmd = dbconn.getMetaData();
 	    String           schemaName = null;
 	    
 	    if (defschema == null) {
@@ -116,11 +107,11 @@ public class EsgynDB
 		while (schemaRS.next()) {
 		    schemaName = schemaRS.getString("TABLE_SCHEM");
 		    log.info("start to init schema [" + schemaName + "]");
-		    init_schema(schemaName);
+		    init_schema(dbconn, schemaName);
 		}
 	    } else {
 		log.info("start to init default schema [" + defschema + "]");
-		init_schema(defschema);
+		init_schema(dbconn, defschema);
 		
 		if (tables.size() <= 0)
 		    log.error("init schema [" + defschema + 
@@ -130,14 +121,16 @@ public class EsgynDB
             sqle.printStackTrace();
 	} catch (Exception e) {
             e.printStackTrace();
-        }
+        } finally {
+	    CloseConnection(dbconn);
+	}
 
 	if (log.isTraceEnabled()){
 	    log.trace("exit function");
 	}
     }
 
-    public TableInfo init_schema(String schemaName)
+    public TableInfo init_schema(Connection  dbconn, String schemaName)
     {
 	TableInfo tableInfo = null;
 
@@ -148,7 +141,7 @@ public class EsgynDB
 	try {
 	    if (deftable == null) {
 		ResultSet         tableRS = null;
-		DatabaseMetaData  dbmd = dbkeepconn.getMetaData();
+		DatabaseMetaData  dbmd = dbconn.getMetaData();
 
 		tableRS = dbmd.getTables("Trafodion", schemaName, "%", null);
 		while (tableRS.next()) {
@@ -158,11 +151,11 @@ public class EsgynDB
 		    tableInfo = new TableInfo(schemaName, tableNameStr, multiable);
 		    
 		    log.info("start to init table [" + tableName + "]");
-		    if (init_culumns(tableInfo) <= 0) {
+		    if (init_culumns(dbconn, tableInfo) <= 0) {
 			log.error("init table [" + tableName 
 				  + "] is not exist!");
 		    } else {
-			init_keys(tableInfo);
+			init_keys(dbconn, tableInfo);
 			tables.put(tableName, tableInfo);
 		    }
 		}
@@ -171,10 +164,10 @@ public class EsgynDB
 		tableInfo = new TableInfo(defschema, deftable, multiable);
 
 		log.info("start to init table [" + tableName + "]");
-		if (init_culumns(tableInfo) <= 0) {
+		if (init_culumns(dbconn, tableInfo) <= 0) {
 		    log.error("init table [" + tableName + "] is not exist!");
 		} else {
-		    init_keys(tableInfo);
+		    init_keys(dbconn, tableInfo);
 		    tables.put(tableName, tableInfo);
 		}
 	    }
@@ -191,7 +184,7 @@ public class EsgynDB
 	return tableInfo;
     }
 
-    public long init_culumns(TableInfo table)
+    public long init_culumns(Connection  dbconn, TableInfo table)
     {
 	if (log.isTraceEnabled()){
 	    log.trace("enter function [table info: " + table + "]");
@@ -210,7 +203,7 @@ public class EsgynDB
 		+ "AND o.SCHEMA_NAME=? AND o.object_name=? "
 		+ "ORDER BY c.COLUMN_NUMBER";
 	    PreparedStatement   psmt = 
-		(PreparedStatement) dbkeepconn.prepareStatement(getTableColumns);
+		(PreparedStatement) dbconn.prepareStatement(getTableColumns);
 
 	    psmt.setString(1, table.GetSchemaName());
 	    psmt.setString(2, table.GetTableName());
@@ -258,7 +251,7 @@ public class EsgynDB
 	return table.GetColumnCount();
     }
 
-    public long init_keys(TableInfo table)
+    public long init_keys(Connection  dbconn, TableInfo table)
     {
 	if (log.isTraceEnabled()){
 	    log.trace("enter function [table info: " + table + "]");
@@ -287,7 +280,7 @@ public class EsgynDB
 		+ "AND o.SCHEMA_NAME=? AND o.object_name=? "
 		+ "ORDER BY k.KEYSEQ_NUMBER;";
 	    PreparedStatement   psmt = 
-		(PreparedStatement) dbkeepconn.prepareStatement(getTableKeys);
+		(PreparedStatement) dbconn.prepareStatement(getTableKeys);
 
 	    psmt.setString(1, table.GetSchemaName());
 	    psmt.setString(2, table.GetTableName());
@@ -369,6 +362,9 @@ public class EsgynDB
 
     public void CloseConnection(Connection  dbConn_)
     {
+	if (dbConn_ == null)
+	    return;
+
 	if (log.isTraceEnabled()){
 	    log.trace("enter function [db conn: " + dbConn_ + "]");
 	}
@@ -402,15 +398,21 @@ public class EsgynDB
     public boolean KeepAlive()
     {
 	ResultSet columnRS = null;
+	Connection  dbkeepconn = CreateConnection(true);
 
 	try {
+	    log.info("prepare the keepalive stmt, query:" + keepQuery); 
+	    PreparedStatement  keepStmt = dbkeepconn.prepareStatement(keepQuery);
+
             columnRS = keepStmt.executeQuery();
 	    while (columnRS.next()) {
                 columnRS.getString("(EXPR)");
             }
 	} catch (SQLException e) {
+            e.printStackTrace();
 	    return false;
 	} finally {
+	    CloseConnection(dbkeepconn);
 	    if (columnRS != null) {
 		try {
 		    columnRS.close();

@@ -356,7 +356,7 @@ public class KafkaCDC implements Runnable{
 	    cmdLine.getOptionValue("version") : null;
 
 	if (version != null){
-	    System.out.println("KafkaCDC current version is KafkaCDC-R1.0.0");
+	    log.info("KafkaCDC current version is KafkaCDC-R1.0.0");
 	    System.exit(0);
 	}
 
