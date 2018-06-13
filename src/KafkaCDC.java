@@ -17,7 +17,7 @@ import org.apache.log4j.Logger;
 public class KafkaCDC implements Runnable{
     private final long   DEFAULT_STREAM_TO_MS = 60; // the unit is second, 60s
     private final long   DEFAULT_ZOOK_TO_MS   = 10; // the unit is second, 10s
-    private final long   DEFAULT_COMMIT_COUNT = 500;
+    private final long   DEFAULT_COMMIT_COUNT = 5000;
     private final long   DEFAULT_PARALLE      = 16;
     private final long   DEFAULT_INTERVAL     = 10; // the unit is second, 10s
     private final int    DEFAULT_MAX_PARTITION= 1000;

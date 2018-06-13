@@ -107,11 +107,13 @@ public class ConsumerThread extends Thread
 	    props.put("bootstrap.servers", broker);
 	}
 	props.put("group.id", groupid);
-	props.put("enable.auto.commit", "true");
+	props.put("enable.auto.commit", "false");
+	props.put("max.partition.fetch.bytes", 10485760);
 	props.put("auto.commit.interval.ms", "1000");
 	props.put("session.timeout.ms", "30000");
 	props.put("key.deserializer", key);
 	props.put("value.deserializer", value);
+	props.put("max.poll.records", (int)commitCount);
 
 	if (format.equals("HongQuan")) {
 	    kafkaByte = new KafkaConsumer<Long, byte []>(props);
@@ -351,7 +353,7 @@ public class ConsumerThread extends Thread
 	cacheNum += records.count();
 	ProcessByteMessages(records);
 		
-	if (cacheNum > commitCount) {
+	if (cacheNum >= commitCount) {
 	    commit_tables();
 	}
 
