@@ -51,7 +51,7 @@ public class ConsumerThread extends Thread
     String  delimiter;
     String  format;
 
-    Map<String, TableInfo>  tables = null;
+    Map<String, TableState>  tables = null;
     KafkaConsumer<String, String> kafkaString;
     KafkaConsumer<Long, byte []>  kafkaByte;
     private final AtomicBoolean running = new AtomicBoolean(true);
@@ -98,7 +98,7 @@ public class ConsumerThread extends Thread
 	full        = full_;
 	skip        = skip_;
 
-	tables = new HashMap<String, TableInfo>(0);
+	tables = new HashMap<String, TableState>(0);
 	Properties props = new Properties();
 
 	if (zookeeper != null){
@@ -190,8 +190,8 @@ public class ConsumerThread extends Thread
     }
 
     public void commit_tables() {
-	for (TableInfo tableinfo : tables.values()) {
-	    if (!tableinfo.CommitTable()){
+	for (TableState tableState : tables.values()) {
+	    if (!tableState.CommitTable()){
 		return;
 	    }
 	}
@@ -201,20 +201,20 @@ public class ConsumerThread extends Thread
 	} else {
 	    kafkaString.commitSync();
 	}
-	for (TableInfo tableinfo : tables.values()) {
-	    esgyndb.AddInsMsgNum(tableinfo.GetCacheInsert());
-	    esgyndb.AddUpdMsgNum(tableinfo.GetCacheUpdate());
-	    esgyndb.AddKeyMsgNum(tableinfo.GetCacheUpdkey());
-	    esgyndb.AddDelMsgNum(tableinfo.GetCacheDelete());
+	for (TableState tableState : tables.values()) {
+	    esgyndb.AddInsMsgNum(tableState.GetCacheInsert());
+	    esgyndb.AddUpdMsgNum(tableState.GetCacheUpdate());
+	    esgyndb.AddKeyMsgNum(tableState.GetCacheUpdkey());
+	    esgyndb.AddDelMsgNum(tableState.GetCacheDelete());
 
-	    esgyndb.AddInsertNum(tableinfo.GetInsertRows());
-	    esgyndb.AddUpdateNum(tableinfo.GetUpdateRows());
-	    esgyndb.AddDeleteNum(tableinfo.GetDeleteRows());
+	    esgyndb.AddInsertNum(tableState.GetInsertRows());
+	    esgyndb.AddUpdateNum(tableState.GetUpdateRows());
+	    esgyndb.AddDeleteNum(tableState.GetDeleteRows());
 
 	    esgyndb.AddTotalNum(cacheNum);
 	    cacheNum = 0;
 
-	    tableinfo.ClearCache();
+	    tableState.ClearCache();
 	}
     }
 
@@ -300,19 +300,30 @@ public class ConsumerThread extends Thread
 
 	urm.AnalyzeMessage();
 
-	String    tableName = urm.GetSchemaName() + "." + urm.GetTableName();
-	TableInfo tableInfo = esgyndb.GetTableInfo(tableName);
+	String     tableName = urm.GetSchemaName() + "." + urm.GetTableName();
+	TableState tableState = tables.get(tableName);
+	if (tableState == null) {
+	    TableInfo  tableInfo = esgyndb.GetTableInfo(tableName);
 
-	if (tableInfo == null || !tableInfo.InitStmt(dbConn)) {
-	    if (log.isDebugEnabled()) {
-		log.warn("the table [" + tableName + "] is not exists!");
+	    if (tableInfo == null) {
+		if (log.isDebugEnabled()) {
+		    log.warn("the table [" + tableName + "] is not exists!");
+		}
+		return;
 	    }
-	    return;
+
+	    tableState = new TableState(tableInfo);
+	    if (!tableState.InitStmt(dbConn)) {
+		if (log.isDebugEnabled()) {
+		    log.warn("init the table [" + tableName + "] fail!");
+		}
+		return;
+	    }
 	}
 
-	tableInfo.InsertMessageToTable(urm);
+	tableState.InsertMessageToTable(urm);
 
-	tables.put(tableName, tableInfo);
+	tables.put(tableName, tableState);
 	if (log.isTraceEnabled()){
 	    log.trace("exit function");
 	}
@@ -397,7 +408,26 @@ public class ConsumerThread extends Thread
 
 	String    tableName = 
 	    esgyndb.GetDefaultSchema() + "." + esgyndb.GetDefaultTable();
-	TableInfo tableInfo = esgyndb.GetTableInfo(tableName);
+	TableState tableState = tables.get(tableName);
+	if (tableState == null) {
+	    TableInfo  tableInfo = esgyndb.GetTableInfo(tableName);
+
+	    if (tableInfo == null) {
+		if (log.isDebugEnabled()) {
+		    log.warn("the table [" + tableName + "] is not exists!");
+		}
+		return;
+	    }
+
+	    tableState = new TableState(tableInfo);
+	    if (!tableState.InitStmt(dbConn)) {
+		if (log.isDebugEnabled()) {
+		    log.warn("init the table [" + tableName + "] fail!");
+		}
+		return;
+	    }
+	}
+
 	if (format.equals("HongQuan")) {
 	    if (log.isDebugEnabled()){
 		StringBuffer strBuffer = new StringBuffer();
@@ -416,7 +446,7 @@ public class ConsumerThread extends Thread
 		log.debug(strBuffer);
 	    }
 
-	    urm = new HongQuanRowMessage(tableInfo, partitionID, msgByte);
+	    urm = new HongQuanRowMessage(tableState.GetTableInfo(), partitionID, msgByte);
 	} else {
 	    log.error("format is error [" + format + "]");
 	    return;
@@ -424,16 +454,9 @@ public class ConsumerThread extends Thread
 
 	urm.AnalyzeMessage();
 
-	if (tableInfo == null || !tableInfo.InitStmt(dbConn)) {
-	    if (log.isDebugEnabled()) {
-		log.warn("the table [" + tableName + "] is not exists!");
-	    }
-	    return;
-	}
+	tableState.InsertMessageToTable(urm);
 
-	tableInfo.InsertMessageToTable(urm);
-
-	tables.put(tableName, tableInfo);
+	tables.put(tableName, tableState);
 	if (log.isTraceEnabled()){
 	    log.trace("exit function");
 	}

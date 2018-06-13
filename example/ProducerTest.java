@@ -16,6 +16,11 @@ public class ProducerTest{
 
 
     public static void main(String[] args){
+	int records = 1;
+
+	if (args.length > 0) {
+	    records = Integer.parseInt(args[0]);
+	}
 
         Properties props = new Properties();
 
@@ -33,7 +38,7 @@ public class ProducerTest{
         byte[] msg2 = new byte[]{0,1,2,3,(byte)155,5,6,7,8,9,10,11,12,13,14,'a','a','a','a','a'};
         byte[] msg3 = new byte[]{0,1,2,3,(byte)155,5,6,7,8,9,10,11,12,13,14,'a','a','a','a','a','a'};
 
-	for (int i = 0; i < 1; i++) {
+	for (int i = 0; i < records; i++) {
 	    send_msg(producer, topic, msg1);
 	    send_msg(producer, topic, msg2);
 	    send_msg(producer, topic, msg3);
