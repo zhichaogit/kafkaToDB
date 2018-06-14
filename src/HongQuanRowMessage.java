@@ -8,13 +8,15 @@ public class HongQuanRowMessage extends RowMessage
     private byte[]          data            = null;
     private int []          fieldSizes      = null;
     private int []          fieldTypes      = null;
-    private boolean          allFixTypes    = true;
+    private boolean         allFixTypes     = true;
+    private boolean         bigEndian       = true;
 
-    public HongQuanRowMessage(TableInfo tableInfo_, int thread_, byte[] message_)
+    public HongQuanRowMessage(TableInfo tableInfo_, int thread_, byte[] message_, boolean bigEndian_)
     {
 	super(tableInfo_.GetSchemaName(), tableInfo_.GetTableName(), null, thread_, null);
 
 	data = message_;
+	bigEndian = bigEndian_;
 	fieldSizes = new int[(int)tableInfo_.GetColumnCount()];
 	fieldTypes = new int[(int)tableInfo_.GetColumnCount()];
 	for (int i = 0; i < tableInfo_.GetColumnCount(); i++) {
@@ -124,12 +126,20 @@ public class HongQuanRowMessage extends RowMessage
     private String get_column(byte [] data, int offset, int size)
     {
 	long   value = 0;
-
-	for (int i = offset + size - 1; i >= offset; i--){
-	    value *= 256;
-	    long b = data[i] & 0xFF;
+	if (bigEndian) {
+	    for (int i = offset; i < offset + size; i++){
+		value *= 256;
+		long b = data[i] & 0xFF;
 	    
-	    value += b;
+		value += b;
+	    }
+	} else {
+	    for (int i = offset + size - 1; i >= offset; i--){
+		value *= 256;
+		long b = data[i] & 0xFF;
+	    
+		value += b;
+	    }
 	}
 
 	return Long.toString(value);

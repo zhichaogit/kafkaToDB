@@ -43,6 +43,7 @@ public class KafkaCDC implements Runnable{
     String   zookeeper    = null;
 
     boolean  full         = false;
+    boolean  bigEndian    = false;
     boolean  skip         = false;
     long     streamTO     = DEFAULT_STREAM_TO_MS;
     long     zkTO         = DEFAULT_ZOOK_TO_MS;
@@ -155,6 +156,7 @@ public class KafkaCDC implements Runnable{
 	 * --dbuser <arg>      database server user
 	 * --dbpw <arg>        database server password
 	 * --delim <arg>       field delimiter, default: ','(comma)
+	 * --bigendian         the data format is bigendian, default is little endian
 	 * --full              pull data from beginning
 	 * --interval <arg>    the print state time interval
 	 * --key <arg>         key deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer
@@ -260,6 +262,11 @@ public class KafkaCDC implements Runnable{
 	    .hasArg()
 	    .desc("field delimiter, default: ','(comma)")
 	    .build();
+	Option bigendianOption = Option.builder()
+	    .longOpt("bigendian")
+	    .required(false)
+	    .desc("the data format is big endian, default: little endian")
+	    .build();
 	Option fullOption = Option.builder()
 	    .longOpt("full")
 	    .required(false)
@@ -330,6 +337,7 @@ public class KafkaCDC implements Runnable{
 	exeOptions.addOption(dbpwOption);
 
 	exeOptions.addOption(delimOption);
+	exeOptions.addOption(bigendianOption);
 	exeOptions.addOption(fullOption);
 	exeOptions.addOption(intervalOption);
 	exeOptions.addOption(keyOption);
@@ -459,6 +467,7 @@ public class KafkaCDC implements Runnable{
 	delimiter = cmdLine.hasOption("delim") ? cmdLine.getOptionValue("delim")
 	    : null;
 	full = cmdLine.hasOption("full") ? true : false;
+	bigEndian = cmdLine.hasOption("bigendian") ? true : false;
 	interval = cmdLine.hasOption("interval") ?
             Long.parseLong(cmdLine.getOptionValue("interval")) : DEFAULT_INTERVAL;
 	key = cmdLine.hasOption("key") ? cmdLine.getOptionValue("key")
@@ -580,6 +589,7 @@ public class KafkaCDC implements Runnable{
 	    ConsumerThread consumer = new ConsumerThread(me.esgyndb,
 							 me.full,
 							 me.skip,
+							 me.bigEndian,
 							 me.delimiter,
 							 me.format,
 							 me.zookeeper,

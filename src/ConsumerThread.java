@@ -48,6 +48,7 @@ public class ConsumerThread extends Thread
 
     boolean full;
     boolean skip;
+    boolean bigEndian;
     String  delimiter;
     String  format;
 
@@ -62,6 +63,7 @@ public class ConsumerThread extends Thread
     ConsumerThread(EsgynDB esgyndb_,
 		   boolean full_,
 		   boolean skip_,
+		   boolean bigEndian_,
 		   String  delimiter_,
 		   String  format_,
 		   String  zookeeper_,
@@ -90,6 +92,7 @@ public class ConsumerThread extends Thread
 	zkTO        = zkTO_;
 	commitCount = commitCount_;
 	cacheNum    = 0;
+	bigEndian   = bigEndian_;
 
 	format      = format_;
 	delimiter   = delimiter_;
@@ -448,7 +451,8 @@ public class ConsumerThread extends Thread
 		log.debug(strBuffer);
 	    }
 
-	    urm = new HongQuanRowMessage(tableState.GetTableInfo(), partitionID, msgByte);
+	    urm = new HongQuanRowMessage(tableState.GetTableInfo(), partitionID, 
+					 msgByte, bigEndian);
 	} else {
 	    log.error("format is error [" + format + "]");
 	    return;

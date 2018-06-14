@@ -27,6 +27,7 @@ usage: Consumer Server
 *    --dbuser <arg>      database server user, default: db__root
 *    --dbpw <arg>        database server password, default: zz
 *    --delim <arg>       field delimiter, default: ','(comma)
+*    --bigendian         the data format is big endian, default is little endian
 *    --full              pull data from beginning, default: false
 *    --interval <arg>    the print state time interval, default: 10s
 *    --key <arg>         key deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer

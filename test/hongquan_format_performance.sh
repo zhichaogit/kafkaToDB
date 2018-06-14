@@ -26,7 +26,7 @@ $KAFKA/bin/kafka-topics.sh --list --zookeeper $ZOOKEEPER
 java -cp bin:bin/*:libs/* ProducerTest $RECORDS
 
 KAFKA_CDC="/work/kafka/KafkaCDC"
-java -cp $KAFKA_CDC/bin/:$KAFKA_CDC/libs/* KafkaCDC -p $PARTITION -b $BROKER -d $IPADDR -s $DESTSCHEMA --table $TABLE -t $TOPIC -f HongQuan --full --sto 5 --interval 2 --key org.apache.kafka.common.serialization.LongDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
+java -cp $KAFKA_CDC/bin/:$KAFKA_CDC/libs/* KafkaCDC -p $PARTITION -b $BROKER -d $IPADDR -s $DESTSCHEMA --table $TABLE -t $TOPIC -f HongQuan --bigendian --full --sto 5 --interval 2 --key org.apache.kafka.common.serialization.LongDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
 
 # clean the environment
 sqlci <<EOF
