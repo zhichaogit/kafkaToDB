@@ -193,10 +193,8 @@ public class EsgynDB
 	try {
 	    String getTableColumns = "SELECT o.object_name TABLE_NAME, "
 		+ "c.COLUMN_NAME COLUMN_NAME, c.FS_DATA_TYPE DATA_TYPE, "
-		+ "c.FS_DATA_TYPE SOURCE_DATA_TYPE, c.SQL_DATA_TYPE TYPE_NAME, "
-		+ "c.COLUMN_SIZE COLUMN_SIZE, c.NULLABLE NULLABLE,"
-		+ "c.COLUMN_PRECISION DECIMAL_DIGITS, "
-		+ "c.COLUMN_SCALE NUM_PREC_RADIX, c.DEFAULT_VALUE COLUMN_DEF, "
+		+ "c.SQL_DATA_TYPE TYPE_NAME, c.COLUMN_SIZE COLUMN_SIZE, "
+		+ "c.NULLABLE NULLABLE, c.CHARACTER_SET CHARACTER_SET, "
 		+ "c.COLUMN_NUMBER ORDINAL_POSITION "
 		+ "FROM \"_MD_\".OBJECTS o, \"_MD_\".COLUMNS c "
 		+ "WHERE o.object_uid=c.object_uid AND c.COLUMN_CLASS != 'S' "
@@ -217,20 +215,21 @@ public class EsgynDB
 	    int   colOff = 0;
 	    int   colId  = 0;
 	    while (columnRS.next()) {
-		String      colName = columnRS.getString("COLUMN_NAME");
+		String      colName  = columnRS.getString("COLUMN_NAME");
 		String      typeName = columnRS.getString("TYPE_NAME");
-		String      colType = columnRS.getString("DATA_TYPE");
-		int         colSize = 
+		String      colType  = columnRS.getString("DATA_TYPE");
+		String      colSet   = columnRS.getString("CHARACTER_SET");
+		int         colSize  = 
 		    Integer.parseInt(columnRS.getString("COLUMN_SIZE"));
 		
 		colId = Integer.parseInt(columnRS.getString("ORDINAL_POSITION"));
-		ColumnInfo  column = new ColumnInfo(colId, colOff, colSize, 
+		ColumnInfo  column = new ColumnInfo(colId, colOff, colSize, colSet,
 						    colType, typeName, colName);
 
 		strBuffer.append("\t" + colName + " [id: " + colId + ", off: " 
 				 + colOff +  ", Type: " + typeName.trim() 
 				 + ", Type ID: " + colType 
-				 + ", Size: " + colSize + "]\n");
+				 + ", Size: " + column.GetColumnSize() + "]\n");
 
 		table.AddColumn(column);
 		colOff++;
