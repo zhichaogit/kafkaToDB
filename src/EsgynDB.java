@@ -227,9 +227,10 @@ public class EsgynDB
 		ColumnInfo  column = new ColumnInfo(colId, colOff, colSize, 
 						    colType, typeName, colName);
 
-		strBuffer.append("\t" + colName + "[id: " + colId + ", off: " 
+		strBuffer.append("\t" + colName + " [id: " + colId + ", off: " 
 				 + colOff +  ", Type: " + typeName.trim() 
-				 + ", Type ID: " + colType + "]\n");
+				 + ", Type ID: " + colType 
+				 + ", Size: " + colSize + "]\n");
 
 		table.AddColumn(column);
 		colOff++;

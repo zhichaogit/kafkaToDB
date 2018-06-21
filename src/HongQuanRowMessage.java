@@ -106,7 +106,7 @@ public class HongQuanRowMessage extends RowMessage
 	    }
 
 	    if(log.isDebugEnabled()){
-		strBuffer.append("\n\tColumn: " + columnValue.GetCurValue());
+		strBuffer.append("\n\tColumn: [" + columnValue.GetCurValue() + "], size: " + fieldSizes[i]);
 	    }
 
 	    columns.put(i, columnValue);

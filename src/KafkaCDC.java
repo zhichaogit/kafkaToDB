@@ -107,7 +107,7 @@ public class KafkaCDC implements Runnable{
 
     public void run() 
     {  
-	log.warn("keepalive thread start to run");  
+	log.info("keepalive thread start to run");  
         while (running != 0) {
 	    try {
 		Thread.sleep(interval);
@@ -131,7 +131,7 @@ public class KafkaCDC implements Runnable{
 		e.printStackTrace(); 
 		break;
 	    }
-        }  
+        }
 	log.warn("keepalive thread exited!");  
     }
 
@@ -553,14 +553,17 @@ public class KafkaCDC implements Runnable{
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
 	strBuffer.append("KafkaCDC start time: " + sdf.format(starttime));
+	strBuffer.append("\n\tbigendian   = " + me.bigEndian);
 	strBuffer.append("\n\tbroker      = " + me.broker);
 	strBuffer.append("\n\tcommitCount = " + me.commitCount);
 	strBuffer.append("\n\tdelimiter   = " + me.delimiter);
 	strBuffer.append("\n\tformat      = " + me.format);
-	strBuffer.append("\n\tmode        = " + me.full);
+	strBuffer.append("\n\tencode      = " + me.charEncoding);
 	strBuffer.append("\n\tgroup       = " + me.groupID);
-	strBuffer.append("\n\tinterval    = " + (me.interval / 1000) + "ms");
+	strBuffer.append("\n\tinterval    = " + (me.interval / 1000) + "s");
+	strBuffer.append("\n\tmode        = " + me.full);
 	strBuffer.append("\n\tpartitions  = " + Arrays.toString(me.partitions));
+	strBuffer.append("\n\tschema      = " + me.defschema);
 	strBuffer.append("\n\tskip        = " + me.skip);
 	strBuffer.append("\n\ttable       = " + me.deftable);
 	strBuffer.append("\n\ttopic       = " + me.topic);
@@ -568,8 +571,8 @@ public class KafkaCDC implements Runnable{
 	strBuffer.append("\n\tkey         = " + me.key); 
 	strBuffer.append("\n\tvalue       = " + me.value); 
 
-	strBuffer.append("\n\tstreamTO    = " + (me.streamTO / 1000) + "ms");
-	strBuffer.append("\n\tzkTO        = " + (me.zkTO / 1000) + "ms");
+	strBuffer.append("\n\tstreamTO    = " + (me.streamTO / 1000) + "s");
+	strBuffer.append("\n\tzkTO        = " + (me.zkTO / 1000) + "s");
 	strBuffer.append("\n\tdburl       = " + me.dburl);
 	log.info(strBuffer.toString());
 	
