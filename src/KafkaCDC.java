@@ -45,6 +45,7 @@ public class KafkaCDC implements Runnable{
     boolean  full         = false;
     boolean  bigEndian    = false;
     boolean  skip         = false;
+    boolean  keepalive    = false;
     long     streamTO     = DEFAULT_STREAM_TO_MS;
     long     zkTO         = DEFAULT_ZOOK_TO_MS;
     long     interval     = DEFAULT_INTERVAL;
@@ -111,7 +112,7 @@ public class KafkaCDC implements Runnable{
         while (running != 0) {
 	    try {
 		Thread.sleep(interval);
-		if (!esgyndb.KeepAlive()){
+		if (keepalive && !esgyndb.KeepAlive()){
 		    log.error("keepalive thread is disconnected from EsgynDB!");
 		    break;
 		}
@@ -278,6 +279,12 @@ public class KafkaCDC implements Runnable{
 	    .hasArg()
 	    .desc("the print state time interval, default: 10000ms")
 	    .build();
+	Option keepaliveOption = Option.builder()
+	    .longOpt("keepalive")
+	    .required(false)
+	    .hasArg()
+	    .desc("check database keepalive")
+	    .build();
 	Option keyOption = Option.builder()
 	    .longOpt("key")
 	    .required(false)
@@ -341,6 +348,7 @@ public class KafkaCDC implements Runnable{
 	exeOptions.addOption(fullOption);
 	exeOptions.addOption(intervalOption);
 	exeOptions.addOption(keyOption);
+	exeOptions.addOption(keepaliveOption);
 	exeOptions.addOption(skipOption);
 	exeOptions.addOption(stoOption);
 	exeOptions.addOption(tableOption);
@@ -470,6 +478,7 @@ public class KafkaCDC implements Runnable{
 	bigEndian = cmdLine.hasOption("bigendian") ? true : false;
 	interval = cmdLine.hasOption("interval") ?
             Long.parseLong(cmdLine.getOptionValue("interval")) : DEFAULT_INTERVAL;
+	keepalive = cmdLine.hasOption("keepalive") ? true : false;
 	key = cmdLine.hasOption("key") ? cmdLine.getOptionValue("key")
 	    : DEFAULT_KEY;
 	skip= cmdLine.hasOption("skip") ? true : false;
@@ -568,6 +577,7 @@ public class KafkaCDC implements Runnable{
 	strBuffer.append("\n\ttable       = " + me.deftable);
 	strBuffer.append("\n\ttopic       = " + me.topic);
 	strBuffer.append("\n\tzookeeper   = " + me.zookeeper); 
+	strBuffer.append("\n\tkeepalive   = " + me.keepalive); 
 	strBuffer.append("\n\tkey         = " + me.key); 
 	strBuffer.append("\n\tvalue       = " + me.value); 
 

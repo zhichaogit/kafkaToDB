@@ -14,7 +14,7 @@ cp bin/*.class KafkaCDC/bin
 cp bin/log4j.* KafkaCDC/bin
 cp -r example KafkaCDC/
 cp README KafkaCDC/
-echo "javac -d ../bin -cp ../libs/* -Xlint:deprecation *.java" > KafkaCDC/example/compile.sh
+echo "javac -d bin -cp example:libs/* -Xlint:deprecation example/*.java" > KafkaCDC/example/compile.sh
 
 tar zcvf KafkaCDC.tar.gz KafkaCDC
 rm -rf KafkaCDC
