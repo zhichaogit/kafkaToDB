@@ -1,0 +1,17 @@
+If want to test kafka server is working or not with binary, you can test step by step as following:
+
+1. Modify the bootstrap.servers of ProducerTest.java and ConsumerTest.java, then compile with command: 
+   # example/compile.sh
+2. Create the topic g_ad
+   # bin/kafka-topics.sh --create --zookeeper  localhost:2181 --replication-factor 1 --partitions 1 --topic g_ad
+3. Produce data to kafka
+   # java -cp bin:bin/*:libs/* ProducerTest
+4. Consume data from kafka
+   # java -cp bin:bin/*:libs/* ConsumerTest
+
+   if you get log as following, you succend:
+   2018-06-26 07:09:05,807 -- INFO -- main org.apache.kafka.clients.consumer.internals.Fetcher.resetOffsetIfNeeded(Fetcher.java:561), [Consumer clientId=consumer-1, groupId=g1] Resetting offset for partition g_ad-0 to offset 0.
+   nothing available end: org.apache.kafka.clients.consumer.ConsumerRecords@3e77a1ed
+   key = null, offset = 0, value = [B@4ba2ca36, length:17
+   key = null, offset = 1, value = [B@3444d69d, length:20
+   key = null, offset = 2, value = [B@1372ed45, length:21
