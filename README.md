@@ -14,13 +14,15 @@ KafkaCDC depends some jar files:
 # KafkaCDC
 usage: Consumer Server
 * -b,--broker <arg>      bootstrap.servers setting, ex: <node>:9092, default: "localhost:9092"
-* -c,--commit <arg>      num message per Kakfa synch, default: 500
+* -c,--commit <arg>      num message per Kakfa synch, default: 5000
 * -e --encode <arg>      character encoding of data, default: utf8
 * -f,--format <arg>      format of data, support "Unicom" now, default: ""
 * -g,--group <arg>       group for this consumer, default: 0
+* -h,--help              show help information
 * -p,--partition <arg>   partition parameter format: "id [, id] ...", id should be: "id-id"<br>                        one thread only process data from one partition, default: 16<br/>                        example:<br>			 a. -p "0,4" : means this progress have two threads, process the partition 0 and 4<br>			 b. -p "0-4" : means this progress have five threads, process the partition 0 to 4<br>			 c. -p "0,3-5,6" : means process the partition 0,3,4,5 and 6<br>			 d. -p 4 : means process the partition 0,1,2 and 3
 * -s,--schema <arg>      default database schema, use the schema from data without this option, default: null
 * -t,--topic <arg>       REQUIRED. topic of subscription
+* -v --version           print the version of KafkaCDC
 * -z,--zook <arg>        zookeeper connection list, ex: <node>:port[/kafka],...
 * -d,--dbip <arg>        database server ip, default: "localhost"
 *    --dbport <arg>      database server port, default: 23400
@@ -29,12 +31,13 @@ usage: Consumer Server
 *    --delim <arg>       field delimiter, default: ','(comma)
 *    --bigendian         the data format is big endian, default is little endian
 *    --full              pull data from beginning, default: false
-*    --interval <arg>    the print state time interval, default: 10s
+*    --interval <arg>    the print state time interval, the unit is second, default: 10s
+*    --keepalive         check database keepalive, default is false
 *    --key <arg>         key deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer
-*    --skip              skip all error of data, default: false
+*    --skip              skip all errors of data, default: false
 *    --sto <arg>         kafka poll time-out limit, default: 60s
-*    --table <arg>       kafka poll time-out limit, default: null
-*    --tenant <arg>      database tenant user
+*    --table <arg>       table name, default: null
+*    --tenant <arg>      tanent user name, default: null
 *    --value <arg>       value  deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer
 *    --zkto <arg>        zookeeper time-out limit, default: 10s
 

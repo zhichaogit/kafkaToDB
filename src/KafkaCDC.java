@@ -77,6 +77,10 @@ public class KafkaCDC implements Runnable{
 
         public void run() 
 	{
+	    // show help or version information
+	    if (consumers == null)
+		return;
+
             log.warn("exiting via Ctrl+C!");
 
 	    for (ConsumerThread consumer : consumers) {
@@ -142,11 +146,12 @@ public class KafkaCDC implements Runnable{
 	 * 
 	 * Cmd line params:
 	 * -b --broker <arg>   broker location (node0:9092[,node1:9092])
-	 * -c --commit <arg>   num message per Kakfa synch (num recs, default is 500)
+	 * -c --commit <arg>   num message per Kakfa synch (num recs, default is 5000)
 	 * -d --dbip <arg>     database server ip
 	 * -e --encode <arg>   character encoding of data, default: utf8
 	 * -f,--format <arg>   format of data, default: ""
 	 * -g --group <arg>    groupID
+	 * -h --help           show help information
 	 * -p --partition <arg>the partition number (default is 16)
 	 * -s --schema <arg>   schema
 	 * -t --topic <arg>    topic
@@ -180,7 +185,7 @@ public class KafkaCDC implements Runnable{
 	    .longOpt("commit")
 	    .required(false)
 	    .hasArg()
-	    .desc("num message per Kakfa synch, default: 500")
+	    .desc("num message per Kakfa synch, default: 5000")
 	    .build();
 	Option dbipOption = Option.builder("d")
 	    .longOpt("dbip")
@@ -198,7 +203,8 @@ public class KafkaCDC implements Runnable{
 	    .longOpt("format")
 	    .required(false)
 	    .hasArg()
-	    .desc("format of data, default: \"\"")
+	    .desc("format of data, support \"Unicom\" and \"HongQuan\" now, "
+		  + "default: \"\"")
 	    .build();
 	Option groupOption = Option.builder("g")
 	    .longOpt("group")
@@ -206,13 +212,22 @@ public class KafkaCDC implements Runnable{
 	    .hasArg()
 	    .desc("group for this consumer, default: 0")
 	    .build();
+	Option helpOption = Option.builder("h")
+	    .longOpt("help")
+	    .required(false)
+	    .desc("show help information")
+	    .build();
 	Option partitionOption = Option.builder("p")
 	    .longOpt("partition")
-	    .required(true)
+	    .required(false)
 	    .hasArg()
 	    .desc("partition number to process message, one thread only process "
-		  + " process the data from one partition, default: 16. the format"
-		  + " example: \"1,4-5,8\"")
+		  + " the data from one partition, default: 16. the format: "
+		  + "\"id [, id] ...\", id should be: \"id-id\". example: "
+		  + "\n\ta. -p \"1,4-5,8\" : means process the partition "
+		  + "0,3,4,5 and 6" 
+		  + "\n\tb. -p 4 : means process the partition 0,1,2 and 3" 
+		  + "\n\tc. -p \"2-2\" : means process the partition 3")
 	    .build();
 	Option schemaOption = Option.builder("s")
 	    .longOpt("schema")
@@ -236,7 +251,6 @@ public class KafkaCDC implements Runnable{
 	Option versionOption = Option.builder("v")
 	    .longOpt("version")
 	    .required(false)
-	    .hasArg()
 	    .desc("print the version of KafkaCDC")
 	    .build();
 	Option dbportOption = Option.builder()
@@ -277,13 +291,13 @@ public class KafkaCDC implements Runnable{
 	    .longOpt("interval")
 	    .required(false)
 	    .hasArg()
-	    .desc("the print state time interval, default: 10000ms")
+	    .desc("the print state time interval, the unit is second, default: 10s")
 	    .build();
 	Option keepaliveOption = Option.builder()
 	    .longOpt("keepalive")
 	    .required(false)
 	    .hasArg()
-	    .desc("check database keepalive")
+	    .desc("check database keepalive, default is false")
 	    .build();
 	Option keyOption = Option.builder()
 	    .longOpt("key")
@@ -294,13 +308,13 @@ public class KafkaCDC implements Runnable{
 	Option skipOption = Option.builder()
 	    .longOpt("skip")
 	    .required(false)
-	    .desc("skip all error of data, default: false")
+	    .desc("skip all errors of data, default: false")
 	    .build();
 	Option stoOption = Option.builder()
 	    .longOpt("sto")
 	    .required(false)
 	    .hasArg()
-	    .desc("kafka poll time-out limit, default: 60000ms")
+	    .desc("kafka poll time-out limit, default: 60s")
 	    .build();
 	Option tableOption = Option.builder()
 	    .longOpt("table")
@@ -324,7 +338,7 @@ public class KafkaCDC implements Runnable{
 	    .longOpt("zkto")
 	    .required(false)
 	    .hasArg()
-	    .desc("zookeeper time-out limit, default: 10000ms")
+	    .desc("zookeeper time-out limit, default: 10s")
 	    .build();
 
 	exeOptions.addOption(brokerOption);
@@ -333,6 +347,7 @@ public class KafkaCDC implements Runnable{
 	exeOptions.addOption(encodeOption);
 	exeOptions.addOption(formatOption);
 	exeOptions.addOption(groupOption);
+	exeOptions.addOption(helpOption);
 	exeOptions.addOption(partitionOption);
 	exeOptions.addOption(schemaOption);
 	exeOptions.addOption(topicOption);
@@ -368,11 +383,18 @@ public class KafkaCDC implements Runnable{
 	CommandLineParser parser = new DefaultParser();
 	CommandLine cmdLine = parser.parse(exeOptions, args);
 
-	String version = cmdLine.hasOption("version") ? 
-	    cmdLine.getOptionValue("version") : null;
+	boolean getVersion = cmdLine.hasOption("version") ? true : false;
 
-	if (version != null){
+	if (getVersion){
 	    log.info("KafkaCDC current version is KafkaCDC-R1.0.0");
+	    System.exit(0);
+	}
+
+	boolean getHelp = cmdLine.hasOption("help") ? true : false;
+
+	if (getHelp){
+	    HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
 	}
 
@@ -391,7 +413,7 @@ public class KafkaCDC implements Runnable{
 	groupID = cmdLine.hasOption("group") ? cmdLine.getOptionValue("group")
 	    : "group_0";
 	String partString = cmdLine.hasOption("partition") ? 
-	    cmdLine.getOptionValue("partition") : null;
+	    cmdLine.getOptionValue("partition") : "16";
 	String[] parts = partString.split(",");
 	ArrayList<Integer> tempParts = new ArrayList<Integer>(0);
 	if (parts.length < 1) {
@@ -520,6 +542,13 @@ public class KafkaCDC implements Runnable{
 		formatter.printHelp("Consumer Server", exeOptions);
 		System.exit(0);
 	    }
+	}
+
+	if (!format.equals("Unicom") && (defschema == null || deftable == null)) {
+	    HelpFormatter formatter = new HelpFormatter();
+	    log.error ("schema and table must be specified in HongQuan and Normal format.");
+	    formatter.printHelp("Consumer Server", exeOptions);
+	    System.exit(0);
 	}
 
 	if ((format.equals("") && delimiter != null && delimiter.length() != 1)) {
