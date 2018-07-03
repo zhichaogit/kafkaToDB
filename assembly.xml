@@ -1,0 +1,76 @@
+<assembly
+	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/2.5.3"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/2.5.3 http://maven.apache.org/xsd/assembly-2.5.3.xsd">
+	<id>release</id>
+	<formats>
+		<format>tar.gz</format>
+	</formats>
+	
+	
+	<!-- 如果为false，不会额外产生根目录，否则，在tar.gz包中会产生以pom.xml中artifactId和version命名的根目录。 -->
+	<includeBaseDirectory>false</includeBaseDirectory>
+	<dependencySets>
+		<dependencySet>
+			<unpack>false</unpack>
+			<scope>runtime</scope>
+			<!-- 依赖包在tar.gz包中相对于根目录的路径 -->
+			<outputDirectory>KafkaCDC/lib</outputDirectory>
+			<!-- 依赖包中是否包含当前工程； -->
+			<useProjectArtifact>false</useProjectArtifact>
+		</dependencySet>
+	</dependencySets>
+	<fileSets>
+		<fileSet>
+			<directory>example</directory>
+			<outputDirectory>KafkaCDC/example</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>src/main/resources</directory>
+			<outputDirectory>KafkaCDC/conf</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>conf</directory>
+			<outputDirectory>KafkaCDC/conf</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>test</directory>
+			<outputDirectory>KafkaCDC/test</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>design</directory>
+			<outputDirectory>KafkaCDC/doc</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>bin</directory>
+			<outputDirectory>KafkaCDC/bin</outputDirectory>
+		</fileSet>
+		
+        <!-- 把项目自己编译出来的jar文件，打包进的根目录 -->
+		<!-- <fileSet>  
+            <directory>${project.build.directory}</directory>  
+            <outputDirectory>KafkaCDC/</outputDirectory>  
+            <includes>  
+                <include>*.jar</include>  
+            </includes>  
+        </fileSet>   -->
+	</fileSets>
+	
+	<!-- 把项目的脚本文件目录（ ）中的启动脚本文件，打包进tar文件的跟目录 -->
+
+	<files>
+		<!-- 把target目录下的KafKaCDC.jar文件打包到本次包的lib目录并且更改名字为KafkaCDC.jar -->
+		 <file>
+   			 <source>target/KafKaCDC.jar</source>
+   			 <outputDirectory>KafkaCDC/lib</outputDirectory>
+   			 <destName>KafkaCDC.jar</destName>
+   		 </file>
+		<file>
+			<source>README.md</source>
+			<outputDirectory>KafkaCDC</outputDirectory>
+			<filtered>true</filtered>
+		</file>
+	</files>
+	
+	
+</assembly>

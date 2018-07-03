@@ -1,7 +1,9 @@
-import org.apache.commons.cli.DefaultParser;
+package com.esgyn.kafkaCDC.server;
+
 
 import org.apache.commons.cli.CommandLine; 
 import org.apache.commons.cli.CommandLineParser; 
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter; 
 import org.apache.commons.cli.Option; 
 import org.apache.commons.cli.Options; 
@@ -13,8 +15,13 @@ import java.util.Arrays;
 import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.xml.DOMConfigurator;
+
+import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
+import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerThread;
 
 public class KafkaCDC implements Runnable{
+    private final static String DEFAULT_LOGCONFPATH = "../conf/log4j.xml";
     private final long   DEFAULT_STREAM_TO_MS = 60; // the unit is second, 60s
     private final long   DEFAULT_ZOOK_TO_MS   = 10; // the unit is second, 10s
     private final long   DEFAULT_COMMIT_COUNT = 5000;
@@ -118,7 +125,7 @@ public class KafkaCDC implements Runnable{
 		Thread.sleep(interval);
 		if (keepalive && !esgyndb.KeepAlive()){
 		    log.error("keepalive thread is disconnected from EsgynDB!");
-		    break;
+                break;
 		}
 		esgyndb.DisplayDatabase();
 		for (ConsumerThread consumer : consumers) {
@@ -518,11 +525,11 @@ public class KafkaCDC implements Runnable{
 	interval *= 1000;
 	streamTO *= 1000;
 	zkTO *= 1000;
-
+	
 	if (defschema != null)
 	    defschema = defschema.toUpperCase();
 	if (deftable != null)
-	    deftable = deftable.toUpperCase();
+                deftable = deftable.toUpperCase();
 	dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/catelog=Trafodion;"
 	    + "applicationName=KafkaCDC";
 	if (tenantUser != null)
@@ -577,6 +584,8 @@ public class KafkaCDC implements Runnable{
 
     public static void main(String[] args) 
     {
+		// 自定义log4j.xml读取路径
+		DOMConfigurator.configure(DEFAULT_LOGCONFPATH);
 	KafkaCDC me = new KafkaCDC();
 		
 	try {

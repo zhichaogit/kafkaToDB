@@ -52,8 +52,8 @@ the classes of KafkaCDC as following:<br/>
 <img align="center" src="https://github.com/esgyn/kafkaCDC/blob/master/design/classes.jpg" alt="Geolife data at block scale"></a><br/><br/>
 </p>
 
-Must create the schema and tables first of all.
 # example:
+Must create the schema and tables first of all.
 * java -cp bin:bin/\*:libs/\* KafkaCDC -p 1 -b 192.168.0.71:9092 -d 192.168.0.71 -g 1 -t test
 
 * java -cp bin:bin/\*:libs/\* KafkaCDC -p 1 -b 192.168.0.71:9092 -d 192.168.0.71 -g 1 -s SEABASE -t test

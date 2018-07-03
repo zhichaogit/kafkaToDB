@@ -1,3 +1,5 @@
+package com.esgyn.kafkaCDC.server.kafkaConsumer;
+
 import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
@@ -11,6 +13,13 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.log4j.Logger; 
+
+import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
+import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
+import com.esgyn.kafkaCDC.server.esgynDB.TableState;
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.HongQuanRowMessage;
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.UnicomRowMessage;
 
 import java.lang.ArrayIndexOutOfBoundsException;
 import java.io.UnsupportedEncodingException;
@@ -60,7 +69,7 @@ public class ConsumerThread extends Thread
 
     private static Logger log = Logger.getLogger(ConsumerThread.class);
 
-    ConsumerThread(EsgynDB esgyndb_,
+   public ConsumerThread(EsgynDB esgyndb_,
 		   boolean full_,
 		   boolean skip_,
 		   boolean bigEndian_,

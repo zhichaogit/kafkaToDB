@@ -1,6 +1,10 @@
+package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
+
 import java.util.Map;
 import java.util.HashMap;
 import org.apache.log4j.Logger; 
+ 
+import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue; 
  
 public class RowMessage
 {
@@ -103,4 +107,3 @@ public class RowMessage
 	return columns;
     }
 }
-

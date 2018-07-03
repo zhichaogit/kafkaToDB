@@ -7,7 +7,7 @@
     </layout>
   </appender>
   <appender name="DEBUG" class="org.apache.log4j.RollingFileAppender">
-    <param name="File" value="./log/KafkaCDC-debug.log"/>
+    <param name="File" value="../log/KafkaCDC-debug.log"/>
     <param name="Append" value="true"/>
     <param name="MaxFileSize" value="100MB"/>
     <param name="MaxBackupIndex" value="5"/>
@@ -16,7 +16,7 @@
     </layout>
   </appender>
   <appender name="INFO" class="org.apache.log4j.RollingFileAppender">
-    <param name="File" value="./log/KafkaCDC-info.log"/>
+    <param name="File" value="../log/KafkaCDC-info.log"/>
     <param name="Append" value="true"/>
     <param name="MaxFileSize" value="100MB"/>
     <param name="MaxBackupIndex" value="5"/>
@@ -28,7 +28,7 @@
     </filter>
   </appender>
   <appender name="WARN" class="org.apache.log4j.RollingFileAppender">
-    <param name="File" value="./log/KafkaCDC-warn.log"/>
+    <param name="File" value="../log/KafkaCDC-warn.log"/>
     <param name="Append" value="true"/>
     <param name="MaxFileSize" value="100MB"/>
     <param name="MaxBackupIndex" value="5"/>
@@ -40,7 +40,7 @@
     </filter>
   </appender>
   <appender name="ERROR" class="org.apache.log4j.RollingFileAppender">
-    <param name="File" value="./log/KafkaCDC-error.log"/>
+    <param name="File" value="../log/KafkaCDC-error.log"/>
     <param name="Append" value="true"/>
     <param name="MaxFileSize" value="100MB"/>
     <param name="MaxBackupIndex" value="5"/>
@@ -52,7 +52,7 @@
     </filter>
   </appender>
   <appender name="FATAL" class="org.apache.log4j.RollingFileAppender">
-    <param name="File" value="./log/KafkaCDC-compressColumnMessage.log"/>
+    <param name="File" value="../log/KafkaCDC-compressColumnMessage.log"/>
     <param name="Append" value="true"/>
     <param name="MaxFileSize" value="100MB"/>
     <param name="MaxBackupIndex" value="5"/>
