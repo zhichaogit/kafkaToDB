@@ -41,6 +41,17 @@ usage: Consumer Server
 *    --value <arg>       value  deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer
 *    --zkto <arg>        zookeeper time-out limit, default: 10s
 
+<p align="center">
+the architecture of KafkaCDC as following:<br/>
+<a href="https://github.com/esgyn/kafkaCDC/blob/master/design/architecture.jpg" target="_blank">
+<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/master/design/architecture.jpg" alt="Geolife data at block scale"></a><br/><br/>
+</p>
+<p align="center">
+the classes of KafkaCDC as following:<br/>
+<a href="https://github.com/esgyn/kafkaCDC/blob/master/design/classes.jpg" target="_blank">
+<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/master/design/classes.jpg" alt="Geolife data at block scale"></a><br/><br/>
+</p>
+
 Must create the schema and tables first of all.
 # example:
 * java -cp bin:bin/\*:libs/\* KafkaCDC -p 1 -b 192.168.0.71:9092 -d 192.168.0.71 -g 1 -t test
