@@ -75,7 +75,7 @@ public class TableState
 	    init_insert_stmt();
 	    init_delete_stmt();
 	} else if (dbConn != dbConn_) {
-	    log.error ("table: " + schemaName + "." + tableName + 
+	    log.error ("table: " + schemaName + "." + "\""+tableName +"\""+
 		       " is reinited, dbConn: " + dbConn + ", the new dbConn: "
 		       + dbConn_);
 	    return false;
@@ -88,7 +88,7 @@ public class TableState
 	ColumnInfo  column    = columns.get(0);
 	String      valueSql  = ") VALUES(?";
 	String      insertSql = "UPSERT USING LOAD INTO " + schemaName + "."
-	    + tableName + "(" + column.GetColumnName();
+	    + "\""+tableName +"\""+ "(" + column.GetColumnName();
 
 	for(int i = 1; i < columns.size(); i++) {
 	    column     = columns.get(i);
@@ -124,7 +124,7 @@ public class TableState
     public void init_delete_stmt() {
 	ColumnInfo keyInfo   = keyColumns.get(0);
 	String     deleteSql = "DELETE FROM " + schemaName + "." 
-	    + tableName;
+	    + "\""+tableName+"\"";
 
 	deleteSql += where_condition() + ";";
 
@@ -412,6 +412,7 @@ public class TableState
 	    insertRows.put(newkey, insertRow);
 
 	    // delete the old key on disk
+        if (!oldkey.equals(newkey))
 	    deleteRows.put(oldkey, rowValues);
 	} else {
 	    Map<Integer, ColumnValue> deleterow = deleteRows.get(oldkey);
@@ -456,6 +457,7 @@ public class TableState
 		updateRows.put(newkey, updateRow);
 
 		// delete the data on the disk
+		if (!oldkey.equals(newkey))
 		deleteRows.put(oldkey, rowValues);
 	    }
 	}
@@ -687,7 +689,7 @@ public class TableState
 	}
 
 	ColumnInfo  columnInfo  = null;
-	String      updateSql   = "UPDATE  " + schemaName + "." + tableName 
+	String      updateSql   = "UPDATE  " + schemaName + "." + "\""+tableName+"\""
 	    + " SET ";
 	ColumnInfo  keyInfo     = null;
 	ColumnValue keyValue    = null;

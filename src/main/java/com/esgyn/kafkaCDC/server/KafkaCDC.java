@@ -327,7 +327,7 @@ public class KafkaCDC implements Runnable{
 	    .longOpt("table")
 	    .required(false)
 	    .hasArg()
-	    .desc("table name, default: null")
+	    .desc("table name, default: null,you should write like this [tablename]  if tablename is lowerCase")
 	    .build();
 	Option tenantOption = Option.builder()
 	    .longOpt("tenant")
@@ -386,8 +386,7 @@ public class KafkaCDC implements Runnable{
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
 	}
-	     
-	CommandLineParser parser = new DefaultParser();
+	DefaultParser parser = new DefaultParser();
 	CommandLine cmdLine = parser.parse(exeOptions, args);
 
 	boolean getVersion = cmdLine.hasOption("version") ? true : false;
@@ -528,8 +527,13 @@ public class KafkaCDC implements Runnable{
 	
 	if (defschema != null)
 	    defschema = defschema.toUpperCase();
-	if (deftable != null)
+	if (deftable != null) {
+            if (deftable.startsWith("[")&&deftable.endsWith("]")) {
+                deftable = deftable.substring(1, deftable.length()-1);
+                log.warn("The table name is lowercase");
+            }else {
                 deftable = deftable.toUpperCase();
+            }
 	dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/catelog=Trafodion;"
 	    + "applicationName=KafkaCDC";
 	if (tenantUser != null)
@@ -580,6 +584,20 @@ public class KafkaCDC implements Runnable{
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
 	}
+		// interval ||streamTO ||zkTO can't be "0"
+		if (interval <= 0) {
+			log.error("the interval parameter can't less than or equal \"0\" ");
+			System.exit(0);
+		}
+		if (streamTO <= 0) {
+			log.error("the sto parameter can't less than or equal \" 0\" ");
+			System.exit(0);
+		}
+		if (zkTO <= 0) {
+			log.error("the zkTO parameter can't less than or equal \"0\" ");
+			System.exit(0);
+		}
+		}
     }
 
     public static void main(String[] args) 

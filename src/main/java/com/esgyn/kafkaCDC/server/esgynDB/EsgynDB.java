@@ -286,7 +286,6 @@ public class EsgynDB
 
 	    psmt.setString(1, table.GetSchemaName());
 	    psmt.setString(2, table.GetTableName());
-
             ResultSet       keysRS = psmt.executeQuery();
 	    StringBuffer    strBuffer = null;
 	    if(log.isDebugEnabled()){
@@ -350,9 +349,11 @@ public class EsgynDB
 	} catch (ClassNotFoundException ce) {
 	    log.error ("driver class not found: " + ce.getMessage());
 	    ce.printStackTrace();
+            System.exit(1);
 	} catch (Exception e) {
 	    log.error ("create connect error: " + e.getMessage());
 	    e.printStackTrace();
+            System.exit(1);
 	}
 	
 	if (log.isTraceEnabled()){

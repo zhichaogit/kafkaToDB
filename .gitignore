@@ -3,3 +3,5 @@
 /bin/log4j.*
 /log/*
 /target/
+/.project
+/.classpath
