@@ -1,9 +1,14 @@
+package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
+
 import java.util.Map;
 import java.util.HashMap;
 import org.apache.log4j.Logger; 
  
-public class HongQuanRowMessage extends RowMessage
-{
+import com.esgyn.kafkaCDC.server.esgynDB.ColumnInfo;
+import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
+import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
+
+public class HongQuanRowMessage extends RowMessage {
     private int             length          = 0;
     private byte[]          data            = null;
     private int []          fieldSizes      = null;

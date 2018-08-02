@@ -1,9 +1,12 @@
+package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
+
 import java.util.Map;
 import java.util.HashMap;
 import org.apache.log4j.Logger; 
  
-public class UnicomRowMessage extends RowMessage
-{
+import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
+
+public class UnicomRowMessage extends RowMessage {
     private final byte SEPARATOR_LEVEL_1    = 0x1;
     private final byte SEPARATOR_DATA       = 0x2;
     private final byte SEPARATOR_NULL       = 0x3;
@@ -175,4 +178,3 @@ public class UnicomRowMessage extends RowMessage
 	return new ColumnValue(cid, currValue, oldValue);
     }
 }
-

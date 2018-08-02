@@ -2,3 +2,4 @@
 /bin/*.class
 /bin/log4j.*
 /log/*
+/target/

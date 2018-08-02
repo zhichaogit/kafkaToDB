@@ -1,5 +1,6 @@
-public class ColumnValue
-{
+package com.esgyn.kafkaCDC.server.esgynDB;
+
+public class ColumnValue {
     int         columnID     = 0;
     String      curValue     = null;
     String      curValueStr  = null;
@@ -78,4 +79,3 @@ public class ColumnValue
 	return oldCondStr;
     }
 }
-

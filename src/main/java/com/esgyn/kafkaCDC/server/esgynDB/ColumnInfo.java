@@ -1,5 +1,6 @@
-public class ColumnInfo
-{
+package com.esgyn.kafkaCDC.server.esgynDB;
+
+public class ColumnInfo {
     int         columnID   = -1;
     int         columnOff  = -1;
     int         columnType = -1;
@@ -61,4 +62,3 @@ public class ColumnInfo
 	return columnOff;
     }
 }
-

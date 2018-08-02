@@ -1,3 +1,5 @@
+package com.esgyn.kafkaCDC.server.esgynDB;
+
 import java.sql.Statement;
 import java.sql.Connection;
 import java.sql.SQLException;

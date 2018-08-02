@@ -1,3 +1,5 @@
+package com.esgyn.kafkaCDC.server.esgynDB;
+
 import java.sql.Statement;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -11,7 +13,9 @@ import java.util.IdentityHashMap;
 import java.util.ArrayList;
 import org.apache.log4j.Logger; 
  
-public class TableState
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
+
+public class TableState 
 {
     private String            schemaName = null;
     private String            tableName  = null;
