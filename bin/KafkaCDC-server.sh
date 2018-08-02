@@ -26,7 +26,7 @@ fi
 
 echo "java_home:$JAVA_HOME"
 basepath=$(cd `dirname $0`; pwd)
-libDIR=$(cd $basepath; cd ../lib; pwd)
+libDIR=$(cd $basepath; cd ../libs; pwd)
 echo "basepath:$basepath"
 echo "libpath:$libDIR"
 

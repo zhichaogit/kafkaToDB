@@ -15,7 +15,7 @@
 			<unpack>false</unpack>
 			<scope>runtime</scope>
 			<!-- 依赖包在tar.gz包中相对于根目录的路径 -->
-			<outputDirectory>KafkaCDC/lib</outputDirectory>
+			<outputDirectory>KafkaCDC/libs</outputDirectory>
 			<!-- 依赖包中是否包含当前工程； -->
 			<useProjectArtifact>false</useProjectArtifact>
 		</dependencySet>
@@ -62,7 +62,7 @@
 		<!-- 把target目录下的KafKaCDC.jar文件打包到本次包的lib目录并且更改名字为KafkaCDC.jar -->
 		 <file>
    			 <source>target/KafKaCDC.jar</source>
-   			 <outputDirectory>KafkaCDC/lib</outputDirectory>
+                         <outputDirectory>KafkaCDC/libs</outputDirectory>
    			 <destName>KafkaCDC.jar</destName>
    		 </file>
 		<file>
