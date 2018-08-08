@@ -100,7 +100,7 @@
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
-			<!-- 打成tar 包 -->
+			<!-- change to tar package -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
@@ -108,18 +108,17 @@
 				<configuration>
 				    <appendAssemblyId>false</appendAssemblyId>
 					<descriptors>
-						<!-- 描述文件路径 -->
+						<!-- describe filepath-->
 						<descriptor>assembly.xml</descriptor>
 					</descriptors>
 				</configuration>
 				<executions>
 					<execution>
-						<!-- 名字任意 -->
+						<!-- anyname -->
 						<id>make-assembly</id>
-						<!-- 绑定到package生命周期阶段上 -->
 						<phase>package</phase>
 						<goals>
-							<!-- 只运行一次 -->
+							<!-- just run once time -->
 							<goal>single</goal>
 						</goals>
 					</execution>
