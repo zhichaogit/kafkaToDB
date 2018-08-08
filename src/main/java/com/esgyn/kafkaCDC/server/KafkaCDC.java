@@ -602,7 +602,7 @@ public class KafkaCDC implements Runnable{
 
     public static void main(String[] args) 
     {
-		// 自定义log4j.xml读取路径
+		// log4j.xml path
 		DOMConfigurator.configure(DEFAULT_LOGCONFPATH);
 	KafkaCDC me = new KafkaCDC();
 		
