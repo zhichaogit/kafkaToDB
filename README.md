@@ -56,6 +56,7 @@ usage: Consumer Server
 
 # example:
 Must create the schema and tables first of all.
+Must have maven and JDK.
 
 # normal
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -s SEABASE --table tab -t test --full --dbuser trafodion --dbpw traf123
