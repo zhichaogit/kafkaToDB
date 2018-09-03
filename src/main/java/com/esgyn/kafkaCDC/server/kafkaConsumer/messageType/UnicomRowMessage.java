@@ -31,7 +31,7 @@ public class UnicomRowMessage extends RowMessage {
     }
 
     @Override
-    public void AnalyzeMessage()
+    public Boolean AnalyzeMessage()
     {
 	if (log.isTraceEnabled()){
 	    log.trace("exit function");
@@ -96,6 +96,8 @@ public class UnicomRowMessage extends RowMessage {
 	if (log.isTraceEnabled()){
 	    log.trace("exit function");
 	}
+
+	return true;
     }
 
     private int byte_array_to_long(byte[] data, int start, int length) {

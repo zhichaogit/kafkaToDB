@@ -18,6 +18,7 @@ import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.TableState;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.HongQuanRowMessage;
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.JsonRowMessage;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.UnicomRowMessage;
 
@@ -305,14 +306,18 @@ public class ConsumerThread extends Thread
 	    urm = new UnicomRowMessage(esgyndb.GetDefaultSchema(),
 				       esgyndb.GetDefaultTable(),
 				       delimiter, partitionID, dbMsg);
-	} else {
+	} else if(format.equals("Json")) {
+	    String dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
+	    urm = new JsonRowMessage(esgyndb, delimiter, partitionID, dbMsg);
+	}else{		    
 	    String     dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
 	    urm = new RowMessage(esgyndb.GetDefaultSchema(), 
 				 esgyndb.GetDefaultTable(),
 				 delimiter, partitionID, dbMsg);
 	}
 
-	urm.AnalyzeMessage();
+	if (!urm.AnalyzeMessage())
+	    return;
 
 	String     tableName = urm.GetSchemaName() + "." + urm.GetTableName();
 	TableState tableState = tables.get(tableName);

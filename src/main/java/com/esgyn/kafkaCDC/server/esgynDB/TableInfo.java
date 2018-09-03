@@ -33,7 +33,7 @@ public class TableInfo
     ArrayList<ColumnInfo>     keyColumns = null;
     ArrayList<ColumnInfo>     columns    = null;
     Map<Integer, ColumnInfo>  columnMap  = null;
-
+    Map<String, ColumnInfo>  columnNameMap  = null;
     private static Logger     log = Logger.getLogger(TableInfo.class);
 
     public TableInfo(String schemaName_, String tableName_, boolean multiable_)
@@ -45,6 +45,7 @@ public class TableInfo
 	columns    = new ArrayList<ColumnInfo>(0);
 	keyColumns = new ArrayList<ColumnInfo>(0);
 	columnMap  = new HashMap<Integer, ColumnInfo>(0);
+    	columnNameMap  = new HashMap<String, ColumnInfo>(0);
     }
 
     public String GetTableName()
@@ -61,6 +62,7 @@ public class TableInfo
     {
 	columns.add(column);
 	columnMap.put(column.GetColumnID(), column);
+	columnNameMap.put(column.GetColumnName(), column);
     }
 
     public ColumnInfo GetColumn(int index)
@@ -71,6 +73,11 @@ public class TableInfo
     public ColumnInfo GetColumnFromMap(int colid)
     {
 	return columnMap.get(colid);
+    }
+
+    public ColumnInfo GetColumn(String colName)
+    {
+	return columnNameMap.get(colName);
     }
 
     public long GetColumnCount()
@@ -107,7 +114,10 @@ public class TableInfo
     {
 	return columnMap;
     }
-
+    public Map<String, ColumnInfo> GetColumnNameMap()
+    {
+	return columnNameMap;
+    }
     public boolean IsMultiable()
     {
 	return multiable;

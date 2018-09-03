@@ -87,7 +87,7 @@ public class TableState
     public void init_insert_stmt() {
 	ColumnInfo  column    = columns.get(0);
 	String      valueSql  = ") VALUES(?";
-	String      insertSql = "UPSERT USING LOAD INTO " + schemaName + "."
+	String      insertSql = "UPSERT USING LOAD INTO \"" + schemaName + "\"."    
 	    + "\""+tableName +"\""+ "(" + column.GetColumnName();
 
 	for(int i = 1; i < columns.size(); i++) {
@@ -123,7 +123,7 @@ public class TableState
 
     public void init_delete_stmt() {
 	ColumnInfo keyInfo   = keyColumns.get(0);
-	String     deleteSql = "DELETE FROM " + schemaName + "." 
+	String     deleteSql = "DELETE FROM \"" + schemaName + "\"." 
 	    + "\""+tableName+"\"";
 
 	deleteSql += where_condition() + ";";
@@ -689,7 +689,7 @@ public class TableState
 	}
 
 	ColumnInfo  columnInfo  = null;
-	String      updateSql   = "UPDATE  " + schemaName + "." + "\""+tableName+"\""
+	String      updateSql   = "UPDATE  \"" + schemaName + "\"." + "\""+tableName+"\""
 	    + " SET ";
 	ColumnInfo  keyInfo     = null;
 	ColumnValue keyValue    = null;

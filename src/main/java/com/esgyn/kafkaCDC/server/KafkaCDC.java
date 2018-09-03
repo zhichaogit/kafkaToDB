@@ -525,8 +525,15 @@ public class KafkaCDC implements Runnable{
 	streamTO *= 1000;
 	zkTO *= 1000;
 	
-	if (defschema != null)
-	    defschema = defschema.toUpperCase();
+	if (defschema != null){
+	     if (defschema.startsWith("[")&&defschema.endsWith("]")) 
+	     	{
+		     defschema = defschema.substring(1, defschema.length()-1);
+		     log.warn("The schema name is lowercase");
+		}else {
+		     defschema = defschema.toUpperCase();
+		}
+    	}
 	if (deftable != null) {
             if (deftable.startsWith("[")&&deftable.endsWith("]")) {
                 deftable = deftable.substring(1, deftable.length()-1);
@@ -534,13 +541,14 @@ public class KafkaCDC implements Runnable{
             }else {
                 deftable = deftable.toUpperCase();
             }
-	dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/catelog=Trafodion;"
+	}
+        dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/catelog=Trafodion;"
 	    + "applicationName=KafkaCDC";
 	if (tenantUser != null)
 	    dburl += ";tenantName=" + tenantUser;
 
 	if (!format.equals("Unicom") && !format.equals("HongQuan") 
-	    && !format.equals("")){
+	    && !format.equals("Json") && !format.equals("")){
 	    HelpFormatter formatter = new HelpFormatter();
 	    log.error ("just support \"Unicom\" and \"HongQuan\" format now. "
 		       + "cur format: \"" + format + "\"");
@@ -555,7 +563,8 @@ public class KafkaCDC implements Runnable{
 	    }
 	}
 
-	if (!format.equals("Unicom") && (defschema == null || deftable == null)) {
+	if (!format.equals("Unicom") && !format.equals("Json") 
+	    && (defschema == null || deftable == null)) {
 	    HelpFormatter formatter = new HelpFormatter();
 	    log.error ("schema and table must be specified in HongQuan and Normal format.");
 	    formatter.printHelp("Consumer Server", exeOptions);
@@ -596,7 +605,6 @@ public class KafkaCDC implements Runnable{
 		if (zkTO <= 0) {
 			log.error("the zkTO parameter can't less than or equal \"0\" ");
 			System.exit(0);
-		}
 		}
     }
 

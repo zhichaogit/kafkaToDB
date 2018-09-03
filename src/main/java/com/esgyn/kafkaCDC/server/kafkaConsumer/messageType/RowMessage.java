@@ -46,7 +46,7 @@ public class RowMessage
 	}
     }
 
-    public void AnalyzeMessage()
+    public Boolean AnalyzeMessage()
     {
 	if (log.isTraceEnabled()){
 	    log.trace("enter function");
@@ -80,6 +80,8 @@ public class RowMessage
 	if (log.isTraceEnabled()){
 	    log.trace("exit function");
 	}
+
+	return true;
     }
 
     public String GetTableName()
