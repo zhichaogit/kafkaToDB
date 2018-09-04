@@ -94,5 +94,5 @@ Must have maven and JDK.
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --full --dbuser trafodion --dbpw traf123 -s SEABASE  -t test
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --full --dbuser trafodion --dbpw traf123 -s SEABASE --table tab -t test --sto 20 --interval 10 --zkto 20 --dbip localhost -c 500
 
-#Json
+# Json
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Json --full --dbuser trafodion --dbpw traf123 -s [schemaname] -t testTopic --sto 20 --interval 10 -c 500
