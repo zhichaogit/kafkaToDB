@@ -58,12 +58,12 @@ public class HongQuanRowMessage extends RowMessage {
     }
 
     @Override
-    public void AnalyzeMessage()
+    public Boolean AnalyzeMessage()
     {
 	if (allFixTypes && length != data.length){
 	    log.error("message error [" + data + "] message length: "
 		      + data.length + ", length: " + length);
-	    return;
+	    return false;
 	}
 
 	int          offset    = 0;
@@ -107,7 +107,7 @@ public class HongQuanRowMessage extends RowMessage {
 			  + "], column id [" + i + "] message [" 
 			  + bytes2HexString(data, 0, data.length)
 			  + "] message length: " + data.length);
-		return;
+		return false;
 	    }
 
 	    if(log.isDebugEnabled()){
@@ -126,6 +126,8 @@ public class HongQuanRowMessage extends RowMessage {
 	if (log.isTraceEnabled()){
 	    log.trace("exit function");
 	}
+
+	return true;
     }
 
     private String get_column(byte [] data, int offset, int size)
