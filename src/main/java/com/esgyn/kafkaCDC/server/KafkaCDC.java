@@ -210,8 +210,8 @@ public class KafkaCDC implements Runnable{
 	    .longOpt("format")
 	    .required(false)
 	    .hasArg()
-	    .desc("format of data, support \"Unicom\" ; \"HongQuan\" ; \"Json\" "
-	          +"and \"normal\" now, default(normal): \"\"")
+	    .desc("format of data, support \"Unicom\"  \"HongQuan\" and \"Json\" "
+	          + "now, default: \"\"")
 	    .build();
 	Option groupOption = Option.builder("g")
 	    .longOpt("group")

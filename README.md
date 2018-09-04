@@ -22,8 +22,8 @@ KafkaCDC depends some jar files(reference pom.xml):
 20. zkclient-0.10.jar
 21. zookeeper-3.4.10.jar
 
-jdbcT4-2.2.0.jar have some modify.so you should move it to 
-/home/${user}/repository/org/apache/trafodion/jdbc/t4/jdbcT4/2.3.302UTT
+jdbcT4-2.3.302UTT.jar have some modify.so you should move it to 
+/home/${user}/.m2/repository/org/apache/trafodion/jdbc/t4/jdbcT4/2.3.302UTT
  by yourself.
 
 # KafkaCDC
@@ -38,7 +38,7 @@ usage: Consumer Server
 *    --dbuser <arg>      database server user, default: db__root
 *    --delim <arg>       field delimiter, default: ','(comma)
 * -e,--encode <arg>      character encoding of data, default: "utf8"
-* -f,--format <arg>      format of data, support "Unicom"  "HongQuan"  "Json" and "normal" now, default(normal): ""
+* -f,--format <arg>      format of data, support "Unicom"  "HongQuan"  "Json"  now, default: ""
 *    --full              pull data from beginning, default: false
 * -g,--group <arg>       group for this consumer, default: 0
 * -h,--help              show help information
@@ -47,21 +47,21 @@ usage: Consumer Server
 *    --key <arg>         key deserializer, default is:<br>
                          org.apache.kafka.common.serialization.StringDeserializer
 * -p,--partition <arg>   partition number to process message, one thread only process<br>
-                         the data from one partition,default: 16. the format: "id [, id] ...", id
-                         should be: "id-id". example:
-                         a. -p "1,4-5,8" : means process the partition 0,3,4,5 and 6
-                         b. -p 4 : means process the partition 0,1,2 and 3 
-                         c. -p "2-2" : means process the partition 3
-* -s,--schema <arg>     default database schema, use the schema from data without this option, <br>
-                        you should write like this [schemaName] if schemaName is lowerCase. default:null
-*    --skip             skip all errors of data, default: false
-*    --sto <arg>        kafka poll time-out limit, default: 60s
-* -t,--topic <arg>      REQUIRED. topic of subscription
-*    --table <arg>      table name, default: null,you should write like this [tablename]  if tablename is lowerCase
-*    --tenant <arg>     tanent user name, default: null
-* -v,--version          print the version of KafkaCDC
-*    --value <arg>      value deserializer, default is:<br>
-                        org.apache.kafka.common.serialization.StringDeserializer
+                         the data from one partition,default: 16. the format: "id [, id] ...", id <br>
+                         should be: "id-id". example:<br>
+                         a. -p "1,4-5,8" : means process the partition 0,3,4,5 and 6<br>
+                         b. -p 4 : means process the partition 0,1,2 and 3 <br>
+                         c. -p "2-2" : means process the partition 3<br>
+* -s,--schema <arg>      default database schema, use the schema from data without this option, <br>
+                         you should write like this [schemaName] if schemaName is lowerCase. default:null<>
+*    --skip              skip all errors of data, default: false
+*    --sto <arg>         kafka poll time-out limit, default: 60s
+* -t,--topic <arg>       REQUIRED. topic of subscription
+*    --table <arg>       table name, default: null,you should write like this [tablename]  if tablename is lowerCase
+*    --tenant <arg>      tanent user name, default: null
+* -v,--version           print the version of KafkaCDC
+*    --value <arg>       value deserializer, default is:<br>
+                         org.apache.kafka.common.serialization.StringDeserializer
 * -z,--zook <arg>        zookeeper connection list, ex:<node>:port[/kafka],...
 *    --zkto <arg>        zookeeper time-out limit, default: 10s
 
