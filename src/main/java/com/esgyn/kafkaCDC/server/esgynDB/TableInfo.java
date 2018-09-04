@@ -114,10 +114,7 @@ public class TableInfo
     {
 	return columnMap;
     }
-    public Map<String, ColumnInfo> GetColumnNameMap()
-    {
-	return columnNameMap;
-    }
+    
     public boolean IsMultiable()
     {
 	return multiable;

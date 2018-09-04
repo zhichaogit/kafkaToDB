@@ -1,40 +1,31 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import com.esgyn.kafkaCDC.server.KafkaCDC;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.log4j.Logger;
 
 public class JsonRowMessage extends RowMessage {
     private static Logger log = Logger.getLogger(JsonRowMessage.class);
-    private int           offset          = 0;
     
     int ts = 0;
     int xid = 0;
     int xoffset = 0;
+    String commit = null;
+    String operatorTypeSource = null;
     String position = null;
     JsonNode dataJsonNode = null;
     JsonNode oldJsonNode = null;
     EsgynDB  esgynDB = null;
 
-    static String tmpstr = null;
-    String     emptystr    = "";
-    String operatorTypeSource = null;
 
     public JsonRowMessage(EsgynDB esgynDB_, String delimiter_, int thread_, String message_) {
         super(esgynDB_.GetDefaultSchema(), esgynDB_.GetDefaultTable(), delimiter_, thread_, message_);
@@ -71,14 +62,43 @@ public class JsonRowMessage extends RowMessage {
 	       return false;
 	    }
 
-	    // TODO: 
-	    operatorTypeSource = node.get("type").toString().replace("\"", "").toLowerCase();
-            
-            ts = Integer.valueOf(node.get("ts").toString());
-            xid = Integer.valueOf(node.get("xid").toString());
-	    //  xoffset = Integer.valueOf(node.get("xoffset").toString());
-            position = node.get("position").toString().replace("\"", "");
-        } catch (IOException e) {
+	    // get json data
+
+	    if(node.get("type") != null){ 
+	        operatorTypeSource = node.get("type").toString().replace("\"", "").toLowerCase();
+	    }else{
+	        log.warn("\"type\"  not exist in json data");
+	    }
+
+	    if(node.get("ts") != null){
+                ts = Integer.valueOf(node.get("ts").toString());
+	    }else{
+	        log.warn("\"ts\" not exist in json data");
+	    }
+
+	    if(node.get("xid") != null){
+	        xid = Integer.valueOf(node.get("xid").toString());
+	    }else{
+	        log.warn("\"xid\" not exist in json data");
+	    }
+	    
+	    if(node.get("commit") != null){
+	        commit = node.get("commit").toString().replace("\"", "");
+	    }else{
+	        log.warn("\"commit\" not exist in json data");
+	    }
+            if(node.get("xoffset") != null){
+	        xoffset = Integer.valueOf(node.get("xoffset").toString());
+	    }else{
+	        log.warn("\"xoffset\" not exist in json data");
+	    }
+
+	    if(node.get("position") !=null){
+	        position = node.get("position").toString().replace("\"", "");
+            }else{
+	        log.warn("\"position\" not exist in json data");
+	    }
+	} catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -139,7 +159,7 @@ public class JsonRowMessage extends RowMessage {
                 }
 
                 if (operatorTypeSource.equals( "update") 
-		    && !columnValue.GetCurValue().equals(columnValue.GetOldValue()) && colId ==0){
+		    && !columnValue.GetCurValue().equals(columnValue.GetOldValue())){
 		    operatorTypeSource = "updatePK";
 		}
 		columns.put(colId, columnValue);
