@@ -210,8 +210,8 @@ public class KafkaCDC implements Runnable{
 	    .longOpt("format")
 	    .required(false)
 	    .hasArg()
-	    .desc("format of data, support \"Unicom\" and \"HongQuan\" now, "
-		  + "default: \"\"")
+	    .desc("format of data, support \"Unicom\"  \"HongQuan\" and \"Json\" "
+	          + "now, default: \"\"")
 	    .build();
 	Option groupOption = Option.builder("g")
 	    .longOpt("group")
@@ -241,7 +241,8 @@ public class KafkaCDC implements Runnable{
 	    .required(false)
 	    .hasArg()
 	    .desc("default database schema, use the schema from data without"
-		  + " this option, default: null")
+		  + " this option, you should write like this [schemaName]  if " 
+		  +"schemaName is lowerCase. default: null")
 	    .build();
 	Option topicOption = Option.builder("t")
 	    .longOpt("topic")

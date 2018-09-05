@@ -1,38 +1,41 @@
-# KafkaCDC
+# kafkaCDC 
 usage: Consumer Server
- -b,--broker <arg>      bootstrap.servers setting, ex: <node>:9092, default: "localhost:9092"
+
+ -b,--broker <arg>      bootstrap.servers setting, ex: <node>:9092,default: "localhost:9092"
+    --bigendian         the data format is big endian, default: little endian
  -c,--commit <arg>      num message per Kakfa synch, default: 5000
- -e --encode <arg>      character encoding of data, default: utf8
- -f,--format <arg>      format of data, support "Unicom" and "HongQuan" now, default: ""
- -g,--group <arg>       group for this consumer, default: 0
- -h,--help              show help information
- -p,--partition <arg>   partition parameter format: "id [, id] ...", id should be: "id-id"
-                        one thread only process data from one partition, default: 16
-			example:
-			a. -p "0,4" : means this progress have two threads, process the partition 0 and 4
-			b. -p "0-4" : means this progress have five threads, process the partition 0 to 4
-			c. -p "0,3-5,6" : means process the partition 0,3,4,5 and 6
-			d. -p 4 : means process the partition 0,1,2 and 3
- -s,--schema <arg>      default database schema, use the schema from data without this option, default: null
- -t,--topic <arg>       REQUIRED. topic of subscription
- -v --version           print the version of KafkaCDC
- -z,--zook <arg>        zookeeper connection list, ex: <node>:port[/kafka],...
  -d,--dbip <arg>        database server ip, default: "localhost"
     --dbport <arg>      database server port, default: 23400
-    --dbuser <arg>      database server user, default: db__root
     --dbpw <arg>        database server password, default: zz
+    --dbuser <arg>      database server user, default: db__root
     --delim <arg>       field delimiter, default: ','(comma)
-    --bigendian         the data format is big endian, default is little endian
+ -e,--encode <arg>      character encoding of data, default: "utf8"
+ -f,--format <arg>      format of data, support "Unicom"  "HongQuan" and "Json"  now, default: ""
     --full              pull data from beginning, default: false
-    --interval <arg>    the print state time interval, default: 10s
-    --keepalive         check database keepalive, default is false
-    --key <arg>         key deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer
-    --skip              skip all error of data, default: false
-    --sto <arg>         kafka poll time-out limit, default 60s
-    --table <arg>       kafka poll time-out limit, default: null
-    --tenant <arg>      database tenant user, default: null
-    --value <arg>       value  deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer
-    --zkto <arg>        zookeeper time-out limit, default 10s
+ -g,--group <arg>       group for this consumer, default: 0
+ -h,--help              show help information
+    --interval <arg>    the print state time interval, the unit is second,default: 10s
+    --keepalive <arg>   check database keepalive, default is false
+    --key <arg>         key deserializer, default is:
+                        org.apache.kafka.common.serialization.StringDeserializer
+ -p,--partition <arg>   partition number to process message, one thread only process
+                        the data from one partition,default: 16. the format: "id [, id] ...", id should be: "id-id". 
+                        example:
+                        a. -p "1,4-5,8" : means process the partition 0,3,4,5 and 6
+                        b. -p 4 : means process the partition 0,1,2 and 3 
+                        c. -p "2-2" : means process the partition 3
+ -s,--schema <arg>      default database schema, use the schema from data without this option,
+                        you should write like this [schemaName] if schemaName is lowerCase. default:null
+    --skip              skip all errors of data, default: false
+    --sto <arg>         kafka poll time-out limit, default: 60s
+ -t,--topic <arg>       REQUIRED. topic of subscription
+    --table <arg>       table name, default: null,you should write like this [tablename]  if tablename is lowerCase
+    --tenant <arg>      tanent user name, default: null
+ -v,--version           print the version of KafkaCDC
+    --value <arg>       value deserializer, default is:
+                        org.apache.kafka.common.serialization.StringDeserializer
+ -z,--zook <arg>        zookeeper connection list, ex:<node>:port[/kafka],...
+    --zkto <arg>        zookeeper time-out limit, default: 10s
 
 Must create the schema and tables first of all.
 
@@ -49,3 +52,6 @@ The use example for KafkaCDC:
 # ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --full --dbuser trafodion --dbpw traf123 -t test
 # ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --full --dbuser trafodion --dbpw traf123 -s SEABASE  -t test
 # ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --full --dbuser trafodion --dbpw traf123 -s SEABASE --table tab -t test --sto 20 --interval 10 --zkto 20 --dbip localhost -c 500
+
+4.Json
+# ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Json --full --dbuser trafodion --dbpw traf123 -s [schemaname] -t testTopic --sto 20 --interval 10 -c 500
