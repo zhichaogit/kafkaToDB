@@ -232,9 +232,9 @@ public class KafkaCDC implements Runnable{
 		  + " the data from one partition, default: 16. the format: "
 		  + "\"id [, id] ...\", id should be: \"id-id\". example: "
 		  + "\n\ta. -p \"1,4-5,8\" : means process the partition "
-		  + "0,3,4,5 and 6" 
+		  + "1,4,5 and 8" 
 		  + "\n\tb. -p 4 : means process the partition 0,1,2 and 3" 
-		  + "\n\tc. -p \"2-2\" : means process the partition 3")
+		  + "\n\tc. -p \"2-2\" : means process the partition 2")
 	    .build();
 	Option schemaOption = Option.builder("s")
 	    .longOpt("schema")
