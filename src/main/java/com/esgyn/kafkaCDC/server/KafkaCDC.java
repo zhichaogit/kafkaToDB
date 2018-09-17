@@ -571,8 +571,12 @@ public class KafkaCDC implements Runnable{
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
 	}
-
-	if ((format.equals("") && delimiter != null && delimiter.length() != 1)) {
+	
+	if (format.equals("") && delimiter.equals("space")) {
+        	delimiter = " ";
+        }else if (format.equals("") && delimiter.equals("tab")) {
+        	delimiter = "	";
+	}else if ((format.equals("") && delimiter != null && delimiter.length() != 1)) {
 	    HelpFormatter formatter = new HelpFormatter();
 	    log.error ("the delimiter must be a single character. but it's ["
 		       + delimiter + "] now");

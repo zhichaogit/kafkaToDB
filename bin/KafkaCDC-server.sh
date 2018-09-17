@@ -27,10 +27,25 @@ fi
 echo "java_home:$JAVA_HOME"
 basepath=$(cd `dirname $0`; pwd)
 libDIR=$(cd $basepath; cd ../libs; pwd)
+execCommand="java -jar $libDIR/KafkaCDC.jar"
 echo "basepath:$basepath"
 echo "libpath:$libDIR"
-
+    whitespace="[[:space:]]"
+    blank_str=" "
+   for i in "$@"
+    do  
+        case x"$i" in
+        x" ")
+        i="\"space\""
+        execCommand=${execCommand}${blank_str}${i}
+        ;;  
+        x"	")
+        i="\"tab\""
+	execCommand=${execCommand}${blank_str}${i}
+        ;;  
+        *)  
+        execCommand=${execCommand}${blank_str}${i}
+        esac
+  done
 #2.java -jar
-exec java -jar $libDIR/KafkaCDC.jar $*
-
-
+exec ${execCommand} 

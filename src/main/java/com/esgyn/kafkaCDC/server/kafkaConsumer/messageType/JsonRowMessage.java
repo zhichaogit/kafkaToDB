@@ -45,12 +45,11 @@ public class JsonRowMessage extends RowMessage {
             dataJsonNode = node.get("data");
             oldJsonNode = node.get("old");
 	    
-	    if (log.isDebugEnabled()) {	    
-		log.debug("datajasonNode: ["+ dataJsonNode.toString() 
-			  + "]\n schemam: [" + schemaName + ", tablename: [" 
-			  + tableName + "}");
+	    if (log.isDebugEnabled()) {
+            log.debug("datajasonNode: ["+ dataJsonNode.toString() 
+			  + "]\n schema: [" + schemaName + "], tablename: [" 
+			  + tableName + "]}\n ");
 	    }
-
 	    tableInfo = esgynDB.GetTableInfo( schemaName + "." + tableName);
 
 	    if(tableInfo == null){
@@ -143,7 +142,10 @@ public class JsonRowMessage extends RowMessage {
         
         //get old data
         if (oldJsonNode !=null && oldJsonNode.isObject()) {
-            Iterator<Entry<String, JsonNode>> it = oldJsonNode.fields();
+       	  if (log.isTraceEnabled()){
+              log.trace("enter get old data oldJsonNode=[" + oldJsonNode.toString() + "]");
+          }
+	  Iterator<Entry<String, JsonNode>> it = oldJsonNode.fields();
             while (it.hasNext()) {
                 Entry<String, JsonNode> entry = it.next();
                 String colNewData = entry.getValue().toString().replace("\"", "");
