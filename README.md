@@ -4,7 +4,7 @@ KafkaCDC depends some jar files(reference pom.xml):
 2. jackson-annotations-2.9.0.jar
 3. jackson-core-2.9.0.jar
 4. jackson-databind-2.9.0.jar
-5. jdbcT4-2.3.302UTT.jar
+5. jdbcT4-2.4.6.jar
 6. jline-0.9.94.jar
 7. jopt-simple-5.0.4.jar
 8. kafka_2.11-1.1.0.jar
@@ -22,8 +22,8 @@ KafkaCDC depends some jar files(reference pom.xml):
 20. zkclient-0.10.jar
 21. zookeeper-3.4.10.jar
 
-jdbcT4-2.3.302UTT.jar have some modify.so you should move it to 
-/home/${user}/.m2/repository/org/apache/trafodion/jdbc/t4/jdbcT4/2.3.302UTT
+jdbcT4-2.4.2.jar have some modify.so you should move it to 
+/home/${user}/.m2/repository/org/apache/trafodion/jdbc/t4/jdbcT4/2.4.2
  by yourself.
 
 # KafkaCDC
