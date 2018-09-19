@@ -82,15 +82,13 @@ public class JsonRowMessage extends RowMessage {
 	        log.warn("\"xid\" not exist in json data");
 	    }
 	    
-	    if(node.get("commit") != null){
-	        commit = node.get("commit").toString().replace("\"", "");
+	    if(node.get("commit") == null && node.get("xoffset") == null){
+	        log.warn("\"commit\" and \"xoffset\" can't not exist at the same time ,check your datas pls");
 	    }else{
-	        log.warn("\"commit\" not exist in json data");
-	    }
-            if(node.get("xoffset") != null){
+		if(node.get("commit") != null)
+		commit = node.get("commit").toString(),replace("\"", "");
+		if(node.get("xoffset") != null)
 	        xoffset = Integer.valueOf(node.get("xoffset").toString());
-	    }else{
-	        log.warn("\"xoffset\" not exist in json data");
 	    }
 
 	    if(node.get("position") !=null){
