@@ -21,7 +21,7 @@ import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerThread;
 
 public class KafkaCDC implements Runnable{
-    private final static String DEFAULT_LOGCONFPATH = "../conf/log4j.xml";
+    private final static String DEFAULT_LOGCONFPATH = "conf/log4j.xml";
     private final long   DEFAULT_STREAM_TO_MS = 60; // the unit is second, 60s
     private final long   DEFAULT_ZOOK_TO_MS   = 10; // the unit is second, 10s
     private final long   DEFAULT_COMMIT_COUNT = 5000;
@@ -567,7 +567,7 @@ public class KafkaCDC implements Runnable{
 	if (!format.equals("Unicom") && !format.equals("Json") 
 	    && (defschema == null || deftable == null)) {
 	    HelpFormatter formatter = new HelpFormatter();
-	    log.error ("schema and table must be specified in HongQuan and Normal format.");
+	    log.error ("schema and table must be specified in HongQuan or Normal or Json format.");
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
 	}
@@ -611,8 +611,8 @@ public class KafkaCDC implements Runnable{
 
     public static void main(String[] args) 
     {
-		// log4j.xml path
-		DOMConfigurator.configure(DEFAULT_LOGCONFPATH);
+	// log4j.xml path
+	DOMConfigurator.configure(DEFAULT_LOGCONFPATH);
 	KafkaCDC me = new KafkaCDC();
 		
 	try {

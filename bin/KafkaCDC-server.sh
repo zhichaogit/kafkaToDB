@@ -18,19 +18,47 @@
 # Operational environment preparation 
 
 #1.make sure env
-
 if [ "x$(uname)" == "xLinux" ];
 then
 JAVA_HOME=${JAVA_HOME-"/usr/bin/java"}
 fi
+bin=`which $0`
+bin=`dirname ${bin}`
+bin=`cd "$bin"; pwd`
 
+BASEPATH=$(cd $bin ; cd ../; pwd)
+LIBSPATH=$(cd $BASEPATH/libs ; pwd)
+
+echo "bin:${bin}"
 echo "java_home:$JAVA_HOME"
-basepath=$(cd `dirname $0`; pwd)
-libDIR=$(cd $basepath; cd ../libs; pwd)
-echo "basepath:$basepath"
-echo "libpath:$libDIR"
+echo "BASEPATH:${BASEPATH}"
+echo "LIBSPATH:${LIBSPATH}"
 
-#2.java -jar
-exec java -jar $libDIR/KafkaCDC.jar $*
+cd ${BASEPATH}
+#2 analy parameters
+execCommand="java -jar $LIBSPATH/KafkaCDC.jar"
 
-
+if [ $# = 0 ]; then
+  execCommand="$execCommand -h"
+  exec ${execCommand}
+  exit
+fi
+whitespace="[[:space:]]"
+blank_str=" "
+   for i in "$@"
+    do  
+        case x"$i" in
+        x" ")
+        i="\"space\""
+        execCommand=${execCommand}${blank_str}${i}
+        ;;  
+        x"	")
+        i="\"tab\""
+	execCommand=${execCommand}${blank_str}${i}
+        ;;  
+        *)  
+        execCommand=${execCommand}${blank_str}${i}
+        esac
+  done
+#3. exec jar file
+exec ${execCommand} 
