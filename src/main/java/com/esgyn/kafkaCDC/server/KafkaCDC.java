@@ -567,7 +567,7 @@ public class KafkaCDC implements Runnable{
 	if (!format.equals("Unicom") && !format.equals("Json") 
 	    && (defschema == null || deftable == null)) {
 	    HelpFormatter formatter = new HelpFormatter();
-	    log.error ("schema and table must be specified in HongQuan or Normal or Jsonformat.");
+	    log.error ("schema and table must be specified in HongQuan or Normal or Json format.");
 	    formatter.printHelp("Consumer Server", exeOptions);
 	    System.exit(0);
 	}

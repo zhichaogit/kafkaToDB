@@ -62,4 +62,3 @@ blank_str=" "
   done
 #3. exec jar file
 exec ${execCommand} 
->>>>>>> 01878d4... fix the bug:FileNotFOundException on log4jxml is returned when started KafkaCDC.
