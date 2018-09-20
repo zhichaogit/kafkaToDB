@@ -46,9 +46,16 @@ public class JsonRowMessage extends RowMessage {
             oldJsonNode = node.get("old");
 	    
 	    if (log.isDebugEnabled()) {
-            log.debug("datajasonNode: ["+ dataJsonNode.toString() 
-			  + "]\n schema: [" + schemaName + "], tablename: [" 
-			  + tableName + "]}\n ");
+	       StringBuffer strBuffer = new StringBuffer();
+	       strBuffer.append("schema: [" + schemaName + "], tablename: [" 
+	                   + tableName + "]}");
+	       if (dataJsonNode != null) 
+	       strBuffer.append("datajasonNode: ["+ dataJsonNode.toString() 
+	       + "]\n");
+	       if (oldJsonNode != null) 
+	       strBuffer.append("oldJsonNode:[" +oldJsonNode.toString() 
+	       + "]\n");
+	       log.debug(strBuffer);
 	    }
 	    tableInfo = esgynDB.GetTableInfo( schemaName + "." + tableName);
 
@@ -80,17 +87,19 @@ public class JsonRowMessage extends RowMessage {
 	    }else{
 	        log.warn("\"xid\" not exist in json data");
 	    }
-	    
-	    if(node.get("commit") != null){
-	        commit = node.get("commit").toString().replace("\"", "");
-	    }else{
-	        log.warn("\"commit\" not exist in json data");
-	    }
-            if(node.get("xoffset") != null){
-	        xoffset = Integer.valueOf(node.get("xoffset").toString());
-	    }else{
-	        log.warn("\"xoffset\" not exist in json data");
-	    }
+	   if(node.get("commit") == null && node.get("xoffset") == null)
+	    {
+                log.warn("\"commit\" and \"xoffset\" can't not exist"
+                    + " at the same time ,check your datas pls");
+            }else if(node.get("commit") != null && node.get("xoffset") != null) {
+                log.warn("\"commit\" and \"xoffset\" can't exist"
+                    + " at the same time ,check your datas pls");
+            }else {
+                if(node.get("commit") != null)
+            	commit = node.get("commit").toString().replace("\"", "");
+            	if(node.get("xoffset") != null)
+            	xoffset = Integer.valueOf(node.get("xoffset").toString()); 
+            } 
 
 	    if(node.get("position") !=null){
 	        position = node.get("position").toString().replace("\"", "");
@@ -107,7 +116,7 @@ public class JsonRowMessage extends RowMessage {
 
             strBuffer.append("Raw message:[" + message + "]\n");
             strBuffer.append("Operator message: [xid: " + xid + ", position:" 
-			     + position);
+			     + position + "]\n");
             strBuffer.append("Operator Info: [Table Name: " + schemaName + "." 
 			     + tableName + ", Type: " + operatorType 
 			     + ", Timestamp: " + ts + "]\n"); 
@@ -116,7 +125,7 @@ public class JsonRowMessage extends RowMessage {
         columns = new HashMap<Integer, ColumnValue>(0);
 
 	// analysis jsondata
-        if (dataJsonNode.isObject()) {
+        if (dataJsonNode != null && dataJsonNode.isObject()) {
             Iterator<Entry<String, JsonNode>> it = dataJsonNode.fields();
             while (it.hasNext()) {
                 Entry<String, JsonNode> entry = it.next();
@@ -134,8 +143,8 @@ public class JsonRowMessage extends RowMessage {
                 columns.put(colId, columnValue);
                
 		if (log.isDebugEnabled()) {
-		    strBuffer.append("\tcolumn name [" + colName + ":" + colId 
-				      + "], column data [" + colNewData + "]");
+		    strBuffer.append("column name [" + colName + ":" + colId 
+				      + "], column data [" + colNewData + "]\n");
 		}
             }
         }
@@ -154,11 +163,16 @@ public class JsonRowMessage extends RowMessage {
                 int    colId = colInfo.GetColumnID();
                 ColumnValue columnValue = columns.get(colId);
                 if (columnValue != null) {
-                    columnValue = new ColumnValue(colId, columnValue.GetCurValue(),colNewData );
-                    
+		  // when message have "data" info 
+	           columnValue = new ColumnValue(colId, columnValue.GetCurValue(),colNewData );
                 } else {
-                    columnValue = new ColumnValue(colId, colNewData, null);
-                }
+		  // if message is delete Operate and there isn't  "data" info
+                   if(dataJsonNode == null){
+	           	columnValue = new ColumnValue(colId, null,colNewData );
+		   }else{
+		   	columnValue = new ColumnValue(colId, colNewData, null);
+		   }
+		}
 
                 if (operatorTypeSource.equals( "update") 
 		    && !columnValue.GetCurValue().equals(columnValue.GetOldValue())){
@@ -167,8 +181,10 @@ public class JsonRowMessage extends RowMessage {
 		columns.put(colId, columnValue);
                 
 		if (log.isDebugEnabled()) {
-		    strBuffer.append("\tcolumn name [" + colName + ":" + colId 
-				      + "], column old data [" + colNewData + "]");
+		    strBuffer.append("column name [" + colName + ":" + colId 
+				      + "], column old data [" + colNewData + "]\n"
+				      +"columnValue [" + columnValue + "]\n"
+				     +"columnOldValue [" + columnValue.GetOldValue() +"]\n");
 		}
             }
         }
