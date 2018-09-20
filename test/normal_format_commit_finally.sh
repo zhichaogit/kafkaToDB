@@ -16,7 +16,11 @@ EXPECTDIR="$EXPECTDIR"
 FINALRESULTPATH="$FINALRESULTPATH"
 RESULTPATH="$EXPECTDIR/${TOPIC}_result.log"
 EXPECTPATH="$EXPECTDIR/${TOPIC}_expect.log"
-
+if [ $# = 1 ] ; then 
+    DELIM=","
+else
+    DELIM="$1"
+fi
 
 su - trafodion<<EOFsu
 sqlci <<EOFsql
@@ -46,7 +50,8 @@ echo "2,\"LC1\",29,BC,2013
 6,\"YH2\",36,PG,2013
 7,\"LC3\",29,BC,2013
 8,\"KY3\",22,PG,2013
-9,\"MH3\",23,PG,2013" > $DATAFILE
+9,\"MH3\",23,PG,2013" | sed -e 's/,/'${DELIM}'/g' > $DATAFILE
+
 
 existtopic=`$KAFKA/bin/kafka-topics.sh --describe --topic $TOPIC --zookeeper $ZOOKEEPER`
 if [ "x$existtopic" != "x" ]; then
@@ -58,7 +63,7 @@ $KAFKA/bin/kafka-console-producer.sh --broker-list $BROKER --topic $TOPIC < $DAT
 #$KAFKA/bin/kafka-console-consumer.sh --zookeeper $ZOOKEEPER --topic $TOPIC --from-beginning
 KAFKA_CDC="$KAFKA_CDC"
 cd $KAFKA_CDC/bin;
-./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC --full --sto 5 --interval 2
+./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC --delim "${DELIM}" --full --sto 5 --interval 2
 # clean the environment
 if [ -f $RESULTPATH ];then
 rm -f $RESULTPATH

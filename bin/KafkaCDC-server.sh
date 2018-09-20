@@ -43,22 +43,6 @@ if [ $# = 0 ]; then
   exec ${execCommand}
   exit
 fi
-whitespace="[[:space:]]"
-blank_str=" "
-   for i in "$@"
-    do  
-        case x"$i" in
-        x" ")
-        i="\"space\""
-        execCommand=${execCommand}${blank_str}${i}
-        ;;  
-        x"	")
-        i="\"tab\""
-	execCommand=${execCommand}${blank_str}${i}
-        ;;  
-        *)  
-        execCommand=${execCommand}${blank_str}${i}
-        esac
-  done
+
 #3. exec jar file
-exec ${execCommand} 
+exec ${execCommand} "${@}"
