@@ -21,9 +21,9 @@ usage: Consumer Server
  -p,--partition <arg>   partition number to process message, one thread only process
                         the data from one partition,default: 16. the format: "id [, id] ...", id should be: "id-id". 
                         example:
-                        a. -p "1,4-5,8" : means process the partition 0,3,4,5 and 6
+                        a. -p "1,4-5,8" : means process the partition 1,4,5 and 8
                         b. -p 4 : means process the partition 0,1,2 and 3 
-                        c. -p "2-2" : means process the partition 3
+                        c. -p "2-2" : means process the partition 2
  -s,--schema <arg>      default database schema, use the schema from data without this option,
                         you should write like this [schemaName] if schemaName is lowerCase. default:null
     --skip              skip all errors of data, default: false
