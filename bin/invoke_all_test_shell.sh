@@ -19,31 +19,72 @@
 # Run kafkacdc/test  scripts 
 #
 
-KAFKA="/opt/kafka_2.11-0.10.0.0"
-KAFKA_CDC="/opt/KafkaCDC"
+# you'll have to change the the following conf at least if you want this
+#test to run:
+# 1.example/ProducerTest.java (host:port)
+# 2.$(KAFKA,KAFKA_CDC,ZKIP,DBIP,BROKERIP,BROKERPORT,TRAFODIONUSERPS,
+#CURRENTUSERPS,)
+#if there are error or faild ,you can go $SCRIPTSDIR/logs for more INFO
 
+#kafka path
+KAFKA="/usr/hdp/2.4.2.0-258/kafka"
+#kafkaCDC path
+KAFKA_CDC="/home/$USER/kafkaCDC/target/KafkaCDC"
+
+#current host IP
 IPADDR="localhost"
+#zookeeper IP
 ZKIP="localhost"
+#trafodion/esgyndb ip
 DBIP="localhost"
-EXPECTDIR="/opt/trafodion/log"
-FINALRESULTPATH="$EXPECTDIR/final.log"
+#kafka ip
+BROKERIP="localhost"
+BROKERPORT="6667"
+#user(trafci) password
+TRAFODIONUSERPS="traf123"
+#user(kafkaCDCuser) password
+CURRENTUSERPS="esgyndb"
+#expectResult and realResult path
+EXPECTDIR="/tmp/kafkaCDClogs"
+#kafkaCDC scripts path
+SCRIPTSDIR="$KAFKA_CDC/test"
+#the finally result (success or failed ) path
+FINALRESULTPATH="$SCRIPTSDIR/logs/final.log"
 
-SCRIPTSDIR="/opt/KafkaCDC/test"
-
-#ready env
-su - trafodion <<EOF
-if [ ! -d $EXPECTDIR ];then
-mkdir $EXPECTDIR
+# make sure installed tcl
+if [ "x$(rpm -qa | grep tcl)" == "x" ];then
+  sudo yum install -y tcl
 fi
-exit;
+#make sure installed expect
+if [ "x$(rpm -qa | grep expect)" == "x" ];then
+  sudo yum install -y expect
+fi
+#ready env
+expect <<-EOF
+  log_user 0
+  set timeout 10
+  spawn ssh trafodion@$DBIP
+  expect {
+  "yes/no" { send "yes\r";exp_continue }
+  "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
+  "$ " { send "\r" }
+  }
+  expect "$ "
+  send "mkdir -p $EXPECTDIR\r"
+  expect "$ "
+  send "exit\r"
+  expect eof
 EOF
 
-if [ ! -d ${SCRIPTSDIR}/logs ];then
-mkdir ${SCRIPTSDIR}/logs
+if [ -d ${FINALRESULTPATH} ];then
+  rm -rf ${FINALRESULTPATH}
 fi
-
-if [ -f $FINALKRESULTTPATH ];then
-rm -f $FINALRESULTPATH
+if [ ! -d ${SCRIPTSDIR}/logs ];then
+  mkdir -p ${SCRIPTSDIR}/logs
+fi
+if [ "$EXPECTDIR" == "/tmp" -o "$EXPECTDIR" == "/tmp/" ];then
+  echo "Not recommended set \"EXPECTDIR\" to \"/tmp\",you can set it like [/tmp/kafkaCDC/logs]" 
+  exit 0
 fi
 #foreach exec the shell script
 for script in ${SCRIPTSDIR}/*sh
@@ -55,4 +96,19 @@ LOGPATH="${script%/*}/logs/${filePath%.*}_INFO.log"
 . $script >${LOGPATH} 2>${LOGPATH}
 echo " $RESULT"
 done
-
+#clean env
+expect <<-EOF
+  log_user 0
+  set timeout 10
+  spawn ssh trafodion@$DBIP
+  expect {
+  "yes/no" { send "yes\r";exp_continue }
+  "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
+  "$ " { send "\r" }
+  }
+  expect "$ "
+  send "rm -rf $EXPECTDIR\r"
+  expect "$ "
+  send "exit\r"
+  expect eof
+EOF
