@@ -4,10 +4,11 @@ IPADDR="$IPADDR"
 ZKIP="$ZKIP"
 DBIP="$DBIP"
 ZOOKEEPER="$ZKIP:2181"
-BROKER="$IPADDR:9092"
+BROKER="$BROKERIP:$BROKERPORT"
+CURRENTUSER="$USER"
+CURRENTUSERPS="$CURRENTUSERPS"
 
-SCHEMA="S1"
-DESTSCHEMA="SEABASE"
+DESTSCHEMA="SEABASES1"
 TABLE="T1"
 TABLEEXP="T1EXP"
 
@@ -17,8 +18,16 @@ EXPECTDIR="$EXPECTDIR"
 RESULTPATH="$EXPECTDIR/${TOPIC}_result.log"
 EXPECTPATH="$EXPECTDIR/${TOPIC}_expect.log"
 
-su - trafodion<<EOFsu
-sqlci <<EOFsql
+expect <<-EOF
+  set timeout 60
+  spawn ssh trafodion@$DBIP
+   expect {
+  "yes/no" { send "yes\r";exp_continue }
+  "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
+  "$ " { send "\r" }
+  }
+  expect "$ "
+  send "sqlci <<EOFsql
 SET SCHEMA $DESTSCHEMA;
 DROP TABLE IF EXISTS $TABLE;
 CREATE TABLE $TABLE(c1 INT NOT NULL, c2 VARCHAR(10), c3 VARCHAR(10), PRIMARY KEY (c1));
@@ -48,9 +57,11 @@ UPDATE $TABLEEXP SET c1 = '6', c3 = 'uuu1' WHERE c1 = 6;
 UPDATE $TABLEEXP SET c1 = '10', c2 = 'updkey', c3 = 'kkk1' WHERE c1 = 8;
 UPDATE $TABLEEXP SET c1 = '9', c2 = 'kkk2', c3 = 'kkk1' WHERE c1 = 10;
 UPDATE $TABLEEXP SET c1 = '6', c2 = 'uuu2' WHERE c1 = 6;
-EOFsql
-exit;
-EOFsu
+EOFsql\r"
+  expect "$ "
+  send "exit\r"
+  expect eof
+EOF
 
 DATAFILE=/tmp/$TOPIC.data
 CLASSPATH=""
@@ -82,23 +93,19 @@ KAFKA_CDC="$KAFKA_CDC"
 cd $KAFKA_CDC/bin;
 ./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f Unicom --full --sto 5 --interval 2
 
-# clean the environment
-if [ -f $RESULTPATH ];then
-rm -f $RESULTPATH
-echo "file exist ,delete $RESULTPATH"
-fi
-if [ -f $EXPECTPATH ];then
-rm -f $EXPECTPATH
-echo "file exist ,delte $EXPECTPATH"
-fi
-
-su - trafodion <<EOFsu
-if [ ! -d $EXPECTDIR ];then
-mkdir $EXPECTDIR
-fi
-
-sqlci <<EOFsql
-SET SCHEMA SEABASE;
+expect <<-EOF
+  set timeout 60
+  spawn ssh trafodion@$DBIP
+   expect {
+  "yes/no" { send "yes\r";exp_continue }
+  "password:" { send "$TRAFODIONUSERPS\r";exp_continue}
+  "$ " { send "\r" }
+  }
+  expect "$ "
+  send "mkdir -p  $EXPECTDIR\r"
+  expect "$ "
+  send "sqlci <<EOFsql
+SET SCHEMA $DESTSCHEMA;
 LOG $RESULTPATH;
 SELECT * FROM $TABLE ORDER BY c1;
 log OFF;
@@ -107,14 +114,52 @@ SELECT * FROM $TABLEEXP ORDER BY c1;
 log OFF;
 DROP TABLE IF EXISTS $TABLE;
 DROP TABLE IF EXISTS $TABLEEXP;
-EOFsql
-exit;
-EOFsu
+EOFsql\r"
+  expect "$ "
+  send "sed -i \"1d\" $RESULTPATH\r"
+  send "sed -i \"1d\" $EXPECTPATH\r"
+  expect "$ "
+  send "exit\r"
+  expect eof
+EOF
 
-sed -i "1d" $RESULTPATH
-sed -i "1d" $EXPECTPATH
+# clean the environment
+CUREXPECTDIR="/tmp"
+mkdir -p $CUREXPECTDIR
+if [ -f /tmp/${TOPIC}_result.log ];then
+ rm -f /tmp/${TOPIC}_result.log
+echo "file exist ,delete /tmp/${TOPIC}_result.log"
+fi
+if [ -f /tmp/${TOPIC}_expect.log ];then
+ rm -f /tmp/${TOPIC}_expect.log
+echo "file exist , delete /tmp/${TOPIC}_expect.log"
+fi
+# copy result file to current host
+expect <<-EOF
+  set timeout 60
+  spawn ssh trafodion@$DBIP
+  expect {
+  "yes/no" { send "yes\r";exp_continue }
+  "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
+  "$ " { send "\r" }
+  }
+  expect "$ "
+  send "scp -r $RESULTPATH $EXPECTPATH $CURRENTUSER@$IPADDR:$CUREXPECTDIR\r"
+  expect {
+  "yes/no" {send "yes\r";exp_continue }
+  "password:" { send "$CURRENTUSERPS\r";exp_continue }
+  "$ " { send "\r" }
+  }
+  expect "$ "
+  send "rm -f $RESULTPATH $EXPECTPATH\r"
+  expect "$ "
+  send "exit\r"
+  expect eof
+EOF
 
 # result set：
+RESULTPATH="$CUREXPECTDIR/${TOPIC}_result.log"
+EXPECTPATH="$CUREXPECTDIR/${TOPIC}_expect.log"
 currentTime=$(date "+%Y-%m-%d %H:%M:%S")
 if [ -f $RESULTPATH -a -f $EXPECTPATH -a "x$(diff -q $RESULTPATH $EXPECTPATH)" == "x" ];then
 echo "$currentTime $TOPIC expected" >> $FINALRESULTPATH

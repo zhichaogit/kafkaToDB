@@ -1,5 +1,5 @@
 KAFKA="$KAFKA"
-TOPIC="only_delete_commit_finally"
+TOPIC="normal_format_delim_space"
 IPADDR="$IPADDR"
 ZKIP="$ZKIP"
 DBIP="$DBIP"
@@ -9,15 +9,15 @@ CURRENTUSER="$USER"
 CURRENTUSERPS="$CURRENTUSERPS"
 
 DESTSCHEMA="SEABASES1"
-TABLE="T1"
-TABLEEXP="T1EXP"
+TABLE="space"
+TABLEEXP="spaceexp"
 
 PARTITION="1"
+DELIM=" "
 EXPECTDIR="$EXPECTDIR"
 FINALRESULTPATH="$SCRIPTSDIR/final.log"
 RESULTPATH="$EXPECTDIR/${TOPIC}_result.log"
 EXPECTPATH="$EXPECTDIR/${TOPIC}_expect.log"
-
 expect <<-EOF
   set timeout 60
   spawn ssh trafodion@$DBIP
@@ -28,16 +28,20 @@ expect <<-EOF
   }
   expect "$ "
   send "sqlci <<EOFsql
+CREATE SCHEMA IF NOT EXISTS $DESTSCHEMA;
 SET SCHEMA $DESTSCHEMA;
 DROP TABLE IF EXISTS $TABLE;
-CREATE TABLE $TABLE(c1 INT NOT NULL, c2 VARCHAR(10), c3 VARCHAR(10), PRIMARY KEY (c1));
-INSERT INTO $TABLE VALUES(5, 'delete', 'delete');
+CREATE TABLE $TABLE(ser NUMERIC NOT NULL PRIMARY KEY, name VARCHAR2(20), age INT, type VARCHAR2(20), yer INT);
 DROP TABLE IF EXISTS $TABLEEXP;
-CREATE TABLE $TABLEEXP(c1 INT NOT NULL, c2 VARCHAR(10), c3 VARCHAR(10), PRIMARY KEY (c1));
-INSERT INTO $TABLEEXP VALUES(5, 'delete', 'delete');
-DELETE FROM $TABLEEXP WHERE c1 = 5;
-DELETE FROM $TABLEEXP WHERE c1 is null;
-DELETE FROM $TABLEEXP WHERE c1 = 5;
+CREATE TABLE $TABLEEXP(ser NUMERIC NOT NULL PRIMARY KEY, name VARCHAR2(20), age INT, type VARCHAR2(20), yer INT);
+INSERT INTO $TABLEEXP VALUES(2, 'LC1', 29, 'BC', 2013);
+INSERT INTO $TABLEEXP VALUES(3, 'KY1', 22, 'PG', 2013);
+INSERT INTO $TABLEEXP VALUES(4, 'MH1', 23, 'PG', 2013);
+INSERT INTO $TABLEEXP VALUES(5, 'LX1', 32, 'PG', 2014);
+INSERT INTO $TABLEEXP VALUES(6, 'YH2', 36, 'PG', 2013);
+INSERT INTO $TABLEEXP VALUES(7, 'LC3', 29, 'BC', 2013);
+INSERT INTO $TABLEEXP VALUES(8, 'KY3', 22, 'PG', 2013);
+INSERT INTO $TABLEEXP VALUES(9, 'MH3', 23, 'PG', 2013);
 EOFsql\r"
   expect "$ "
   send "exit\r"
@@ -46,9 +50,14 @@ EOF
 
 DATAFILE=/tmp/$TOPIC.data
 CLASSPATH=""
-echo "CRM_CUE2159140509447540000000058000191662722522,973800561000000005800019142337$TABLED2018-04-02 07:59:54.085639051bbb2)))
-CRM_CUE2159140509447540000000058000191662722522,973800561000000005800019142337$TABLED2018-04-02 07:59:54.08563901delete2delete
-CRM_CUE2159140509447540000000058000191662722522,973800561000000005800019142337$TABLED2018-04-02 07:59:54.085639051delete2delete" > $DATAFILE
+echo "2,\"LC1\",29,BC,2013
+3,\"KY1\",22,PG,2013
+4,\"MH1\",23,PG,2013
+5,\"LX1\",32,PG,2014
+6,\"YH2\",36,PG,2013
+7,\"LC3\",29,BC,2013
+8,\"KY3\",22,PG,2013
+9,\"MH3\",23,PG,2013" | sed -e "s/,/${DELIM}/g" > $DATAFILE
 
 existtopic=`$KAFKA/bin/kafka-topics.sh --describe --topic $TOPIC --zookeeper $ZOOKEEPER`
 if [ "x$existtopic" != "x" ]; then
@@ -58,10 +67,9 @@ $KAFKA/bin/kafka-topics.sh --create --zookeeper $ZOOKEEPER --replication-factor 
 $KAFKA/bin/kafka-topics.sh --list --zookeeper $ZOOKEEPER
 $KAFKA/bin/kafka-console-producer.sh --broker-list $BROKER --topic $TOPIC < $DATAFILE
 #$KAFKA/bin/kafka-console-consumer.sh --zookeeper $ZOOKEEPER --topic $TOPIC --from-beginning
-
 KAFKA_CDC="$KAFKA_CDC"
 cd $KAFKA_CDC/bin;
-./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f Unicom --full --sto 5 --interval 2
+./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC --delim "${DELIM}" --full --sto 5 --interval 2
 
 #get result file from trafodion
 expect <<-EOF
@@ -94,7 +102,7 @@ EOFsql\r"
   expect eof
 EOF
 # clean the environment
-UREXPECTDIR="/tmp"
+CUREXPECTDIR="/tmp"
 mkdir -p $CUREXPECTDIR
 if [ -f /tmp/${TOPIC}_result.log ];then
  rm -f /tmp/${TOPIC}_result.log
@@ -104,6 +112,7 @@ if [ -f /tmp/${TOPIC}_expect.log ];then
  rm -f /tmp/${TOPIC}_expect.log
 echo "file exist , delete /tmp/${TOPIC}_expect.log"
 fi
+
 # copy result file to current host
 expect <<-EOF
   set timeout 60
@@ -126,16 +135,17 @@ expect <<-EOF
   send "exit\r"
   expect eof
 EOF
-# result set：
+
 RESULTPATH="$CUREXPECTDIR/${TOPIC}_result.log"
 EXPECTPATH="$CUREXPECTDIR/${TOPIC}_expect.log"
 currentTime=$(date "+%Y-%m-%d %H:%M:%S")
+# result set：
 if [ -f $RESULTPATH -a -f $EXPECTPATH -a "x$(diff -q $RESULTPATH $EXPECTPATH)" == "x" ];then
-echo "$currentTime $TOPIC expected" >> $FINALRESULTPATH
-RESULT="$currentTime $TOPIC success"
+  echo \"$currentTime $TOPIC expected\" >> $FINALRESULTPATH
+  RESULT="$currentTime $TOPIC success"
 else
-echo "$currentTime $TOPIC unexpected" >> $FINALRESULTPATH
-RESULT="$currentTime $TOPIC failed"
+  echo "$currentTime $TOPIC unexpected" >> $FINALRESULTPATH
+  RESULT="$currentTime $TOPIC failed"
 fi
 $KAFKA/bin/kafka-topics.sh --delete --zookeeper $ZOOKEEPER --topic $TOPIC
 rm -f $DATAFILE
