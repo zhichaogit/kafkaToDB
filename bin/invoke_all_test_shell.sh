@@ -25,6 +25,7 @@
 # 2.$(KAFKA,KAFKA_CDC,ZKIP,DBIP,BROKERIP,BROKERPORT,TRAFODIONUSERPS,
 #CURRENTUSERPS,)
 #if there are error or faild ,you can go $SCRIPTSDIR/logs for more INFO
+# 3. the IP better not be write "localhost"
 
 #kafka path
 KAFKA="/usr/hdp/2.4.2.0-258/kafka"
@@ -32,7 +33,7 @@ KAFKA="/usr/hdp/2.4.2.0-258/kafka"
 KAFKA_CDC="/home/$USER/kafkaCDC/target/KafkaCDC"
 
 #current host IP
-IPADDR="localhost"
+IPADDR=$(ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1 -d '/')
 #zookeeper IP
 ZKIP="localhost"
 #trafodion/esgyndb ip
@@ -84,6 +85,10 @@ if [ ! -d ${SCRIPTSDIR}/logs ];then
 fi
 if [ "$EXPECTDIR" == "/tmp" -o "$EXPECTDIR" == "/tmp/" ];then
   echo "Not recommended set \"EXPECTDIR\" to \"/tmp\",you can set it like [/tmp/kafkaCDC/logs]" 
+  exit 0
+fi
+if [ "$IPADDR" == "localhost" ];then
+  echo "\"IPADDR\" should IP,not \"localhost\""
   exit 0
 fi
 #foreach exec the shell script
