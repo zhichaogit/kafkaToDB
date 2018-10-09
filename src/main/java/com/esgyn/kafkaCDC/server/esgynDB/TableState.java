@@ -520,6 +520,7 @@ public class TableState
 	}
 
 	try {
+	    
 	    insert_data();
 	    update_data();
 	    delete_data();

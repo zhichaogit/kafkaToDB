@@ -1,5 +1,5 @@
 KAFKA="$KAFKA"
-TOPIC="only_insert_commit_middle"
+TOPIC="only_onekey_commit_middle"
 IPADDR="$IPADDR"
 ZKIP="$ZKIP"
 DBIP="$DBIP"
