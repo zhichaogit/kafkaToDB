@@ -300,7 +300,6 @@ public class ConsumerThread extends Thread
 
 	RowMessage urm = null;
 	String     msgStr = record.value();
-
 	if (format.equals("Unicom")) {
 	    String     dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
 	    urm = new UnicomRowMessage(esgyndb.GetDefaultSchema(),
@@ -315,12 +314,23 @@ public class ConsumerThread extends Thread
 				 esgyndb.GetDefaultTable(),
 				 delimiter, partitionID, dbMsg);
 	}
-
 	if (!urm.AnalyzeMessage())
 	    return;
-
 	String     tableName = urm.GetSchemaName() + "." + urm.GetTableName();
 	TableState tableState = tables.get(tableName);
+	
+	if(log.isDebugEnabled()){
+	log.debug("operatorType[" + urm.GetOperatorType() + "]\n"
+		+ "cacheNum [" + cacheNum + "]\n"
+		+ "commitCount [" + commitCount + "]");
+	}
+	if (urm.GetOperatorType().equals("K")) {
+            commit_tables();
+            if (log.isDebugEnabled()) {
+                log.debug(" before the table ["+ tableName+"] message has commit"
+                + " due to there is \"K\" operate");
+             }  
+        }
 	if (tableState == null) {
 	    TableInfo  tableInfo = esgyndb.GetTableInfo(tableName);
 
@@ -343,7 +353,21 @@ public class ConsumerThread extends Thread
 	tableState.InsertMessageToTable(urm);
 
 	tables.put(tableName, tableState);
-	if (log.isTraceEnabled()){
+
+	if(log.isDebugEnabled()){
+	log.debug("operatorType[" + urm.GetOperatorType() + "]\n"
+		+ "cacheNum [" + cacheNum + "]\n"
+		+ "commitCount [" + commitCount + "]");
+	}
+	if (urm.GetOperatorType().equals("K")) {
+            commit_tables();
+            if (log.isDebugEnabled()) {
+                log.debug(" before the table ["+ tableName+"] message has commit"
+                + " due to there is \"K\" operate");
+             }  
+        }
+        
+        if (log.isTraceEnabled()){
 	    log.trace("exit function");
 	}
     }
