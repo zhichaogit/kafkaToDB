@@ -9,8 +9,14 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options; 
 import org.apache.commons.cli.ParseException;
 
+import java.io.IOException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.BufferedInputStream;
+import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Properties;
 import java.util.Arrays;
 import java.util.ArrayList;
 
@@ -21,23 +27,24 @@ import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerThread;
 
 public class KafkaCDC implements Runnable{
-    private final static String DEFAULT_LOGCONFPATH = "conf/log4j.xml";
-    private final long   DEFAULT_STREAM_TO_MS = 60; // the unit is second, 60s
-    private final long   DEFAULT_ZOOK_TO_MS   = 10; // the unit is second, 10s
-    private final long   DEFAULT_COMMIT_COUNT = 5000;
-    private final long   DEFAULT_PARALLE      = 16;
-    private final long   DEFAULT_INTERVAL     = 10; // the unit is second, 10s
-    private final int    DEFAULT_MAX_PARTITION= 1000;
-    private final String DEFAULT_BROKER       = "localhost:9092";
-    private final String DEFAULT_IPADDR       = "localhost";
-    private final String DEFAULT_PORT         = "23400";
-    private final String DEFAULT_SCHEMA       = "SEABASE";
-    private final String DEFAULT_USER         = "db__root";
-    private final String DEFAULT_PASSWORD     = "zz";
-
-    private final String DEFAULT_ENCODING     = "UTF8";
-    private final String DEFAULT_KEY          = "org.apache.kafka.common.serialization.StringDeserializer";
-    private final String DEFAULT_VALUE        = "org.apache.kafka.common.serialization.StringDeserializer";
+    private final static String DEFAULT_LOGCONFPATH      = "conf/log4j.xml";
+    private final static String DEFAULT_KAFKACDCCONFPATH = "conf/kafkaCDC-site.properties";
+    private final long   DEFAULT_STREAM_TO_MS            = 60; // the unit is second, 60s
+    private final long   DEFAULT_ZOOK_TO_MS              = 10; // the unit is second, 10s
+    private final long   DEFAULT_COMMIT_COUNT            = 5000;
+    private final long   DEFAULT_PARALLE                 = 16;
+    private final long   DEFAULT_INTERVAL                = 10; // the unit is second, 10s
+    private final int    DEFAULT_MAX_PARTITION           = 1000;
+    private final String DEFAULT_BROKER                  = "localhost:9092";
+    private final String DEFAULT_IPADDR                  = "localhost";
+    private final String DEFAULT_PORT                    = "23400";
+    private final String DEFAULT_SCHEMA                  = "SEABASE";
+    private final String DEFAULT_USER                    = "db__root";
+    private final String DEFAULT_PASSWORD                = "zz";
+    private final String DEFAULT_ENCODING                = "UTF8";
+    private final String DEFAULT_KEY                     = "org.apache.kafka.common.serialization.StringDeserializer";
+    private final String DEFAULT_VALUE                   = "org.apache.kafka.common.serialization.StringDeserializer";
+    private final String DEFAULT_MESSAGECLASS            = "com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage";
 
     private static Logger log = Logger.getLogger(KafkaCDC.class); 
 
@@ -71,6 +78,7 @@ public class KafkaCDC implements Runnable{
     String   charEncoding = DEFAULT_ENCODING;
     String   key          = DEFAULT_KEY;
     String   value        = DEFAULT_VALUE;
+    String   messageClass = DEFAULT_MESSAGECLASS;
 
     private volatile int              running = 0;
     private EsgynDB                   esgyndb = null;
@@ -522,6 +530,14 @@ public class KafkaCDC implements Runnable{
 	zkTO = cmdLine.hasOption("zkto") ? 
 	    Long.parseLong(cmdLine.getOptionValue("zkto")) : DEFAULT_ZOOK_TO_MS;
 
+	try {
+        readConfigByProperties(DEFAULT_KAFKACDCCONFPATH);
+    } catch (IOException e) {
+        log.error("there is error when read kafkaCDC conf,make sure you have"
+                + "a right path:"+e.getMessage());
+        e.printStackTrace();
+        System.exit(0);
+    }
 	interval *= 1000;
 	streamTO *= 1000;
 	zkTO *= 1000;
@@ -608,7 +624,30 @@ public class KafkaCDC implements Runnable{
 			System.exit(0);
 		}
     }
-
+    public void readConfigByProperties(String filePath) throws IOException {
+        Properties properties = new Properties();
+        properties.load(new BufferedInputStream(new FileInputStream(new File(filePath))));
+	if(properties.containsKey("key.deserializer")) 
+            key =properties.getProperty("key.deserializer");
+       
+        if(properties.containsKey("value.deserializer")) 
+            value =properties.getProperty("value.deserializer");
+      switch (format) {
+    case "Unicom":
+        messageClass ="com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.UnicomRowMessage";
+        break;
+    case "HongQuan":
+        messageClass ="com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.HongQuanRowMessage";
+        break;
+    case "Json":
+        messageClass ="com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.JsonRowMessage";
+        
+    default:
+        if(properties.containsKey("messageType")) 
+            messageClass = properties.getProperty("messageType");
+        break;
+    }
+    }
     public static void main(String[] args) 
     {
 	// log4j.xml path
@@ -645,6 +684,7 @@ public class KafkaCDC implements Runnable{
 	strBuffer.append("\n\tkeepalive   = " + me.keepalive); 
 	strBuffer.append("\n\tkey         = " + me.key); 
 	strBuffer.append("\n\tvalue       = " + me.value); 
+	strBuffer.append("\n\tmessageClass= " + me.messageClass);
 
 	strBuffer.append("\n\tstreamTO    = " + (me.streamTO / 1000) + "s");
 	strBuffer.append("\n\tzkTO        = " + (me.zkTO / 1000) + "s");
@@ -680,7 +720,8 @@ public class KafkaCDC implements Runnable{
 							 partition,
 							 me.streamTO,
 							 me.zkTO,
-							 me.commitCount);
+							 me.commitCount,
+							 me.messageClass);
 	    consumer.setName("ConsumerThread-" + partition);
 	    me.consumers.add(consumer);
 	    consumer.start();

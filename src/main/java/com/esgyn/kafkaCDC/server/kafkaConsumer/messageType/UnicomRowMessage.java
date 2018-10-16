@@ -1,12 +1,14 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
 
-import java.util.Map;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import org.apache.log4j.Logger; 
  
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
+import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 
-public class UnicomRowMessage extends RowMessage {
+public class UnicomRowMessage extends RowMessage<String> {
+    private static Logger   log          = Logger.getLogger(UnicomRowMessage.class);
     private final byte SEPARATOR_LEVEL_1    = 0x1;
     private final byte SEPARATOR_DATA       = 0x2;
     private final byte SEPARATOR_NULL       = 0x3;
@@ -23,11 +25,19 @@ public class UnicomRowMessage extends RowMessage {
     String                  catlogName      = null;
     String                  timestamp       = null;
     String                  emptystr        = "";
-
-    public UnicomRowMessage(String defschema_, String deftable_, String delimiter_,
-			    int thread_, String message_)
+    String                  message         = null;
+    public UnicomRowMessage() {}
+    
+    public UnicomRowMessage(MessageTypePara<String> mtpara) throws UnsupportedEncodingException
     {
-	super(defschema_, deftable_, delimiter_, thread_, message_);
+	super(mtpara);
+    }
+
+    @Override
+    public boolean init(MessageTypePara<String> mtpara_) throws UnsupportedEncodingException {
+         super.init(mtpara_);
+        message = new String(((String) mtpara.getMessage()).getBytes(mtpara.getEncoding()), "UTF-8");
+        return true;
     }
 
     @Override

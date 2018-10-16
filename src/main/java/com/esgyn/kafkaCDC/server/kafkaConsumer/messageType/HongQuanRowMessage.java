@@ -1,61 +1,105 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
 
 import java.util.Map;
+
+import org.apache.log4j.Logger;
+
+import java.io.UnsupportedEncodingException;
+import java.sql.Connection;
 import java.util.HashMap;
-import org.apache.log4j.Logger; 
- 
+
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
+import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
+import com.esgyn.kafkaCDC.server.esgynDB.TableState;
+import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 
-public class HongQuanRowMessage extends RowMessage {
+public class HongQuanRowMessage extends RowMessage<byte[]> {
+    private static Logger     log = Logger.getLogger(HongQuanRowMessage.class);
+    
     private int             length          = 0;
     private byte[]          data            = null;
+    private EsgynDB         esgyndb         = null;
+    private Map<String, TableState>  tables = null;
     private int []          fieldSizes      = null;
     private int []          fieldTypes      = null;
     private boolean         allFixTypes     = true;
     private boolean         bigEndian       = true;
-
-    public HongQuanRowMessage(TableInfo tableInfo_, int thread_, byte[] message_, boolean bigEndian_)
+    private TableInfo       tableInfo_      = null;
+    
+   
+    public HongQuanRowMessage() {}
+    public HongQuanRowMessage(MessageTypePara<byte[]> mtpara_) throws UnsupportedEncodingException
     {
-	super(tableInfo_.GetSchemaName(), tableInfo_.GetTableName(), null, thread_, null);
-
-	data = message_;
-	bigEndian = bigEndian_;
-	fieldSizes = new int[(int)tableInfo_.GetColumnCount()];
-	fieldTypes = new int[(int)tableInfo_.GetColumnCount()];
-	for (int i = 0; i < tableInfo_.GetColumnCount(); i++) {
-	    ColumnInfo column = tableInfo_.GetColumn(i);
-	    fieldSizes[i] = column.GetColumnSize();
-	    fieldTypes[i] = column.GetColumnType();
-	    switch(fieldTypes[i]){
-	    case 136:  		// TINYINT
-	    case 137:  		// UNSIGNED TINYINT
-	    case 130:		// SIGNED SMALLINT
-	    case 131:		// UNSIGNED SMALLINT
-	    case 132:		// SIGNED INTEGER
-	    case 133:		// UNSIGNED INTEGER
-	    case 134:		// SIGNED LARGEINT
-	    case 138:		// UNSIGNED LARGEINT
-		break;
-
-	    case 64:		// VARCHAR
-	    case 2:		// NCHAR
-	    case 0:		// CHAR
-		allFixTypes = false;
-		break;
-
-	    default:
-	    }
-
-	    length += fieldSizes[i];
-	}
-	
-	if (log.isDebugEnabled()){
-	    log.info("the table mode [" + fieldSizes + "] total size [" 
-		     + length + "]");
-	}
+        init(mtpara_);
     }
+    
+    @Override
+    public boolean init(MessageTypePara<byte[]> mtpara_) throws UnsupportedEncodingException {
+        super.init(mtpara_);
+        if (log.isTraceEnabled()){
+            log.trace("enter function");
+        }
+        data       = (byte[]) mtpara.getMessage();
+        bigEndian  = mtpara.getBigEndian();
+        esgyndb    = mtpara.getEsgynDB();
+        tables     = mtpara.getTables();
+        tableInfo_ = mtpara.getTableState().GetTableInfo();
+         
+        if (log.isDebugEnabled()){
+              StringBuffer strBuffer = new StringBuffer();
+              strBuffer.append("message [" + data + "] length: " 
+                       + data.length + "\nraw data [");
+
+              for (int i = 0; i < data.length; i++) {
+                  String temp = Integer.toHexString(data[i] & 0xFF);
+                  if(temp.length() == 1){  
+                  temp = "0" + temp;  
+                  }  
+                  strBuffer.append(" " + temp);
+              }
+
+              strBuffer.append("]");
+              log.debug(strBuffer);
+          }
+        
+          fieldSizes = new int[(int)tableInfo_.GetColumnCount()];
+          fieldTypes = new int[(int)tableInfo_.GetColumnCount()];
+          for (int i = 0; i < tableInfo_.GetColumnCount(); i++) {
+              ColumnInfo column = tableInfo_.GetColumn(i);
+              fieldSizes[i] = column.GetColumnSize();
+              fieldTypes[i] = column.GetColumnType();
+              switch(fieldTypes[i]){
+              case 136:       // TINYINT
+              case 137:       // UNSIGNED TINYINT
+              case 130:       // SIGNED SMALLINT
+              case 131:       // UNSIGNED SMALLINT
+              case 132:       // SIGNED INTEGER
+              case 133:       // UNSIGNED INTEGER
+              case 134:       // SIGNED LARGEINT
+              case 138:       // UNSIGNED LARGEINT
+              break;
+
+              case 64:        // VARCHAR
+              case 2:     // NCHAR
+              case 0:     // CHAR
+              allFixTypes = false;
+              break;
+
+              default:
+              }
+
+              length += fieldSizes[i];
+          }
+          
+          if (log.isDebugEnabled()){
+              log.info("the table mode [" + fieldSizes + "] total size [" 
+                   + length + "]");
+          }
+          return true;
+    }
+    
 
     @Override
     public Boolean AnalyzeMessage()
@@ -71,7 +115,6 @@ public class HongQuanRowMessage extends RowMessage {
 
 	if(log.isDebugEnabled()){
 	    strBuffer = new StringBuffer();
-
 	    strBuffer.append("RowMessage thread [" + thread + "]\n");
 	    strBuffer.append("Raw message:[" + data + "]\n");
 	    strBuffer.append("Operator Info: [Table Name: " + tableName 
@@ -166,5 +209,6 @@ public class HongQuanRowMessage extends RowMessage {
 	}
 
 	return new String(b, start, size);  
-    }  
+    }
+    
 }

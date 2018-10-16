@@ -17,12 +17,9 @@ import org.apache.log4j.Logger;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.TableState;
-import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.HongQuanRowMessage;
-import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.JsonRowMessage;
+import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
-import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.UnicomRowMessage;
 
-import java.lang.ArrayIndexOutOfBoundsException;
 import java.io.UnsupportedEncodingException;
 import kafka.consumer.ConsumerTimeoutException;
 
@@ -38,7 +35,7 @@ import kafka.consumer.ConsumerTimeoutException;
  *   a.  pdsh script per node
  *   b.  zookeeper?
  */
-public class ConsumerThread extends Thread
+public class ConsumerThread<T> extends Thread
 {
     EsgynDB esgyndb;
     // execution settings
@@ -63,11 +60,13 @@ public class ConsumerThread extends Thread
     String  format;
 
     Map<String, TableState>  tables = null;
-    KafkaConsumer<String, String> kafkaString;
-    KafkaConsumer<Long, byte []>  kafkaByte;
+    KafkaConsumer<?, ?> kafkaconsumer;
     private final AtomicBoolean running = new AtomicBoolean(true);
     Connection  dbConn = null;
-
+    RowMessage<T>  urm    = null;
+    //e.g.:com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.UnicomRowMessage
+    private String messageClass;
+    
     private static Logger log = Logger.getLogger(ConsumerThread.class);
 
    public ConsumerThread(EsgynDB esgyndb_,
@@ -86,7 +85,8 @@ public class ConsumerThread extends Thread
 		   int     partitionID_,
 		   long    streamTO_,
 		   long    zkTO_,
-		   long    commitCount_) 
+		   long    commitCount_,
+		   String  messageClass_) 
     {
 	if (log.isTraceEnabled()){
 	    log.trace("enter function");
@@ -110,6 +110,7 @@ public class ConsumerThread extends Thread
 	value       = value_;
 	full        = full_;
 	skip        = skip_;
+	messageClass= messageClass_;
 
 	tables = new HashMap<String, TableState>(0);
 	Properties props = new Properties();
@@ -128,30 +129,33 @@ public class ConsumerThread extends Thread
 	props.put("value.deserializer", value);
 	props.put("max.poll.records", (int)commitCount);
 
-	if (format.equals("HongQuan")) {
-	    kafkaByte = new KafkaConsumer<Long, byte []>(props);
-	} else {
-	    kafkaString = new KafkaConsumer<String, String>(props);
-	}
+
+	kafkaconsumer = new KafkaConsumer(props);
+	
 
 	TopicPartition partition = new TopicPartition(topic, partitionID);
-	if (format.equals("HongQuan")) {
-	    kafkaByte.assign(Arrays.asList(partition));
-	} else {
-	    kafkaString.assign(Arrays.asList(partition));
-	}
+	kafkaconsumer.assign(Arrays.asList(partition));
 
 	if (full) {
-	    if (format.equals("HongQuan")) {
-		kafkaByte.poll(100);
-		kafkaByte.seekToBeginning(Arrays.asList(partition));
-	    } else {
-		// priming poll
-		kafkaString.poll(100);
-		// always start from beginning
-		kafkaString.seekToBeginning(Arrays.asList(partition));
-	    }
+	    kafkaconsumer.poll(100);
+	    kafkaconsumer.seekToBeginning(Arrays.asList(partition));
 	}
+	//building RowMessage
+	try {
+        urm = (RowMessage<T>) Class.forName(messageClass).newInstance();
+    } catch (InstantiationException ine) {
+        log.error ("when forName messageClass,there is a error: [" 
+                + ine.getMessage() + "]");
+        ine.printStackTrace();
+    } catch (IllegalAccessException ine) {
+        log.error ("when forName messageClass,there is a error: [" 
+                + ine.getMessage() + "]");
+        ine.printStackTrace();
+    } catch (ClassNotFoundException cnfe) {
+        log.error ("when forName messageClass,there is a error: [" 
+                + cnfe.getMessage() + "]make sure the full-qualified name is right");
+        cnfe.printStackTrace();
+    }
 
 	if (log.isTraceEnabled()){
 	    log.trace("exit function");
@@ -168,13 +172,8 @@ public class ConsumerThread extends Thread
 	    dbConn = esgyndb.CreateConnection(false);
 	    log.info("consumer server started.");
 	    while(running.get()) {
-		if (format.equals("HongQuan")) {
-		    if (!ProcessByteRecord())
+		    if (!ProcessRecord())
 			break;
-		} else {
-		    if (!ProcessStringRecord())
-			break;
-		}
 	    } // while true
 
 	    log.info("consumer server stoped.");
@@ -192,11 +191,7 @@ public class ConsumerThread extends Thread
 	    log.info("close connection");
 	    esgyndb.CloseConnection(dbConn);
 	    esgyndb.DisplayDatabase();
-	    if (format.equals("HongQuan")) {
-		kafkaByte.close();
-	    } else {
-		kafkaString.close();
-	    }
+	    kafkaconsumer.close();
 	    running.set(false);
 	}
 	if (log.isTraceEnabled()){
@@ -211,11 +206,7 @@ public class ConsumerThread extends Thread
 	    }
 	}
 
-	if (format.equals("HongQuan")) {
-	    kafkaByte.commitSync();
-	} else {
-	    kafkaString.commitSync();
-	}
+	kafkaconsumer.commitSync();
 	for (TableState tableState : tables.values()) {
 	    esgyndb.AddInsMsgNum(tableState.GetCacheInsert());
 	    esgyndb.AddUpdMsgNum(tableState.GetCacheUpdate());
@@ -232,279 +223,190 @@ public class ConsumerThread extends Thread
 	    tableState.ClearCache();
 	}
     }
-
-    public boolean ProcessStringRecord() 
+   
+    public boolean ProcessRecord() 
     {
-	// note that we don't commitSync to kafka - tho we should
-	ConsumerRecords<String, String> records = kafkaString.poll(streamTO);
-	if(log.isDebugEnabled()){
-	    log.debug("poll messages: " + records.count());
-	}
-	if (records.isEmpty())
-	    return false;               // timed out
-
-	cacheNum += records.count();
-	ProcessStringMessages(records);
-		
-	if (cacheNum > commitCount) {
-	    commit_tables();
-	}
-
-	return true;
+    // note that we don't commitSync to kafka - tho we should
+    ConsumerRecords<?, ?> records = kafkaconsumer.poll(streamTO);
+    if(log.isDebugEnabled()){
+        log.debug("poll messages: " + records.count());
     }
-
-    public void ProcessStringMessages(ConsumerRecords<String, String> records) 
-    {
-	if (log.isTraceEnabled()){
-	    log.trace("enter function");
-	}
-	for (ConsumerRecord<String, String> record : records) {
-	    try {
-		ProcessStringMessage(record);
-	    } catch (ArrayIndexOutOfBoundsException aiooe) {
-		log.error ("table schema is not matched with data, raw data: [" 
-			   + record + "]");
-		aiooe.printStackTrace();
-	    } catch (UnsupportedEncodingException uee) {
-		log.error ("the encoding is not supported in java, raw data: [" 
-			   + record + "]");
-		uee.printStackTrace();
-	    }
-	} // for each msg
-	if (log.isTraceEnabled()){
-	    log.trace("exit function");
-	}
-    }
-
-    public void ProcessStringMessage(ConsumerRecord<String, String> record) 
-	throws UnsupportedEncodingException
-    {
-	if (log.isTraceEnabled()){
-	    log.trace("enter function");
-	}
-	// position info for this message
-	long    partition = record.partition();
-	long    offset    = record.offset();
-	String  topic     = record.topic();
-	long    num       = 0;
-
-	if (partition != partitionID) {
-	    log.error("message info [topic: " + topic + ", partition: " 
-		      + partition + ", off: " + offset + "], current partition #" 
-		      + partitionID);
-	    if (log.isTraceEnabled()){
-		log.trace("exit function");
-	    }
-	    return;
-	}
-
-	RowMessage urm = null;
-	String     msgStr = record.value();
-	if (format.equals("Unicom")) {
-	    String     dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
-	    urm = new UnicomRowMessage(esgyndb.GetDefaultSchema(),
-				       esgyndb.GetDefaultTable(),
-				       delimiter, partitionID, dbMsg);
-	} else if(format.equals("Json")) {
-	    String dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
-	    urm = new JsonRowMessage(esgyndb, delimiter, partitionID, dbMsg);
-	}else{		    
-	    String     dbMsg = new String(msgStr.getBytes(encoding), "UTF-8");
-	    urm = new RowMessage(esgyndb.GetDefaultSchema(), 
-				 esgyndb.GetDefaultTable(),
-				 delimiter, partitionID, dbMsg);
-	}
-	if (!urm.AnalyzeMessage())
-	    return;
-	String     tableName = urm.GetSchemaName() + "." + urm.GetTableName();
-	TableState tableState = tables.get(tableName);
-	
-	if(log.isDebugEnabled()){
-	log.debug("operatorType[" + urm.GetOperatorType() + "]\n"
-		+ "cacheNum [" + cacheNum + "]\n"
-		+ "commitCount [" + commitCount + "]");
-	}
-	if (urm.GetOperatorType().equals("K")) {
-            commit_tables();
-            if (log.isDebugEnabled()) {
-                log.debug(" before the table ["+ tableName+"] message has commit"
-                + " due to there is \"K\" operate");
-             }  
-        }
-	if (tableState == null) {
-	    TableInfo  tableInfo = esgyndb.GetTableInfo(tableName);
-
-	    if (tableInfo == null) {
-		if (log.isDebugEnabled()) {
-		    log.warn("the table [" + tableName + "] is not exists!");
-		}
-		return;
-	    }
-
-	    tableState = new TableState(tableInfo);
-	    if (!tableState.InitStmt(dbConn)) {
-		if (log.isDebugEnabled()) {
-		    log.warn("init the table [" + tableName + "] fail!");
-		}
-		return;
-	    }
-	}
-
-	tableState.InsertMessageToTable(urm);
-
-	tables.put(tableName, tableState);
-
-	if(log.isDebugEnabled()){
-	log.debug("operatorType[" + urm.GetOperatorType() + "]\n"
-		+ "cacheNum [" + cacheNum + "]\n"
-		+ "commitCount [" + commitCount + "]");
-	}
-	if (urm.GetOperatorType().equals("K")) {
-            commit_tables();
-            if (log.isDebugEnabled()) {
-                log.debug(" before the table ["+ tableName+"] message has commit"
-                + " due to there is \"K\" operate");
-             }  
-        }
+    if (records.isEmpty())
+        return false;               // timed out
+    
+    cacheNum += records.count();
+    ProcessMessages(records);
         
+    if (cacheNum > commitCount) {
+        commit_tables();
+    }
+
+    return true;
+    }
+    
+    public void ProcessMessages(ConsumerRecords<?, ?> records) {
+    if (log.isTraceEnabled()){
+        log.trace("enter function");
+    }
+
+    for (ConsumerRecord<?, ?> record : records) {
+        
+	try {
+	    ProcessMessage(record);
+    	}catch (ArrayIndexOutOfBoundsException aiooe) {
+            log.error ("table schema is not matched with data, raw data: [" 
+               	+ record + "]");
+            aiooe.printStackTrace();
+        } catch (UnsupportedEncodingException uee) {
+            log.error ("the encoding is not supported in java, raw data: [" 
+               + record + "]");
+            uee.printStackTrace();
+        }
+    } // for each msg
+    if (log.isTraceEnabled()){
+        log.trace("exit function");
+    }
+    }
+    
+    public <T> void ProcessMessage(ConsumerRecord<?,? > record) 
+    	throws UnsupportedEncodingException
+    {
         if (log.isTraceEnabled()){
-	    log.trace("exit function");
-	}
-    }
+            log.trace("enter function");
+        }
+        // position info for this message
+        long    partition = record.partition();
+        long    offset    = record.offset();
+        String  topic     = record.topic();
+        long    num       = 0;
 
-    public boolean ProcessByteRecord() 
-    {
-	// note that we don't commitSync to kafka - tho we should
-	ConsumerRecords<Long, byte[]> records = kafkaByte.poll(streamTO);
-	if(log.isDebugEnabled()){
-	    log.debug("poll messages: " + records.count());
-	}
-	if (records.isEmpty())
-	    return false;               // timed out
+        if (partition != partitionID) {
+            log.error("message info [topic: " + topic + ", partition: " 
+		  + partition + ", off: " + offset + "], current partition #" 
+                  + partitionID);
+            if (log.isTraceEnabled()){
+                log.trace("exit function");
+            }
+                return;
+        }
 
-	if (log.isTraceEnabled()){
-	    for(ConsumerRecord<Long, byte[]> record : records){
-		byte[] msg = record.value();
-		log.trace("key = " + record.key() + ", offset = " 
-			  + record.offset() + ", value = " + msg 
-			  + ", length:%d" + msg.length);
-	    }
-	}
+        T   msg = (T) record.value();
+        String     tableName  = esgyndb.GetDefaultSchema() + "." + esgyndb.GetDefaultTable();
+        TableState tableState = tables.get(tableName);
+        if (log.isTraceEnabled()){
+            log.trace("1 tableNameFull[" + tableName +"],\ntableState if null ["
+	          + (tableState == null) + "]");
+        } 
+         // if tableName is null,should found it from message
+        if (esgyndb.GetDefaultTable()!=null) {
+            if (tableState == null) {
+                TableInfo tableInfo = esgyndb.GetTableInfo(tableName);
+                log.error("tableinfo is null: " + (tableInfo== null) 
+                        + tableInfo.GetSchemaName() +tableInfo.GetTableName());
+                if (tableInfo == null) {
+                    if (log.isDebugEnabled()) {
+                        log.warn("the table [" + tableName + "] is not exists!");
+                    }
+                    
+                    return;
+                }
 
-	cacheNum += records.count();
-	ProcessByteMessages(records);
-		
-	if (cacheNum >= commitCount) {
-	    commit_tables();
-	}
+                tableState = new TableState(tableInfo);
+                if (!tableState.InitStmt(dbConn)) {
+                    if (log.isDebugEnabled()) {
+                        log.warn("init the table [" + tableName + "] fail!");
+                    }
+                    return;
+                }
+            } else {
+                if (log.isTraceEnabled()){
+                    log.debug(" tableInfo if null [" +(tableState.GetTableInfo()== null) + "]");
+                } 
+            } 
+        }
+     
+        MessageTypePara typeMessage = new MessageTypePara(
+                esgyndb,
+                tables,
+                tableState,
+                dbConn,
+                delimiter, 
+                partitionID, 
+                msg, 
+                encoding,
+                bigEndian);
+             
+        if(!urm.init(typeMessage))
+           return;
+             
+        if (!urm.AnalyzeMessage())
+           return;
+          
+        if(log.isDebugEnabled()){
+            log.debug("operatorType[" + urm.GetOperatorType() + "]\n"
+                    + "cacheNum [" + cacheNum + "]\n"
+                    + "commitCount [" + commitCount + "]");
+        }
+        if (urm.GetOperatorType().equals("K")) {
+            commit_tables();
+                if (log.isDebugEnabled()) {
+                    log.debug(" before the table ["+ tableName+"] message has commit"
+                            + " due to there is \"K\" operate");
+                }  
+        }
+                  
+        if (esgyndb.GetDefaultTable() == null) {
+            tableName = urm.GetSchemaName() + "." + urm.GetTableName();
+            tableState = tables.get(tableName);
+            if (tableState == null) {
+                TableInfo tableInfo = esgyndb.GetTableInfo(tableName);
+    
+                if (tableInfo == null) {
+                    if (log.isDebugEnabled()) {
+                      log.warn("the table [" + tableName + "] is not exists!");
+                    }
+                    return;
+                }
+    
+                tableState = new TableState(tableInfo);
+                if (!tableState.InitStmt(dbConn)) {
+                    if (log.isDebugEnabled()) {
+                        log.warn("init the table [" + tableName + "] fail!");
+                    }
+                    return;
+                }
+              } 
+        }
+                
+        if(log.isDebugEnabled()) {
+            log.debug("start insert message to table , urm [" + urm.toString() + "],"
+                + "tableState if null [" + (tableState == null) + "]");
+        }
+            
+        tableState.InsertMessageToTable(urm);
+        if(log.isDebugEnabled()) {
+            log.debug("put table state in map :" +tableName +"  " + tableState.toString());
+        }
+        tables.put(tableName, tableState);
 
-	return true;
-    }
-
-    public void ProcessByteMessages(ConsumerRecords<Long, byte[]> records) 
-    {
-	if (log.isTraceEnabled()){
-	    log.trace("enter function");
-	}
-	for (ConsumerRecord<Long, byte[]> message : records) {
-	    try {
-		ProcessByteMessage(message);
-	    } catch (ArrayIndexOutOfBoundsException aiooe) {
-		log.error ("table schema is not matched with data, raw data: [" 
-			   + message + "]");
-		aiooe.printStackTrace();
-	    } catch (UnsupportedEncodingException uee) {
-		log.error ("the encoding is not supported in java, raw data: [" 
-			   + message + "]");
-		uee.printStackTrace();
-	    }
-	} // for each msg
-	if (log.isTraceEnabled()){
-	    log.trace("exit function");
-	}
-    }
-
-    public void ProcessByteMessage(ConsumerRecord<Long, byte[]> record) 
-	throws UnsupportedEncodingException
-    {
-	if (log.isTraceEnabled()){
-	    log.trace("enter function");
-	}
-	// position info for this message
-	long    partition = record.partition();
-	long    offset    = record.offset();
-	String  topic     = record.topic();
-	long    num       = 0;
-
-	if (partition != partitionID) {
-	    log.error("message info [topic: " + topic + ", partition: " 
-		      + partition + ", off: " + offset
-		      + "], current partition #" + partitionID);
-	    if (log.isTraceEnabled()){
-		log.trace("exit function");
-	    }
-	    return;
-	}
-
-	RowMessage urm = null;
-	byte[]     msgByte = record.value();
-
-	String    tableName = 
-	    esgyndb.GetDefaultSchema() + "." + esgyndb.GetDefaultTable();
-	TableState tableState = tables.get(tableName);
-	if (tableState == null) {
-	    TableInfo  tableInfo = esgyndb.GetTableInfo(tableName);
-
-	    if (tableInfo == null) {
-		if (log.isDebugEnabled()) {
-		    log.warn("the table [" + tableName + "] is not exists!");
-		}
-		return;
-	    }
-
-	    tableState = new TableState(tableInfo);
-	    if (!tableState.InitStmt(dbConn)) {
-		if (log.isDebugEnabled()) {
-		    log.warn("init the table [" + tableName + "] fail!");
-		}
-		return;
-	    }
-	}
-
-	if (format.equals("HongQuan")) {
-	    if (log.isDebugEnabled()){
-		StringBuffer strBuffer = new StringBuffer();
-		strBuffer.append("message [" + msgByte + "] length: " 
-				 + msgByte.length + "\nraw data [");
-
-		for (int i = 0; i < msgByte.length; i++) {
-		    String temp = Integer.toHexString(msgByte[i] & 0xFF);
-		    if(temp.length() == 1){  
-			temp = "0" + temp;  
-		    }  
-		    strBuffer.append(" " + temp);
-		}
-
-		strBuffer.append("]");
-		log.debug(strBuffer);
-	    }
-
-	    urm = new HongQuanRowMessage(tableState.GetTableInfo(), partitionID, 
-					 msgByte, bigEndian);
-	} else {
-	    log.error("format is error [" + format + "]");
-	    return;
-	}
-
-	urm.AnalyzeMessage();
-
-	tableState.InsertMessageToTable(urm);
-
-	tables.put(tableName, tableState);
-	if (log.isTraceEnabled()){
-	    log.trace("exit function");
-	}
-    }
+        if(log.isDebugEnabled()){
+            log.debug("operatorType[" + urm.GetOperatorType() + "]\n"
+                    + "cacheNum [" + cacheNum + "]\n"
+                    + "commitCount [" + commitCount + "]");
+        }
+        if (urm.GetOperatorType().equals("K")) {
+                commit_tables();
+                if (log.isDebugEnabled()) {
+                    log.debug(" before the table ["+ tableName+"] message has commit"
+                            + " due to there is \"K\" operate");
+                 }  
+        }
+                
+        if (log.isTraceEnabled()){
+            log.trace("exit function");
+        }
+    }     
+    
 
     public int GetConsumerID() 
     {
@@ -519,11 +421,6 @@ public class ConsumerThread extends Thread
     public synchronized void Close() 
     {
 	running.set(false);
-	
-	if (format.equals("HongQuan")) {
-	    kafkaByte.wakeup();
-	} else {
-	    kafkaString.wakeup();
-	}
+	kafkaconsumer.wakeup();
     }
 }

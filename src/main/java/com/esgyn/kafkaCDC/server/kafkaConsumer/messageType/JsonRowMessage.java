@@ -1,6 +1,7 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -8,12 +9,13 @@ import com.esgyn.kafkaCDC.server.esgynDB.ColumnInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
+import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map.Entry;
 import org.apache.log4j.Logger;
 
-public class JsonRowMessage extends RowMessage {
+public class JsonRowMessage extends RowMessage<String>{
     private static Logger log = Logger.getLogger(JsonRowMessage.class);
     
     int ts = 0;
@@ -25,13 +27,20 @@ public class JsonRowMessage extends RowMessage {
     JsonNode dataJsonNode = null;
     JsonNode oldJsonNode = null;
     EsgynDB  esgynDB = null;
-
-
-    public JsonRowMessage(EsgynDB esgynDB_, String delimiter_, int thread_, String message_) {
-        super(esgynDB_.GetDefaultSchema(), esgynDB_.GetDefaultTable(), delimiter_, thread_, message_);
-        esgynDB = esgynDB_;
+    String   message = null;
+    public JsonRowMessage() {}
+    public JsonRowMessage(MessageTypePara<String> mtpara) throws UnsupportedEncodingException {
+        init(mtpara);
+       
     }
-
+    
+    @Override
+    public boolean init(MessageTypePara<String> mtpara) throws UnsupportedEncodingException {
+        super.init(mtpara);
+        message = new String(((String) mtpara.getMessage()).getBytes(mtpara.getEncoding()), "UTF-8");
+        esgynDB = mtpara.getEsgynDB();
+        return true;
+    }
     @Override
     public Boolean AnalyzeMessage() {
         ObjectMapper mapper = new ObjectMapper();
@@ -161,7 +170,7 @@ public class JsonRowMessage extends RowMessage {
                 String colName ="\"" +  entry.getKey().toString() + "\"";
                 ColumnInfo colInfo = tableInfo.GetColumn(colName);
                 int    colId = colInfo.GetColumnID();
-                ColumnValue columnValue = columns.get(colId);
+                ColumnValue columnValue = (ColumnValue) columns.get(colId);
                 if (columnValue != null) {
 		  // when message have "data" info 
 	           columnValue = new ColumnValue(colId, columnValue.GetCurValue(),colNewData );
