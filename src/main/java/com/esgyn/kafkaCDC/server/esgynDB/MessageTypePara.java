@@ -6,7 +6,7 @@ import java.util.Map;
 public class MessageTypePara<T> {
     private EsgynDB                 esgynDB   = null;
     private Map<String, TableState>  tables   = null;
-    private TableState             tableState   = null;
+    private TableState             tableState = null;
     private Connection               dbConn   = null;
     private String                  delimiter = null;
     private int                     thread    = 0;
@@ -18,9 +18,9 @@ public class MessageTypePara<T> {
             TableState tableState_,Connection  dbConn_,String delimiter_, 
             int thread_, T message_, String encoding_,boolean bigEndian_) {
         esgynDB    = esgynDB_;
-        tables  = tables_;
-        tableState  = tableState_;
-        dbConn  = dbConn_;
+        tables     = tables_;
+        tableState = tableState_;
+        dbConn     = dbConn_;
         delimiter  = delimiter_;
         thread     = thread_;
         message    = message_;

@@ -28,7 +28,4 @@ README 2:  user-defined format
    2.edit your code(refer to CustomFormatTest.java)
    3.pack user-defined code to jar,and add it to libs
    4.modify conf/kafkaCDC-site.properties
-   5.set the parameter [ -f "" ], run the kafkaCDC
-   
-   
-   
+   5.set the parameter [ -f "" ], run the kafkaCDC 
