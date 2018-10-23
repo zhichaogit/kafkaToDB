@@ -89,9 +89,7 @@
 					<archive>
 						<manifest>
 							<mainClass>com.esgyn.kafkaCDC.server.KafkaCDC</mainClass>
-							<addClasspath>true</addClasspath>
-							<classpathPrefix>./</classpathPrefix>
-						</manifest>
+						</manifest> 
 					</archive>
 					<classesDirectory>
 					</classesDirectory>

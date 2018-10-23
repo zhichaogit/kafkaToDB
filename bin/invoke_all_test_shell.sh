@@ -37,7 +37,7 @@ IPADDR=$(ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1 -
 #zookeeper IP
 ZKIP="localhost"
 #trafodion/esgyndb ip
-DBIP="loaclhost"
+DBIP="localhost"
 #kafka ip
 BROKERIP="localhost"
 BROKERPORT="6667"

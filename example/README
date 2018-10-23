@@ -1,3 +1,4 @@
+README 1:
 If want to test kafka server is working or not with binary, you can test step by step as following:
 Method 1:
 1. Modify the bootstrap.servers of ProducerTest.java and ConsumerTest.java, then compile with command :
@@ -21,3 +22,13 @@ Method 2: or you can do the same things by script:
    # bin/kafka-topics.sh --create --zookeeper  localhost:2181 --replication-factor 1 --partitions 1 --topic g_ad
    2.exec the shell script
    # example/compile.sh
+
+README 2:  user-defined format
+   1.add libs/KafkaCDC.jar to your maven project build path
+   2.edit your code(refer to CustomFormatTest.java)
+   3.pack user-defined code to jar,and add it to libs
+   4.modify conf/kafkaCDC-site.properties
+   5.set the parameter [ -f "" ], run the kafkaCDC
+   
+   
+   
