@@ -1,0 +1,19 @@
+user-defined data format as follow:(It would be easy if to use eclipse/IDEA)
+  1.create maven project:
+  mvn archetype:generate -DgroupId=com.esgyn.kafkaCDC.server.kafkaConsumer.messageType 
+  -DartifactId=kafkaCDC -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+  
+  2.copy pom.xml and userDefinedRowMessage.java to this maven project (kafkaCDC)
+  
+  3.load the kafkaCDC.jar to maven Local repository:
+  mvn install:install-file -Dfile=$KafkaCDC/libs/KafkaCDC.jar-DgroupId=com.esgyn  
+  -DartifactId=kafkaCDC -Dversion=R1.0.0  -Dpackaging=jar
+  
+  4.pack this maven project (kafkaCDC) to jar file:
+    mvn clean package
+
+  5. move this jar file(target/user-definedFormat.jar) to $KafkaCDC/libs/
+     
+  6.run the kafkaCDC as follow (the class name shloud be "[format] +RowMessage")
+   KafkaCDC-server.sh -p 1 -b 172.16.20.12:6667 -d 172.16.20.12  -s [xzc] -t jsonMulTopic6 
+   -f "userDefined" --full --sto 3 --interval 5  --dbuser db__root --dbpw traf123  -c 50

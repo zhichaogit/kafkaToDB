@@ -24,7 +24,7 @@ public class ProducerTest{
 
         Properties props = new Properties();
 
-        props.put("bootstrap.servers", "localhost:6667");
+        props.put("bootstrap.servers", "localhost:9092");
 
         props.put("retries", 3);
 

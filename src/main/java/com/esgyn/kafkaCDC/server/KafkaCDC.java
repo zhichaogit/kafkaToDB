@@ -2,21 +2,14 @@ package com.esgyn.kafkaCDC.server;
 
 
 import org.apache.commons.cli.CommandLine; 
-import org.apache.commons.cli.CommandLineParser; 
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter; 
 import org.apache.commons.cli.Option; 
 import org.apache.commons.cli.Options; 
 import org.apache.commons.cli.ParseException;
 
-import java.io.IOException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.BufferedInputStream;
-import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Properties;
 import java.util.Arrays;
 import java.util.ArrayList;
 
@@ -28,7 +21,6 @@ import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerThread;
 
 public class KafkaCDC implements Runnable{
     private final static String DEFAULT_LOGCONFPATH      = "conf/log4j.xml";
-    private final static String DEFAULT_KAFKACDCCONFPATH = "conf/kafkaCDC-site.properties";
     private final long   DEFAULT_STREAM_TO_MS            = 60; // the unit is second, 60s
     private final long   DEFAULT_ZOOK_TO_MS              = 10; // the unit is second, 10s
     private final long   DEFAULT_COMMIT_COUNT            = 5000;
@@ -218,8 +210,8 @@ public class KafkaCDC implements Runnable{
 	    .longOpt("format")
 	    .required(false)
 	    .hasArg()
-	    .desc("format of data, support \"Unicom\"  \"HongQuan\" and \"Json\" "
-	          + "now, default: \"\"")
+	    .desc("format of data, support \"Unicom\"  \"HongQuan\"  \"Json\" "
+	          + "and \"user-defined\" default: \"\",")
 	    .build();
 	Option groupOption = Option.builder("g")
 	    .longOpt("group")
@@ -427,6 +419,9 @@ public class KafkaCDC implements Runnable{
 	    : "";
 	groupID = cmdLine.hasOption("group") ? cmdLine.getOptionValue("group")
 	    : "group_0";
+	if (format != "") {
+        messageClass ="com.esgyn.kafkaCDC.server.kafkaConsumer.messageType." + format +"RowMessage";
+    }
 	String partString = cmdLine.hasOption("partition") ? 
 	    cmdLine.getOptionValue("partition") : "16";
 	String[] parts = partString.split(",");
@@ -530,14 +525,6 @@ public class KafkaCDC implements Runnable{
 	zkTO = cmdLine.hasOption("zkto") ? 
 	    Long.parseLong(cmdLine.getOptionValue("zkto")) : DEFAULT_ZOOK_TO_MS;
 
-	try {
-        readConfigByProperties(DEFAULT_KAFKACDCCONFPATH);
-    } catch (IOException e) {
-        log.error("there is error when read kafkaCDC conf,make sure you have"
-                + "a right path:"+e.getMessage());
-        e.printStackTrace();
-        System.exit(0);
-    }
 	interval *= 1000;
 	streamTO *= 1000;
 	zkTO *= 1000;
@@ -564,14 +551,7 @@ public class KafkaCDC implements Runnable{
 	if (tenantUser != null)
 	    dburl += ";tenantName=" + tenantUser;
 
-	if (!format.equals("Unicom") && !format.equals("HongQuan") 
-	    && !format.equals("Json") && !format.equals("")){
-	    HelpFormatter formatter = new HelpFormatter();
-	    log.error ("just support \"Unicom\" and \"HongQuan\" format now. "
-		       + "cur format: \"" + format + "\"");
-	    formatter.printHelp("Consumer Server", exeOptions);
-	    System.exit(0);
-	} else if (format.equals("HongQuan")) {
+	if (format.equals("HongQuan")) {
 	    if (!cmdLine.hasOption("key") || !cmdLine.hasOption("value")) {
 		HelpFormatter formatter = new HelpFormatter();
 		log.error ("\"HongQuan\" format must need key and value parameter. ");
@@ -623,30 +603,7 @@ public class KafkaCDC implements Runnable{
 			System.exit(0);
 		}
     }
-    public void readConfigByProperties(String filePath) throws IOException {
-        Properties properties = new Properties();
-        properties.load(new BufferedInputStream(new FileInputStream(new File(filePath))));
-	if(properties.containsKey("key.deserializer")) 
-            key =properties.getProperty("key.deserializer");
-       
-        if(properties.containsKey("value.deserializer")) 
-            value =properties.getProperty("value.deserializer");
-      switch (format) {
-    case "Unicom":
-        messageClass ="com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.UnicomRowMessage";
-        break;
-    case "HongQuan":
-        messageClass ="com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.HongQuanRowMessage";
-        break;
-    case "Json":
-        messageClass ="com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.JsonRowMessage";
-        
-    default:
-        if(properties.containsKey("messageType")) 
-            messageClass = properties.getProperty("messageType");
-        break;
-    }
-    }
+
     public static void main(String[] args) 
     {
 	// log4j.xml path
