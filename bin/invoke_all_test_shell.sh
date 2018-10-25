@@ -40,7 +40,7 @@ ZKIP="localhost"
 DBIP="localhost"
 #kafka ip
 BROKERIP="localhost"
-BROKERPORT="6667"
+BROKERPORT="9092"
 #user(trafci) password
 TRAFODIONUSERPS="traf123"
 #user(kafkaCDCuser) password
