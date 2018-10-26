@@ -2,7 +2,6 @@ package com.esgyn.kafkaCDC.server;
 
 
 import org.apache.commons.cli.CommandLine; 
-import org.apache.commons.cli.CommandLineParser; 
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter; 
 import org.apache.commons.cli.Option; 
@@ -21,23 +20,23 @@ import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerThread;
 
 public class KafkaCDC implements Runnable{
-    private final static String DEFAULT_LOGCONFPATH = "conf/log4j.xml";
-    private final long   DEFAULT_STREAM_TO_MS = 60; // the unit is second, 60s
-    private final long   DEFAULT_ZOOK_TO_MS   = 10; // the unit is second, 10s
-    private final long   DEFAULT_COMMIT_COUNT = 5000;
-    private final long   DEFAULT_PARALLE      = 16;
-    private final long   DEFAULT_INTERVAL     = 10; // the unit is second, 10s
-    private final int    DEFAULT_MAX_PARTITION= 1000;
-    private final String DEFAULT_BROKER       = "localhost:9092";
-    private final String DEFAULT_IPADDR       = "localhost";
-    private final String DEFAULT_PORT         = "23400";
-    private final String DEFAULT_SCHEMA       = "SEABASE";
-    private final String DEFAULT_USER         = "db__root";
-    private final String DEFAULT_PASSWORD     = "zz";
-
-    private final String DEFAULT_ENCODING     = "UTF8";
-    private final String DEFAULT_KEY          = "org.apache.kafka.common.serialization.StringDeserializer";
-    private final String DEFAULT_VALUE        = "org.apache.kafka.common.serialization.StringDeserializer";
+    private final static String DEFAULT_LOGCONFPATH      = "conf/log4j.xml";
+    private final long   DEFAULT_STREAM_TO_MS            = 60; // the unit is second, 60s
+    private final long   DEFAULT_ZOOK_TO_MS              = 10; // the unit is second, 10s
+    private final long   DEFAULT_COMMIT_COUNT            = 5000;
+    private final long   DEFAULT_PARALLE                 = 16;
+    private final long   DEFAULT_INTERVAL                = 10; // the unit is second, 10s
+    private final int    DEFAULT_MAX_PARTITION           = 1000;
+    private final String DEFAULT_BROKER                  = "localhost:9092";
+    private final String DEFAULT_IPADDR                  = "localhost";
+    private final String DEFAULT_PORT                    = "23400";
+    private final String DEFAULT_SCHEMA                  = "SEABASE";
+    private final String DEFAULT_USER                    = "db__root";
+    private final String DEFAULT_PASSWORD                = "zz";
+    private final String DEFAULT_ENCODING                = "UTF8";
+    private final String DEFAULT_KEY                     = "org.apache.kafka.common.serialization.StringDeserializer";
+    private final String DEFAULT_VALUE                   = "org.apache.kafka.common.serialization.StringDeserializer";
+    private final String DEFAULT_MESSAGECLASS            = "com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage";
 
     private static Logger log = Logger.getLogger(KafkaCDC.class); 
 
@@ -71,6 +70,7 @@ public class KafkaCDC implements Runnable{
     String   charEncoding = DEFAULT_ENCODING;
     String   key          = DEFAULT_KEY;
     String   value        = DEFAULT_VALUE;
+    String   messageClass = DEFAULT_MESSAGECLASS;
 
     private volatile int              running = 0;
     private EsgynDB                   esgyndb = null;
@@ -210,8 +210,8 @@ public class KafkaCDC implements Runnable{
 	    .longOpt("format")
 	    .required(false)
 	    .hasArg()
-	    .desc("format of data, support \"Unicom\"  \"HongQuan\" and \"Json\" "
-	          + "now, default: \"\"")
+	    .desc("format of data, support \"Unicom\"  \"HongQuan\"  \"Json\" "
+	          + "and \"user-defined\" default: \"\",")
 	    .build();
 	Option groupOption = Option.builder("g")
 	    .longOpt("group")
@@ -548,14 +548,7 @@ public class KafkaCDC implements Runnable{
 	if (tenantUser != null)
 	    dburl += ";tenantName=" + tenantUser;
 
-	if (!format.equals("Unicom") && !format.equals("HongQuan") 
-	    && !format.equals("Json") && !format.equals("")){
-	    HelpFormatter formatter = new HelpFormatter();
-	    log.error ("just support \"Unicom\" and \"HongQuan\" format now. "
-		       + "cur format: \"" + format + "\"");
-	    formatter.printHelp("Consumer Server", exeOptions);
-	    System.exit(0);
-	} else if (format.equals("HongQuan")) {
+	if (format.equals("HongQuan")) {
 	    if (!cmdLine.hasOption("key") || !cmdLine.hasOption("value")) {
 		HelpFormatter formatter = new HelpFormatter();
 		log.error ("\"HongQuan\" format must need key and value parameter. ");
@@ -563,15 +556,20 @@ public class KafkaCDC implements Runnable{
 		System.exit(0);
 	    }
 	}
-
-	if (!format.equals("Unicom") && !format.equals("Json") 
-	    && (defschema == null || deftable == null)) {
-	    HelpFormatter formatter = new HelpFormatter();
-	    log.error ("schema and table must be specified in HongQuan or Normal or Json format.");
-	    formatter.printHelp("Consumer Server", exeOptions);
-	    System.exit(0);
+	if(!format.equals("")&&!format.equals("Unicom")&&!format.equals("Json")&&!format.equals("Json")){
+        	messageClass ="com.esgyn.kafkaCDC.server.kafkaConsumer.messageType." + format +"RowMessage";
+	}else {
+	    if (!format.equals("Unicom") && !format.equals("Json") 
+		&& (defschema == null || deftable == null)) {
+	        HelpFormatter formatter = new HelpFormatter();
+	        log.error ("schema and table must be specified in HongQuan or Normal or Json format.");
+	        formatter.printHelp("Consumer Server", exeOptions);
+	        System.exit(0);
+	    }
+	    if (!format.equals("")) {
+                messageClass ="com.esgyn.kafkaCDC.server.kafkaConsumer.messageType." + format +"RowMessage";
+            }
 	}
-	
 	if ((format.equals("") && delimiter != null && delimiter.length() != 1)) {
 	    HelpFormatter formatter = new HelpFormatter();
 	    log.error ("the delimiter must be a single character. but it's ["
@@ -645,6 +643,7 @@ public class KafkaCDC implements Runnable{
 	strBuffer.append("\n\tkeepalive   = " + me.keepalive); 
 	strBuffer.append("\n\tkey         = " + me.key); 
 	strBuffer.append("\n\tvalue       = " + me.value); 
+	strBuffer.append("\n\tmessageClass= " + me.messageClass);
 
 	strBuffer.append("\n\tstreamTO    = " + (me.streamTO / 1000) + "s");
 	strBuffer.append("\n\tzkTO        = " + (me.zkTO / 1000) + "s");
@@ -680,7 +679,8 @@ public class KafkaCDC implements Runnable{
 							 partition,
 							 me.streamTO,
 							 me.zkTO,
-							 me.commitCount);
+							 me.commitCount,
+							 me.messageClass);
 	    consumer.setName("ConsumerThread-" + partition);
 	    me.consumers.add(consumer);
 	    consumer.start();

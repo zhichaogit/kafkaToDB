@@ -36,7 +36,7 @@ echo "LIBSPATH:${LIBSPATH}"
 
 cd ${BASEPATH}
 #2 analy parameters
-execCommand="java -jar $LIBSPATH/KafkaCDC.jar"
+execCommand="java -Djava.ext.dirs=libs:$JAVA_HOME/jre/lib/ext -jar $LIBSPATH/KafkaCDC.jar"
 
 if [ $# = 0 ]; then
   execCommand="$execCommand -h"
