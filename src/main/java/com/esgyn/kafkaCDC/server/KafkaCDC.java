@@ -419,9 +419,6 @@ public class KafkaCDC implements Runnable{
 	    : "";
 	groupID = cmdLine.hasOption("group") ? cmdLine.getOptionValue("group")
 	    : "group_0";
-	if (!format.equals("")) {
-        messageClass ="com.esgyn.kafkaCDC.server.kafkaConsumer.messageType." + format +"RowMessage";
-    }
 	String partString = cmdLine.hasOption("partition") ? 
 	    cmdLine.getOptionValue("partition") : "16";
 	String[] parts = partString.split(",");
@@ -559,14 +556,20 @@ public class KafkaCDC implements Runnable{
 		System.exit(0);
 	    }
 	}
-
-	if (!format.equals("Unicom") && !format.equals("Json") 
-	    && (defschema == null || deftable == null)) {
-	    HelpFormatter formatter = new HelpFormatter();
-	    log.warn ("schema and table must be specified in HongQuan or Normal or Json format.");
-	    formatter.printHelp("Consumer Server", exeOptions);
+	if(!format.equals("")&&!format.equals("Unicom")&&!format.equals("Json")&&!format.equals("Json")){
+        	messageClass ="com.esgyn.kafkaCDC.server.kafkaConsumer.messageType." + format +"RowMessage";
+	}else {
+	    if (!format.equals("Unicom") && !format.equals("Json") 
+		&& (defschema == null || deftable == null)) {
+	        HelpFormatter formatter = new HelpFormatter();
+	        log.error ("schema and table must be specified in HongQuan or Normal or Json format.");
+	        formatter.printHelp("Consumer Server", exeOptions);
+	        System.exit(0);
+	    }
+	    if (!format.equals("")) {
+                messageClass ="com.esgyn.kafkaCDC.server.kafkaConsumer.messageType." + format +"RowMessage";
+            }
 	}
-	
 	if ((format.equals("") && delimiter != null && delimiter.length() != 1)) {
 	    HelpFormatter formatter = new HelpFormatter();
 	    log.error ("the delimiter must be a single character. but it's ["
