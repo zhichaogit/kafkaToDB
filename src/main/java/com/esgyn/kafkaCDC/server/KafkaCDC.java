@@ -419,7 +419,7 @@ public class KafkaCDC implements Runnable{
 	    : "";
 	groupID = cmdLine.hasOption("group") ? cmdLine.getOptionValue("group")
 	    : "group_0";
-	if (format != "") {
+	if (!format.equals("")) {
         messageClass ="com.esgyn.kafkaCDC.server.kafkaConsumer.messageType." + format +"RowMessage";
     }
 	String partString = cmdLine.hasOption("partition") ? 
