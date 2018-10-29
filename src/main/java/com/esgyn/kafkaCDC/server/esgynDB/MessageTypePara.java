@@ -4,28 +4,28 @@ import java.sql.Connection;
 import java.util.Map;
 
 public class MessageTypePara<T> {
-    private EsgynDB                 esgynDB   = null;
-    private Map<String, TableState>  tables   = null;
-    private TableState             tableState = null;
-    private Connection               dbConn   = null;
-    private String                  delimiter = null;
-    private int                     thread    = 0;
-    private T                       message   = null;
-    private String                  encoding  = null;
-    private boolean                 bigEndian = false;
+    private EsgynDB                 esgynDB    = null;
+    private Map<String, TableState> tables     = null;
+    private TableState              tableState = null;
+    private Connection              dbConn     = null;
+    private String                  delimiter  = null;
+    private int                     thread     = 0;
+    private T                       message    = null;
+    private String                  encoding   = null;
+    private boolean                 bigEndian  = false;
 
-    public MessageTypePara(EsgynDB esgynDB_,Map<String, TableState> tables_, 
-            TableState tableState_,Connection  dbConn_,String delimiter_, 
-            int thread_, T message_, String encoding_,boolean bigEndian_) {
-        esgynDB    = esgynDB_;
-        tables     = tables_;
+    public MessageTypePara(EsgynDB esgynDB_, Map<String, TableState> tables_,
+            TableState tableState_, Connection dbConn_, String delimiter_, int thread_, T message_,
+            String encoding_, boolean bigEndian_) {
+        esgynDB = esgynDB_;
+        tables = tables_;
         tableState = tableState_;
-        dbConn     = dbConn_;
-        delimiter  = delimiter_;
-        thread     = thread_;
-        message    = message_;
-        encoding   = encoding_;
-        bigEndian  = bigEndian_;
+        dbConn = dbConn_;
+        delimiter = delimiter_;
+        thread = thread_;
+        message = message_;
+        encoding = encoding_;
+        bigEndian = bigEndian_;
     }
 
     public EsgynDB getEsgynDB() {
@@ -35,7 +35,7 @@ public class MessageTypePara<T> {
     public void setEsgynDB(EsgynDB esgynDB) {
         this.esgynDB = esgynDB;
     }
-    
+
     public Map<String, TableState> getTables() {
         return tables;
     }
@@ -103,5 +103,5 @@ public class MessageTypePara<T> {
     public void setBigEndian(Boolean bigEndian) {
         this.bigEndian = bigEndian;
     }
-     
+
 }
