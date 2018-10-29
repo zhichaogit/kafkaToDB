@@ -10,490 +10,452 @@ import java.sql.PreparedStatement;
 import java.util.Map;
 import java.util.HashMap;
 import java.lang.StringBuffer;
-import org.apache.log4j.Logger; 
+import org.apache.log4j.Logger;
 
 import java.util.Date;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
- 
-public class EsgynDB
-{
-    String      dburl       = null;
-    String      dbdriver    = null;
-    String      dbuser      = null;
-    String      dbpassword  = null;
-    String      defschema   = null;
-    String      deftable    = null;
-    long        commitCount = 500;
-    String      keepQuery   = "values(1);";
-    Map<String, TableInfo>  tables   = null;
-    private static Logger   log = Logger.getLogger(EsgynDB.class);
 
-    private long totalMsgNum = 0;
+public class EsgynDB {
+    String                 dburl       = null;
+    String                 dbdriver    = null;
+    String                 dbuser      = null;
+    String                 dbpassword  = null;
+    String                 defschema   = null;
+    String                 deftable    = null;
+    long                   commitCount = 500;
+    String                 keepQuery   = "values(1);";
+    Map<String, TableInfo> tables      = null;
+    private static Logger  log         = Logger.getLogger(EsgynDB.class);
 
-    private long messageNum = 0;
-    private long insMsgNum  = 0;
-    private long updMsgNum  = 0;
-    private long keyMsgNum  = 0;
-    private long delMsgNum  = 0;
+    private long           totalMsgNum = 0;
 
-    private long oldMsgNum  = 0;
+    private long           messageNum  = 0;
+    private long           insMsgNum   = 0;
+    private long           updMsgNum   = 0;
+    private long           keyMsgNum   = 0;
+    private long           delMsgNum   = 0;
 
-    private long insertNum  = 0;
-    private long updateNum  = 0;
-    private long deleteNum  = 0;
+    private long           oldMsgNum   = 0;
 
-    private long maxSpeed   = 0;
-    private long interval   = 0;
+    private long           insertNum   = 0;
+    private long           updateNum   = 0;
+    private long           deleteNum   = 0;
 
-    private boolean multiable = false;
+    private long           maxSpeed    = 0;
+    private long           interval    = 0;
 
-    private long begin;
-    private Date startTime;
+    private boolean        multiable   = false;
 
-    public EsgynDB(String  defschema_,
-		   String  deftable_,
-		   String  dburl_, 
-		   String  dbdriver_, 
-		   String  dbuser_, 
-		   String  dbpassword_,
-		   long    interval_,
-		   long    commitCount_,
-		   boolean multiable_) 
-    {
-	if (log.isTraceEnabled()){
-	    log.trace("enter function [table: " + defschema_ + "." + deftable_ 
-		      + ", db url: " + dburl_ + ", db driver:" + dbdriver_ 
-		      + ", db user: " + dbuser_  + ", commit count:" 
-		      + commitCount_ + "]");
-	}
+    private long           begin;
+    private Date           startTime;
 
-	dburl       = dburl_;
-	dbdriver    = dbdriver_;
-	dbuser      = dbuser_;
-	dbpassword  = dbpassword_;
-	defschema   = defschema_;
-	deftable    = deftable_;
-	interval    = interval_;
-	commitCount = commitCount_;
-	multiable   = multiable_;
+    public EsgynDB(String defschema_, String deftable_, String dburl_, String dbdriver_,
+            String dbuser_, String dbpassword_, long interval_, long commitCount_,
+            boolean multiable_) {
+        if (log.isTraceEnabled()) {
+            log.trace("enter function [table: " + defschema_ + "." + deftable_ + ", db url: "
+                    + dburl_ + ", db driver:" + dbdriver_ + ", db user: " + dbuser_
+                    + ", commit count:" + commitCount_ + "]");
+        }
 
-	begin = new Date().getTime();
-	startTime = new Date();
-	
-	tables = new HashMap<String, TableInfo>(); 
+        dburl = dburl_;
+        dbdriver = dbdriver_;
+        dbuser = dbuser_;
+        dbpassword = dbpassword_;
+        defschema = defschema_;
+        deftable = deftable_;
+        interval = interval_;
+        commitCount = commitCount_;
+        multiable = multiable_;
 
-	log.info("start to init schemas"); 
-	init_schemas();
+        begin = new Date().getTime();
+        startTime = new Date();
 
-	if (log.isTraceEnabled()){
-	    log.trace("exit function");
-	}
+        tables = new HashMap<String, TableInfo>();
+
+        log.info("start to init schemas");
+        init_schemas();
+
+        if (log.isTraceEnabled()) {
+            log.trace("exit function");
+        }
     }
 
-    private void init_schemas()
-    {
-	ResultSet   schemaRS = null;
-	Connection  dbconn = CreateConnection(true);
+    private void init_schemas() {
+        ResultSet schemaRS = null;
+        Connection dbconn = CreateConnection(true);
 
-	if (log.isTraceEnabled()){
-	    log.trace("enter function");
-	}
+        if (log.isTraceEnabled()) {
+            log.trace("enter function");
+        }
 
-	try {
-	    DatabaseMetaData dbmd = dbconn.getMetaData();
-	    String           schemaName = null;
-	    
-	    if (defschema == null) {
-		schemaRS = dbmd.getSchemas();
-		while (schemaRS.next()) {
-		    schemaName = schemaRS.getString("TABLE_SCHEM");
-		    log.info("start to init schema [" + schemaName + "]");
-		    init_schema(dbconn, schemaName);
-		}
-	    } else {
-		log.info("start to init default schema [" + defschema + "]");
-		init_schema(dbconn, defschema);
-		
-		if (tables.size() <= 0)
-		    log.error("init schema [" + defschema + 
-			      "] fail, cann't find any table!");
-	    }
-	} catch (SQLException sqle) {
+        try {
+            DatabaseMetaData dbmd = dbconn.getMetaData();
+            String schemaName = null;
+
+            if (defschema == null) {
+                schemaRS = dbmd.getSchemas();
+                while (schemaRS.next()) {
+                    schemaName = schemaRS.getString("TABLE_SCHEM");
+                    log.info("start to init schema [" + schemaName + "]");
+                    init_schema(dbconn, schemaName);
+                }
+            } else {
+                log.info("start to init default schema [" + defschema + "]");
+                init_schema(dbconn, defschema);
+
+                if (tables.size() <= 0)
+                    log.error("init schema [" + defschema + "] fail, cann't find any table!");
+            }
+        } catch (SQLException sqle) {
             sqle.printStackTrace();
-	} catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
-	    CloseConnection(dbconn);
-	}
+            CloseConnection(dbconn);
+        }
 
-	if (log.isTraceEnabled()){
-	    log.trace("exit function");
-	}
+        if (log.isTraceEnabled()) {
+            log.trace("exit function");
+        }
     }
 
-    public TableInfo init_schema(Connection  dbconn, String schemaName)
-    {
-	TableInfo tableInfo = null;
+    public TableInfo init_schema(Connection dbconn, String schemaName) {
+        TableInfo tableInfo = null;
 
-	if (log.isTraceEnabled()){
-	    log.trace("enter function [schema: " + schemaName + "]");
-	}
+        if (log.isTraceEnabled()) {
+            log.trace("enter function [schema: " + schemaName + "]");
+        }
 
-	try {
-	    if (deftable == null) {
-		ResultSet         tableRS = null;
-		DatabaseMetaData  dbmd = dbconn.getMetaData();
+        try {
+            if (deftable == null) {
+                ResultSet tableRS = null;
+                DatabaseMetaData dbmd = dbconn.getMetaData();
 
-		tableRS = dbmd.getTables("Trafodion", schemaName, "%", null);
-		while (tableRS.next()) {
-		    String  tableNameStr = tableRS.getString("TABLE_NAME");
-		    String  tableName = schemaName + "." + tableNameStr;
+                tableRS = dbmd.getTables("Trafodion", schemaName, "%", null);
+                while (tableRS.next()) {
+                    String tableNameStr = tableRS.getString("TABLE_NAME");
+                    String tableName = schemaName + "." + tableNameStr;
 
-		    tableInfo = new TableInfo(schemaName, tableNameStr, multiable);
-		    
-		    log.info("start to init table [" + tableName + "]");
-		    if (init_culumns(dbconn, tableInfo) <= 0) {
-			log.error("init table [" + tableName 
-				  + "] is not exist!");
-		    } else {
-			init_keys(dbconn, tableInfo);
-			tables.put(tableName, tableInfo);
-		    }
-		}
-	    } else {
-		String tableName = defschema + "." + deftable;
-		tableInfo = new TableInfo(defschema, deftable, multiable);
+                    tableInfo = new TableInfo(schemaName, tableNameStr, multiable);
 
-		log.info("start to init table [" + tableName + "]");
-		if (init_culumns(dbconn, tableInfo) <= 0) {
-		    log.error("init table [" + tableName + "] is not exist!");
-		} else {
-		    init_keys(dbconn, tableInfo);
-		    tables.put(tableName, tableInfo);
-		}
-	    }
-	} catch (SQLException sqle) {
+                    log.info("start to init table [" + tableName + "]");
+                    if (init_culumns(dbconn, tableInfo) <= 0) {
+                        log.error("init table [" + tableName + "] is not exist!");
+                    } else {
+                        init_keys(dbconn, tableInfo);
+                        tables.put(tableName, tableInfo);
+                    }
+                }
+            } else {
+                String tableName = defschema + "." + deftable;
+                tableInfo = new TableInfo(defschema, deftable, multiable);
+
+                log.info("start to init table [" + tableName + "]");
+                if (init_culumns(dbconn, tableInfo) <= 0) {
+                    log.error("init table [" + tableName + "] is not exist!");
+                } else {
+                    init_keys(dbconn, tableInfo);
+                    tables.put(tableName, tableInfo);
+                }
+            }
+        } catch (SQLException sqle) {
             sqle.printStackTrace();
-	} catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
-	if (log.isTraceEnabled()){
-	    log.trace("exit function [table info: " + tableInfo + "]");
-	}
+        if (log.isTraceEnabled()) {
+            log.trace("exit function [table info: " + tableInfo + "]");
+        }
 
-	return tableInfo;
+        return tableInfo;
     }
 
-    public long init_culumns(Connection  dbconn, TableInfo table)
-    {
-	if (log.isTraceEnabled()){
-	    log.trace("enter function [table info: " + table + "]");
-	}
+    public long init_culumns(Connection dbconn, TableInfo table) {
+        if (log.isTraceEnabled()) {
+            log.trace("enter function [table info: " + table + "]");
+        }
 
-	try {
-	    String getTableColumns = "SELECT o.object_name TABLE_NAME, "
-		+ "c.COLUMN_NAME COLUMN_NAME, c.FS_DATA_TYPE DATA_TYPE, "
-		+ "c.SQL_DATA_TYPE TYPE_NAME, c.COLUMN_SIZE COLUMN_SIZE, "
-		+ "c.NULLABLE NULLABLE, c.CHARACTER_SET CHARACTER_SET, "
-		+ "c.COLUMN_NUMBER ORDINAL_POSITION "
-		+ "FROM \"_MD_\".OBJECTS o, \"_MD_\".COLUMNS c "
-		+ "WHERE o.object_uid=c.object_uid AND c.COLUMN_CLASS != 'S' "
-		+ "AND o.SCHEMA_NAME=? AND o.object_name=? "
-		+ "ORDER BY c.COLUMN_NUMBER";
-	    PreparedStatement   psmt = 
-		(PreparedStatement) dbconn.prepareStatement(getTableColumns);
+        try {
+            String getTableColumns = "SELECT o.object_name TABLE_NAME, "
+                    + "c.COLUMN_NAME COLUMN_NAME, c.FS_DATA_TYPE DATA_TYPE, "
+                    + "c.SQL_DATA_TYPE TYPE_NAME, c.COLUMN_SIZE COLUMN_SIZE, "
+                    + "c.NULLABLE NULLABLE, c.CHARACTER_SET CHARACTER_SET, "
+                    + "c.COLUMN_NUMBER ORDINAL_POSITION "
+                    + "FROM \"_MD_\".OBJECTS o, \"_MD_\".COLUMNS c "
+                    + "WHERE o.object_uid=c.object_uid AND c.COLUMN_CLASS != 'S' "
+                    + "AND o.SCHEMA_NAME=? AND o.object_name=? " + "ORDER BY c.COLUMN_NUMBER";
+            PreparedStatement psmt = (PreparedStatement) dbconn.prepareStatement(getTableColumns);
 
-	    psmt.setString(1, table.GetSchemaName());
-	    psmt.setString(2, table.GetTableName());
+            psmt.setString(1, table.GetSchemaName());
+            psmt.setString(2, table.GetTableName());
 
-            ResultSet       columnRS = psmt.executeQuery();
-	    StringBuffer    strBuffer = new StringBuffer();
-	    strBuffer.append("get table \"" + table.GetSchemaName() + "." 
-			     + table.GetTableName() + "\" column sql \"" 
-			     + getTableColumns + "\"\n columns [\n");
+            ResultSet columnRS = psmt.executeQuery();
+            StringBuffer strBuffer = new StringBuffer();
+            strBuffer.append("get table \"" + table.GetSchemaName() + "." + table.GetTableName()
+                    + "\" column sql \"" + getTableColumns + "\"\n columns [\n");
 
-	    int   colOff = 0;
-	    int   colId  = 0;
-	    while (columnRS.next()) {
-		String      colName  = columnRS.getString("COLUMN_NAME");
-		String      typeName = columnRS.getString("TYPE_NAME");
-		String      colType  = columnRS.getString("DATA_TYPE");
-		String      colSet   = columnRS.getString("CHARACTER_SET");
-		int         colSize  = 
-		    Integer.parseInt(columnRS.getString("COLUMN_SIZE"));
-		
-		colId = Integer.parseInt(columnRS.getString("ORDINAL_POSITION"));
-		ColumnInfo  column = new ColumnInfo(colId, colOff, colSize, colSet,
-						    colType, typeName, colName);
+            int colOff = 0;
+            int colId = 0;
+            while (columnRS.next()) {
+                String colName = columnRS.getString("COLUMN_NAME");
+                String typeName = columnRS.getString("TYPE_NAME");
+                String colType = columnRS.getString("DATA_TYPE");
+                String colSet = columnRS.getString("CHARACTER_SET");
+                int colSize = Integer.parseInt(columnRS.getString("COLUMN_SIZE"));
 
-		strBuffer.append("\t" + colName + " [id: " + colId + ", off: " 
-				 + colOff +  ", Type: " + typeName.trim() 
-				 + ", Type ID: " + colType 
-				 + ", Size: " + column.GetColumnSize() + "]\n");
+                colId = Integer.parseInt(columnRS.getString("ORDINAL_POSITION"));
+                ColumnInfo column =
+                        new ColumnInfo(colId, colOff, colSize, colSet, colType, typeName, colName);
 
-		table.AddColumn(column);
-		colOff++;
-	    }
-	    strBuffer.append("]"); 
-	    log.debug(strBuffer.toString());
-	    psmt.close();
-	} catch (SQLException sqle) {
-	    sqle.printStackTrace();
-	} catch (Exception e) {
-	    e.printStackTrace();
-	}
+                strBuffer.append("\t" + colName + " [id: " + colId + ", off: " + colOff + ", Type: "
+                        + typeName.trim() + ", Type ID: " + colType + ", Size: "
+                        + column.GetColumnSize() + "]\n");
 
-	if (log.isTraceEnabled()){
-	    log.trace("exit function [column number:" + table.GetColumnCount()
-		      + "]");
-	}
+                table.AddColumn(column);
+                colOff++;
+            }
+            strBuffer.append("]");
+            log.debug(strBuffer.toString());
+            psmt.close();
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-	return table.GetColumnCount();
+        if (log.isTraceEnabled()) {
+            log.trace("exit function [column number:" + table.GetColumnCount() + "]");
+        }
+
+        return table.GetColumnCount();
     }
 
-    public long init_keys(Connection  dbconn, TableInfo table)
-    {
-	if (log.isTraceEnabled()){
-	    log.trace("enter function [table info: " + table + "]");
-	}
+    public long init_keys(Connection dbconn, TableInfo table) {
+        if (log.isTraceEnabled()) {
+            log.trace("enter function [table info: " + table + "]");
+        }
 
-	ColumnInfo  firstColumn = table.GetColumn(0);
-	if (firstColumn.GetColumnID() != 0) {
-	    log.warn("no primary key on table [" + table.GetSchemaName() + "."
-		     + table.GetTableName() + "], use all of columns.");
+        ColumnInfo firstColumn = table.GetColumn(0);
+        if (firstColumn.GetColumnID() != 0) {
+            log.warn("no primary key on table [" + table.GetSchemaName() + "."
+                    + table.GetTableName() + "], use all of columns.");
 
-	    for (int i = 0; i < table.GetColumnCount(); i++){
-		table.AddKey(table.GetColumn(i));
-	    }
+            for (int i = 0; i < table.GetColumnCount(); i++) {
+                table.AddKey(table.GetColumn(i));
+            }
 
-	    return table.GetKeyCount();
-	}
+            return table.GetKeyCount();
+        }
 
-	try {
-	    String getTableKeys = "SELECT k.COLUMN_NAME COLUMN_NAME, "
-		+ "c.FS_DATA_TYPE DATA_TYPE, c.SQL_DATA_TYPE TYPE_NAME, "
-		+ "c.NULLABLE NULLABLE, c.COLUMN_PRECISION DECIMAL_DIGITS, "
-		+ "c.COLUMN_NUMBER KEY_COLUMN_ID, c.COLUMN_NUMBER ORDINAL_POSITION "
-		+ "FROM \"_MD_\".OBJECTS o, \"_MD_\".COLUMNS c, \"_MD_\".KEYS k "
-		+ "WHERE o.OBJECT_UID=c.OBJECT_UID AND o.OBJECT_UID=k.OBJECT_UID "
-		+ "AND c.COLUMN_NUMBER = k.COLUMN_NUMBER AND c.COLUMN_CLASS != 'S' "
-		+ "AND o.SCHEMA_NAME=? AND o.object_name=? "
-		+ "ORDER BY k.KEYSEQ_NUMBER;";
-	    PreparedStatement   psmt = 
-		(PreparedStatement) dbconn.prepareStatement(getTableKeys);
+        try {
+            String getTableKeys = "SELECT k.COLUMN_NAME COLUMN_NAME, "
+                    + "c.FS_DATA_TYPE DATA_TYPE, c.SQL_DATA_TYPE TYPE_NAME, "
+                    + "c.NULLABLE NULLABLE, c.COLUMN_PRECISION DECIMAL_DIGITS, "
+                    + "c.COLUMN_NUMBER KEY_COLUMN_ID, c.COLUMN_NUMBER ORDINAL_POSITION "
+                    + "FROM \"_MD_\".OBJECTS o, \"_MD_\".COLUMNS c, \"_MD_\".KEYS k "
+                    + "WHERE o.OBJECT_UID=c.OBJECT_UID AND o.OBJECT_UID=k.OBJECT_UID "
+                    + "AND c.COLUMN_NUMBER = k.COLUMN_NUMBER AND c.COLUMN_CLASS != 'S' "
+                    + "AND o.SCHEMA_NAME=? AND o.object_name=? " + "ORDER BY k.KEYSEQ_NUMBER;";
+            PreparedStatement psmt = (PreparedStatement) dbconn.prepareStatement(getTableKeys);
 
-	    psmt.setString(1, table.GetSchemaName());
-	    psmt.setString(2, table.GetTableName());
-            ResultSet       keysRS = psmt.executeQuery();
-	    StringBuffer    strBuffer = null;
-	    if(log.isDebugEnabled()){
-		strBuffer = new StringBuffer();
-		strBuffer.append("get primakey of \"" + table.GetSchemaName() 
-				 + "\".\"" + table.GetTableName() 
-				 + "\" key columns\n[\n");
-	    }
-	    int  colId = 0;
-	    while (keysRS.next()) {
-		colId    =  Integer.parseInt(keysRS.getString("KEY_COLUMN_ID"));
-		ColumnInfo  column = table.GetColumnFromMap(colId);
-		if(log.isDebugEnabled()){
-		    strBuffer.append("\t" + column.GetColumnName() + " [id: " 
-				     + column.GetColumnID() + ", Off: "
-				     + column.GetColumnOff() + ", Type: "
-				     + column.GetTypeName() + ", Type ID: " 
-				     + column.GetColumnType() + "]\n");
-		}
+            psmt.setString(1, table.GetSchemaName());
+            psmt.setString(2, table.GetTableName());
+            ResultSet keysRS = psmt.executeQuery();
+            StringBuffer strBuffer = null;
+            if (log.isDebugEnabled()) {
+                strBuffer = new StringBuffer();
+                strBuffer.append("get primakey of \"" + table.GetSchemaName() + "\".\""
+                        + table.GetTableName() + "\" key columns\n[\n");
+            }
+            int colId = 0;
+            while (keysRS.next()) {
+                colId = Integer.parseInt(keysRS.getString("KEY_COLUMN_ID"));
+                ColumnInfo column = table.GetColumnFromMap(colId);
+                if (log.isDebugEnabled()) {
+                    strBuffer.append("\t" + column.GetColumnName() + " [id: " + column.GetColumnID()
+                            + ", Off: " + column.GetColumnOff() + ", Type: " + column.GetTypeName()
+                            + ", Type ID: " + column.GetColumnType() + "]\n");
+                }
 
-		table.AddKey(column);
-	    }
-	    if(log.isDebugEnabled()){
-		strBuffer.append("]\n"); 
-		log.debug(strBuffer.toString());
-	    }
-	    psmt.close();
-	} catch (SQLException sqle) {
-	    sqle.printStackTrace();
-	} catch (Exception e) {
-	    e.printStackTrace();
-	}
+                table.AddKey(column);
+            }
+            if (log.isDebugEnabled()) {
+                strBuffer.append("]\n");
+                log.debug(strBuffer.toString());
+            }
+            psmt.close();
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-	if (log.isTraceEnabled()){
-	    log.trace("exit function [key column number: " + table.GetKeyCount()
-		      + "]");
-	}
+        if (log.isTraceEnabled()) {
+            log.trace("exit function [key column number: " + table.GetKeyCount() + "]");
+        }
 
-	return table.GetKeyCount();
+        return table.GetKeyCount();
     }
 
-    public long GetBatchSize()
-    {
-	return commitCount;
+    public long GetBatchSize() {
+        return commitCount;
     }
 
-    public Connection CreateConnection(boolean autocommit)
-    {
-	Connection          dbConn = null;
-	if (log.isTraceEnabled()){
-	    log.trace("enter function [autocommit: " + autocommit + "]");
-	}
+    public Connection CreateConnection(boolean autocommit) {
+        Connection dbConn = null;
+        if (log.isTraceEnabled()) {
+            log.trace("enter function [autocommit: " + autocommit + "]");
+        }
 
-	try {
-	    Class.forName(dbdriver);
-	    dbConn = DriverManager.getConnection(dburl, dbuser, dbpassword);
-	    dbConn.setAutoCommit(autocommit);
-	} catch (SQLException se) {
-	    log.error ("SQL error: " + se.getMessage());
-	    se.printStackTrace();
-	} catch (ClassNotFoundException ce) {
-	    log.error ("driver class not found: " + ce.getMessage());
-	    ce.printStackTrace();
+        try {
+            Class.forName(dbdriver);
+            dbConn = DriverManager.getConnection(dburl, dbuser, dbpassword);
+            dbConn.setAutoCommit(autocommit);
+        } catch (SQLException se) {
+            log.error("SQL error: " + se.getMessage());
+            se.printStackTrace();
+        } catch (ClassNotFoundException ce) {
+            log.error("driver class not found: " + ce.getMessage());
+            ce.printStackTrace();
             System.exit(1);
-	} catch (Exception e) {
-	    log.error ("create connect error: " + e.getMessage());
-	    e.printStackTrace();
+        } catch (Exception e) {
+            log.error("create connect error: " + e.getMessage());
+            e.printStackTrace();
             System.exit(1);
-	}
-	
-	if (log.isTraceEnabled()){
-	    log.trace("exit function");
-	}
+        }
 
-	return dbConn;
+        if (log.isTraceEnabled()) {
+            log.trace("exit function");
+        }
+
+        return dbConn;
     }
 
-    public void CloseConnection(Connection  dbConn_)
-    {
-	if (dbConn_ == null)
-	    return;
+    public void CloseConnection(Connection dbConn_) {
+        if (dbConn_ == null)
+            return;
 
-	if (log.isTraceEnabled()){
-	    log.trace("enter function [db conn: " + dbConn_ + "]");
-	}
+        if (log.isTraceEnabled()) {
+            log.trace("enter function [db conn: " + dbConn_ + "]");
+        }
 
-	try {
-	    dbConn_.close();
-	} catch (SQLException e) {
-	    e.printStackTrace();
-	}
+        try {
+            dbConn_.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
-	if (log.isTraceEnabled()){
-	    log.trace("exit function");
-	}
+        if (log.isTraceEnabled()) {
+            log.trace("exit function");
+        }
     }
 
-    public String GetDefaultSchema()
-    {
-	return defschema;
+    public String GetDefaultSchema() {
+        return defschema;
     }
 
-    public String GetDefaultTable()
-    {
-	return deftable;
+    public String GetDefaultTable() {
+        return deftable;
     }
 
-    public TableInfo GetTableInfo(String tableName_)
-    {
-	return tables.get(tableName_);
+    public TableInfo GetTableInfo(String tableName_) {
+        return tables.get(tableName_);
     }
 
-    public boolean KeepAlive()
-    {
-	ResultSet columnRS = null;
-	Connection  dbkeepconn = CreateConnection(true);
+    public boolean KeepAlive() {
+        ResultSet columnRS = null;
+        Connection dbkeepconn = CreateConnection(true);
 
-	try {
-	    log.info("prepare the keepalive stmt, query:" + keepQuery); 
-	    PreparedStatement  keepStmt = dbkeepconn.prepareStatement(keepQuery);
+        try {
+            log.info("prepare the keepalive stmt, query:" + keepQuery);
+            PreparedStatement keepStmt = dbkeepconn.prepareStatement(keepQuery);
 
             columnRS = keepStmt.executeQuery();
-	    while (columnRS.next()) {
+            while (columnRS.next()) {
                 columnRS.getString("(EXPR)");
             }
-	} catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
-	    return false;
-	} finally {
-	    CloseConnection(dbkeepconn);
-	    if (columnRS != null) {
-		try {
-		    columnRS.close();
-		} catch (SQLException e) {
-		    return false;
-		}
-	    }
-	}
+            return false;
+        } finally {
+            CloseConnection(dbkeepconn);
+            if (columnRS != null) {
+                try {
+                    columnRS.close();
+                } catch (SQLException e) {
+                    return false;
+                }
+            }
+        }
 
-	return true;
+        return true;
     }
 
-    public synchronized void AddInsMsgNum(long insMsgNum_){
-	insMsgNum += insMsgNum_;
-	messageNum += insMsgNum_;
+    public synchronized void AddInsMsgNum(long insMsgNum_) {
+        insMsgNum += insMsgNum_;
+        messageNum += insMsgNum_;
     }
 
-    public synchronized void AddUpdMsgNum(long updMsgNum_){
-	updMsgNum += updMsgNum_;
-	messageNum += updMsgNum_;
+    public synchronized void AddUpdMsgNum(long updMsgNum_) {
+        updMsgNum += updMsgNum_;
+        messageNum += updMsgNum_;
     }
 
-    public synchronized void AddKeyMsgNum(long keyMsgNum_){
-	keyMsgNum += keyMsgNum_;
-	messageNum += keyMsgNum_;
+    public synchronized void AddKeyMsgNum(long keyMsgNum_) {
+        keyMsgNum += keyMsgNum_;
+        messageNum += keyMsgNum_;
     }
 
-    public synchronized void AddDelMsgNum(long delMsgNum_){
-	delMsgNum += delMsgNum_;
-	messageNum += delMsgNum_;
+    public synchronized void AddDelMsgNum(long delMsgNum_) {
+        delMsgNum += delMsgNum_;
+        messageNum += delMsgNum_;
     }
 
-    public synchronized void AddInsertNum(long insertNum_){
-	insertNum += insertNum_;
+    public synchronized void AddInsertNum(long insertNum_) {
+        insertNum += insertNum_;
     }
 
-    public synchronized void AddUpdateNum(long updateNum_){
-	updateNum += updateNum_;
+    public synchronized void AddUpdateNum(long updateNum_) {
+        updateNum += updateNum_;
     }
 
-    public synchronized void AddDeleteNum(long deleteNum_){
-	deleteNum += deleteNum_;
+    public synchronized void AddDeleteNum(long deleteNum_) {
+        deleteNum += deleteNum_;
     }
 
-    public synchronized void AddTotalNum(long totalMsgNum_){
-	totalMsgNum += totalMsgNum_;
+    public synchronized void AddTotalNum(long totalMsgNum_) {
+        totalMsgNum += totalMsgNum_;
     }
 
-    public void DisplayDatabase()
-    {
-	Long end = new Date().getTime();
-	Date endTime = new Date();
-	Float useTime = ((float) (end - begin))/1000;
-	long avgSpeed = (long)(messageNum/useTime);
-	long incMessage = (messageNum-oldMsgNum);
-	long curSpeed = (long)(incMessage/(interval/1000));
-	if (curSpeed > maxSpeed)
-	    maxSpeed = curSpeed;
-	DecimalFormat df = new DecimalFormat("####0.000");
-	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    public void DisplayDatabase() {
+        Long end = new Date().getTime();
+        Date endTime = new Date();
+        Float useTime = ((float) (end - begin)) / 1000;
+        long avgSpeed = (long) (messageNum / useTime);
+        long incMessage = (messageNum - oldMsgNum);
+        long curSpeed = (long) (incMessage / (interval / 1000));
+        if (curSpeed > maxSpeed)
+            maxSpeed = curSpeed;
+        DecimalFormat df = new DecimalFormat("####0.000");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
-	StringBuffer strBuffer = new StringBuffer();
-	strBuffer.append("consumer states: \n\tmessages [total: " + totalMsgNum 
-			 + ", process total: " + messageNum + ", process inc: "
-			 + incMessage + "], speed [max: " + maxSpeed
-			 + "/s, avg: " + avgSpeed + "/s, cur: " + curSpeed
-			 + "/s]\n\ttime [run: " + df.format(useTime) 
-			 + "s, start: " + sdf.format(startTime) + ", cur: " 
-			 + sdf.format(endTime) + "]\n\tmessages [I: "
-			 + insMsgNum + ", U: " + updMsgNum + ", K: " + keyMsgNum
-			 + ", D: " + delMsgNum + "]\tdatabase opertors " 
-			 + "[insert: " + insertNum + ", update: " + updateNum 
-			 + ", delete: " + deleteNum + "]\n");
-	for (TableInfo tableInfo : tables.values()) {
-	    tableInfo.DisplayStat(strBuffer);
-	}
-	log.info(strBuffer.toString());
+        StringBuffer strBuffer = new StringBuffer();
+        strBuffer.append("consumer states: \n\tmessages [total: " + totalMsgNum
+                + ", process total: " + messageNum + ", process inc: " + incMessage
+                + "], speed [max: " + maxSpeed + "/s, avg: " + avgSpeed + "/s, cur: " + curSpeed
+                + "/s]\n\ttime [run: " + df.format(useTime) + "s, start: " + sdf.format(startTime)
+                + ", cur: " + sdf.format(endTime) + "]\n\tmessages [I: " + insMsgNum + ", U: "
+                + updMsgNum + ", K: " + keyMsgNum + ", D: " + delMsgNum + "]\tdatabase opertors "
+                + "[insert: " + insertNum + ", update: " + updateNum + ", delete: " + deleteNum
+                + "]\n");
+        for (TableInfo tableInfo : tables.values()) {
+            tableInfo.DisplayStat(strBuffer);
+        }
+        log.info(strBuffer.toString());
 
-	oldMsgNum = messageNum;
+        oldMsgNum = messageNum;
     }
 }
