@@ -152,23 +152,35 @@ public class KafkaCDC implements Runnable {
         /*
          * Get command line args
          * 
-         * Cmd line params: -b --broker <arg> broker location (node0:9092[,node1:9092]) -c --commit
-         * <arg> num message per Kakfa synch (num recs, default is 5000) -d --dbip <arg> database
-         * server ip -e --encode <arg> character encoding of data, default: utf8 -f,--format <arg>
-         * format of data, default: "" -g --group <arg> groupID -h --help show help information -p
-         * --partition <arg>the partition number (default is 16) -s --schema <arg> schema -t --topic
-         * <arg> topic -v --version print version info -z --zk <arg> zookeeper connection
-         * (node:port[/kafka?]
-         *
-         * --dbport <arg> database server port --dbuser <arg> database server user --dbpw <arg>
-         * database server password --delim <arg> field delimiter, default: ','(comma) --bigendian
-         * the data format is bigendian, default is little endian --full pull data from beginning
-         * --interval <arg> the print state time interval --key <arg> key deserializer, default is:
-         * org.apache.kafka.common.serialization.StringDeserializer --sto <arg> stream T/O (default
-         * is 60000ms) --skip skip the data error --table <arg> table name, default: null --tenant
-         * <arg> database tenant user --value <arg> value deserializer, default is:
-         * org.apache.kafka.common.serialization.StringDeserializer --zkto <arg> zk T/O (default is
-         * 10000ms)
+         * Cmd line params: 
+         * -b --broker <arg> broker location (node0:9092[,node1:9092]) 
+         * -c --commit <arg> num message per Kakfa synch (num recs, default is 5000) 
+         * -d --dbip <arg> database server ip 
+         * -e --encode <arg> character encoding of data, default: utf8 
+         * -f,--format <arg> format of data, default: "" 
+         * -g --group <arg> groupID 
+         * -h --help show help information 
+         * -p --partition <arg>the partition number (default is 16) 
+         * -s --schema <arg> schema 
+         * -t --topic <arg> topic 
+         * -v --version print version info 
+         * -z --zk <arg> zookeeper connection(node:port[/kafka?]
+         *    --dbport <arg> database server port 
+         *    --dbuser <arg> database server user 
+         *    --dbpw   <arg> database server password 
+         *    --delim <arg> field delimiter, default: ','(comma) 
+         *    --bigendian the data format is bigendian, default is little endian 
+         *    --full pull data from beginning
+         *    --interval <arg> the print state time interval 
+         *    --key <arg> key deserializer, default is:
+         *                org.apache.kafka.common.serialization.StringDeserializer 
+         *    --sto <arg> stream T/O (default is 60000ms) 
+         *    --skip skip the data error 
+         *    --table  <arg> table name, default: null 
+         *    --tenant <arg> database tenant user 
+         *    --value <arg> value deserializer, default is:
+         *                org.apache.kafka.common.serialization.StringDeserializer 
+         *    --zkto <arg> zk T/O (default is 10000ms)
          */
         Options exeOptions = new Options();
         Option brokerOption = Option.builder("b").longOpt("broker").required(false).hasArg().desc(
