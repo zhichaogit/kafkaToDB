@@ -187,7 +187,7 @@ public class KafkaCDC implements Runnable {
                 "bootstrap.servers setting, ex: <node>:9092, default: " + "\"localhost:9092\"")
                 .build();
         Option commitOption = Option.builder("c").longOpt("commit").required(false).hasArg()
-                .desc("num message per Kakfa synch, default: 5000").build();
+                .desc("num message per Kakfa synch/pull, default: 5000").build();
         Option dbipOption = Option.builder("d").longOpt("dbip").required(false).hasArg()
                 .desc("database server ip, default: \"localhost\"").build();
         Option encodeOption = Option.builder("e").longOpt("encode").required(false).hasArg()
