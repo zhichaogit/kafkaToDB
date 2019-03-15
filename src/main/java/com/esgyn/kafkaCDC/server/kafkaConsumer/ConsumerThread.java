@@ -214,9 +214,7 @@ public class ConsumerThread<T> extends Thread {
         cacheNum += records.count();
         ProcessMessages(records);
 
-        if (cacheNum > commitCount) {
             commit_tables();
-        }
 
         return true;
     }
