@@ -8,10 +8,12 @@ import java.sql.Connection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.kafka.common.errors.WakeupException;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
@@ -48,6 +50,8 @@ public class ConsumerThread<T> extends Thread {
     String                      encoding;
     String                      key;
     String                      value;
+    String                      kafkauser;
+    String                      kafkapasswd;
 
     boolean                     full;
     boolean                     skip;
@@ -67,8 +71,9 @@ public class ConsumerThread<T> extends Thread {
 
     public ConsumerThread(EsgynDB esgyndb_, boolean full_, boolean skip_, boolean bigEndian_,
             String delimiter_, String format_, String zookeeper_, String broker_, String topic_,
-            String groupid_, String encoding_, String key_, String value_, int partitionID_,
-            long streamTO_, long zkTO_, long commitCount_, String messageClass_) {
+            String groupid_, String encoding_, String key_, String value_,String kafkauser_ ,
+            String kafkapasswd_, int partitionID_,long streamTO_, long zkTO_, long commitCount_, 
+            String messageClass_) {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
@@ -89,6 +94,8 @@ public class ConsumerThread<T> extends Thread {
         delimiter = delimiter_;
         key = key_;
         value = value_;
+        kafkauser = kafkauser_;
+        kafkapasswd = kafkapasswd_;
         full = full_;
         skip = skip_;
         messageClass = messageClass_;
@@ -109,6 +116,13 @@ public class ConsumerThread<T> extends Thread {
         props.put("key.deserializer", key);
         props.put("value.deserializer", value);
         props.put("max.poll.records", (int) commitCount);
+        
+        if (kafkauser !="") {
+        props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
+        props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
+        props.put("sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username=" + kafkauser + " password="+kafkapasswd+";");
+        }
+      
 
 
         kafkaconsumer = new KafkaConsumer(props);
@@ -214,7 +228,9 @@ public class ConsumerThread<T> extends Thread {
         cacheNum += records.count();
         ProcessMessages(records);
 
+        if (cacheNum > commitCount) {
             commit_tables();
+        }
 
         return true;
     }

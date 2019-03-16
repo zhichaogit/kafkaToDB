@@ -71,6 +71,9 @@ public class KafkaCDC implements Runnable {
     String  delimiter   = null;
     String  dbuser      = DEFAULT_USER;
     String  dbpassword  = DEFAULT_PASSWORD;
+    
+    String  kafkauser   = "";
+    String  kafkapw     = "";
 
     String  tenantUser  = null;
     String  charEncoding= DEFAULT_ENCODING;
@@ -154,7 +157,7 @@ public class KafkaCDC implements Runnable {
          * 
          * Cmd line params: 
          * -b --broker <arg> broker location (node0:9092[,node1:9092]) 
-         * -c --commit <arg> num message per Kakfa synch (num recs, default is 5000) 
+         * -c --commit <arg> num message per Kakfa synch/pull (num recs, default is 5000) 
          * -d --dbip <arg> database server ip 
          * -e --encode <arg> character encoding of data, default: utf8 
          * -f,--format <arg> format of data, default: "" 
@@ -181,6 +184,8 @@ public class KafkaCDC implements Runnable {
          *    --value <arg> value deserializer, default is:
          *                org.apache.kafka.common.serialization.StringDeserializer 
          *    --zkto <arg> zk T/O (default is 10000ms)
+         *    --kafkauser <arg> kafka user name , default: ""
+         *    --kafkapw <arg> kafka passwd , default: ""
          */
         Options exeOptions = new Options();
         Option brokerOption = Option.builder("b").longOpt("broker").required(false).hasArg().desc(
@@ -252,6 +257,10 @@ public class KafkaCDC implements Runnable {
                 .build();
         Option zktoOption = Option.builder().longOpt("zkto").required(false).hasArg()
                 .desc("zookeeper time-out limit, default: 10s").build();
+        Option kafkauserOption = Option.builder().longOpt("kafkauser").required(false).hasArg()
+                .desc("kafka user name , default: \"\"").build();
+        Option kafkapwOption = Option.builder().longOpt("kafkapw").required(false).hasArg()
+                .desc("kafka password , default: \"\"").build();
 
         exeOptions.addOption(brokerOption);
         exeOptions.addOption(commitOption);
@@ -282,6 +291,8 @@ public class KafkaCDC implements Runnable {
         exeOptions.addOption(tenantOption);
         exeOptions.addOption(valueOption);
         exeOptions.addOption(zktoOption);
+        exeOptions.addOption(kafkauserOption);
+        exeOptions.addOption(kafkapwOption);
 
         // With required options, can't have HELP option to display help as it will only
         // indicate that "required options are missing"
@@ -408,6 +419,8 @@ public class KafkaCDC implements Runnable {
         value    = cmdLine.hasOption("value") ? cmdLine.getOptionValue("value") : DEFAULT_VALUE;
         zkTO     = cmdLine.hasOption("zkto") ? Long.parseLong(cmdLine.getOptionValue("zkto"))
                 : DEFAULT_ZOOK_TO_MS;
+        kafkauser = cmdLine.hasOption("kafkauser") ? cmdLine.getOptionValue("kafkauser"):"";
+        kafkapw = cmdLine.hasOption("kafkapw") ? cmdLine.getOptionValue("kafkapasswd"):"";
 
         interval *= 1000;
         streamTO *= 1000;
@@ -494,6 +507,12 @@ public class KafkaCDC implements Runnable {
             log.error("the zkTO parameter can't less than or equal \"0\" ");
             System.exit(0);
         }
+        if ((!kafkapw.equals("") && kafkauser.equals("")) || 
+                (kafkapw.equals("") && !kafkauser.equals(""))) {
+            log.error("check the kafkauser and kafkapw parameter pls."
+                    + "They must exist or not exist at the same time ");
+            System.exit(0);
+        }
     }
 
     public static void main(String[] args) {
@@ -535,6 +554,8 @@ public class KafkaCDC implements Runnable {
 
         strBuffer.append("\n\tstreamTO    = " + (me.streamTO / 1000) + "s");
         strBuffer.append("\n\tzkTO        = " + (me.zkTO / 1000) + "s");
+        strBuffer.append("\n\tkafkauser   = " + me.kafkauser);
+        strBuffer.append("\n\tkafkapasswd = " + me.kafkapw);
         strBuffer.append("\n\tdburl       = " + me.dburl);
         log.info(strBuffer.toString());
 
@@ -546,8 +567,8 @@ public class KafkaCDC implements Runnable {
             // connect to kafka w/ either zook setting
             ConsumerThread consumer = new ConsumerThread(me.esgyndb, me.full, me.skip, me.bigEndian,
                     me.delimiter, me.format, me.zookeeper, me.broker, me.topic, me.groupID,
-                    me.charEncoding, me.key, me.value, partition, me.streamTO, me.zkTO,
-                    me.commitCount, me.messageClass);
+                    me.charEncoding, me.key, me.value,me.kafkauser,me.kafkapw, partition,
+                    me.streamTO, me.zkTO,me.commitCount, me.messageClass);
             consumer.setName("ConsumerThread-" + partition);
             me.consumers.add(consumer);
             consumer.start();
