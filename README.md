@@ -31,7 +31,7 @@ usage: Consumer Server
 
 * -b,--broker <arg>      bootstrap.servers setting, ex: <node>:9092,default: "localhost:9092"
 *    --bigendian         the data format is big endian, default: little endian
-* -c,--commit <arg>      num message per Kakfa synch, default: 5000
+* -c,--commit <arg>      num message per Kakfa synch/pull, default: 5000
 * -d,--dbip <arg>        database server ip, default: "localhost"
 *    --dbport <arg>      database server port, default: 23400
 *    --dbpw <arg>        database server password, default: zz
@@ -46,6 +46,8 @@ usage: Consumer Server
 *    --keepalive <arg>   check database keepalive, default is false
 *    --key <arg>         key deserializer, default is:<br>
                          org.apache.kafka.common.serialization.StringDeserializer
+*    --kafkauser <arg>   kafka user name , default: ""
+*    --kafkapw   <arg>   kafka password , default: ""
 * -p,--partition <arg>   partition number to process message, one thread only process<br>
                          the data from one partition,default: 16. the format: "id [, id] ...", id <br>
                          should be: "id-id". example:<br>
