@@ -420,7 +420,7 @@ public class KafkaCDC implements Runnable {
         zkTO     = cmdLine.hasOption("zkto") ? Long.parseLong(cmdLine.getOptionValue("zkto"))
                 : DEFAULT_ZOOK_TO_MS;
         kafkauser = cmdLine.hasOption("kafkauser") ? cmdLine.getOptionValue("kafkauser"):"";
-        kafkapw = cmdLine.hasOption("kafkapw") ? cmdLine.getOptionValue("kafkapasswd"):"";
+        kafkapw = cmdLine.hasOption("kafkapw") ? cmdLine.getOptionValue("kafkapw"):"";
 
         interval *= 1000;
         streamTO *= 1000;
