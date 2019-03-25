@@ -248,7 +248,8 @@ public class KafkaCDC implements Runnable {
         Option stoOption = Option.builder().longOpt("sto").required(false).hasArg()
                 .desc("kafka poll time-out limit, default: 60s").build();
         Option tableOption = Option.builder().longOpt("table").required(false).hasArg().desc(
-                "table name, default: null,you should write like this [tablename]  if tablename is lowerCase")
+                "table name, default: null,you should write like this [tablename]  if tablename is lowerCase"
+		+ "you should write like this tablename1,tablename2  if tablename is multi-table")
                 .build();
         Option tenantOption = Option.builder().longOpt("tenant").required(false).hasArg()
                 .desc("tanent user name, default: null").build();
