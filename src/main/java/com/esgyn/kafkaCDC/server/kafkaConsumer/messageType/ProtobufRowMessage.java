@@ -52,7 +52,7 @@ public class ProtobufRowMessage extends RowMessage<Record> {
     @Override
     public Boolean AnalyzeMessage() {
         if (log.isTraceEnabled()) {
-            log.trace("exit function");
+            log.trace("enter function");
         }
         
         TableInfo tableInfo = null;
@@ -75,7 +75,7 @@ public class ProtobufRowMessage extends RowMessage<Record> {
         } else {
             tableName = names[0];
         }
-        //
+
         int operationType = message.getOperationType();
         switch (operationType) {
             case INSERT_VAL: {
