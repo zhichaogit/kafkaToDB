@@ -136,29 +136,15 @@ public class EsgynDB {
                 tableRS = dbmd.getTables("Trafodion", schemaName, "%", null);
                 while (tableRS.next()) {
                     String tableNameStr = tableRS.getString("TABLE_NAME");
-                    String tableName = schemaName + "." + tableNameStr;
-
-                    tableInfo = new TableInfo(schemaName, tableNameStr, multiable);
-
-                    log.info("start to init table [" + tableName + "]");
-                    if (init_culumns(dbconn, tableInfo) <= 0) {
-                        log.error("init table [" + tableName + "] is not exist!");
-                    } else {
-                        init_keys(dbconn, tableInfo);
-                        tables.put(tableName, tableInfo);
-                    }
+		    init_tables(tableInfo,dbconn,schemaName,tableNameStr);
                 }
             } else {
-                String tableName = defschema + "." + deftable;
-                tableInfo = new TableInfo(defschema, deftable, multiable);
-
-                log.info("start to init table [" + tableName + "]");
-                if (init_culumns(dbconn, tableInfo) <= 0) {
-                    log.error("init table [" + tableName + "] is not exist!");
-                } else {
-                    init_keys(dbconn, tableInfo);
-                    tables.put(tableName, tableInfo);
+		String[] tables= deftable.split(",");
+                for (String table : tables) {
+                    init_tables(tableInfo,dbconn,defschema,table);
                 }
+                if (tables.length>1) 
+                    deftable=null;
             }
         } catch (SQLException sqle) {
             sqle.printStackTrace();
@@ -172,7 +158,25 @@ public class EsgynDB {
 
         return tableInfo;
     }
+	
+    public void init_tables(TableInfo tableInfo,Connection dbconn,String schema,String table) {
+        if (log.isTraceEnabled()) {
+            log.trace("enter function");
+        }
+        String tableName = schema + "." + table;
+        tableInfo = new TableInfo(schema, table, multiable);
 
+        log.info("start to init table [" + tableName + "]");
+        if (init_culumns(dbconn, tableInfo) <= 0) {
+            log.error("init table [" + tableName + "] is not exist!");
+        } else {
+            init_keys(dbconn, tableInfo);
+            tables.put(tableName, tableInfo);
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("exit function");
+        }
+    }
     public long init_culumns(Connection dbconn, TableInfo table) {
         if (log.isTraceEnabled()) {
             log.trace("enter function [table info: " + table + "]");
