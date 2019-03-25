@@ -14,13 +14,14 @@ KafkaCDC depends some jar files(reference pom.xml):
 12. metrics-core-2.2.0.jar
 13. netty-3.10.5.Final.jar
 14. scala-library-2.11.12.jar
-15. cala-logging_2.11-3.7.2.jar
+15. scala-logging_2.11-3.7.2.jar
 16. scala-reflect-2.11.12.jar
 17. slf4j-api-1.7.25.jar
 18. slf4j-log4j12-1.7.25.jar
 19. snappy-java-1.1.7.1.jar
 20. zkclient-0.10.jar
 21. zookeeper-3.4.10.jar
+22. protobuf-java-3.6.0.jar
 
 jdbcT4-2.4.7.jar couldn't download it by maven ,so you should move it to 
 /home/${user}/.m2/repository/org/apache/trafodion/jdbc/t4/jdbcT4/2.4.7
@@ -38,7 +39,7 @@ usage: Consumer Server
 *    --dbuser <arg>      database server user, default: db__root
 *    --delim <arg>       field delimiter, default: ','(comma)
 * -e,--encode <arg>      character encoding of data, default: "utf8"
-* -f,--format <arg>      format of data, support "Unicom"  "HongQuan"  "Json"  now, default: ""
+* -f,--format <arg>      format of data, support "Unicom"  "HongQuan"  "Json" "Protobuf" now, default: ""
 *    --full              pull data from beginning, default: false
 * -g,--group <arg>       group for this consumer, default: 0
 * -h,--help              show help information

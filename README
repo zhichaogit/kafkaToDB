@@ -10,7 +10,7 @@ usage: Consumer Server
     --dbuser <arg>      database server user, default: db__root
     --delim <arg>       field delimiter, default: ','(comma)
  -e,--encode <arg>      character encoding of data, default: "utf8"
- -f,--format <arg>      format of data, support "Unicom"  "HongQuan"  "Json" and "user-defined" , default: ""
+ -f,--format <arg>      format of data, support "Unicom"  "HongQuan"  "Json" "Protobuf" and "user-defined" , default: ""
     --full              pull data from beginning, default: false
  -g,--group <arg>       group for this consumer, default: 0
  -h,--help              show help information

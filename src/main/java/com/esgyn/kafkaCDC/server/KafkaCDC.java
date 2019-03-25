@@ -198,7 +198,7 @@ public class KafkaCDC implements Runnable {
         Option encodeOption = Option.builder("e").longOpt("encode").required(false).hasArg()
                 .desc("character encoding of data, default: \"utf8\"").build();
         Option formatOption = Option.builder("f").longOpt("format").required(false).hasArg()
-                .desc("format of data, support \"Unicom\"  \"HongQuan\"  \"Json\" "
+                .desc("format of data, support \"Unicom\"  \"HongQuan\"  \"Json\" \"Protobuf\" "
                         + "and \"user-defined\" default: \"\",")
                 .build();
         Option groupOption = Option.builder("g").longOpt("group").required(false).hasArg()
