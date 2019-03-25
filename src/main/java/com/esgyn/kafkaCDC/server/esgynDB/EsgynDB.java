@@ -136,12 +136,12 @@ public class EsgynDB {
                 tableRS = dbmd.getTables("Trafodion", schemaName, "%", null);
                 while (tableRS.next()) {
                     String tableNameStr = tableRS.getString("TABLE_NAME");
-		    init_tables(tableInfo,dbconn,tableNameStr);
+		    init_tables(tableInfo,dbconn,schemaName,tableNameStr);
                 }
             } else {
 		String[] tables= deftable.split(",");
                 for (String table : tables) {
-                    init_tables(tableInfo,dbconn,table);
+                    init_tables(tableInfo,dbconn,defschema,table);
                 }
                 if (tables.length>1) 
                     deftable=null;
@@ -159,12 +159,12 @@ public class EsgynDB {
         return tableInfo;
     }
 	
-    public void init_tables(TableInfo tableInfo,Connection dbconn,String table) {
+    public void init_tables(TableInfo tableInfo,Connection dbconn,String schema,String table) {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
-        String tableName = defschema + "." + table;
-        tableInfo = new TableInfo(defschema, table, multiable);
+        String tableName = schema + "." + table;
+        tableInfo = new TableInfo(schema, table, multiable);
 
         log.info("start to init table [" + tableName + "]");
         if (init_culumns(dbconn, tableInfo) <= 0) {
