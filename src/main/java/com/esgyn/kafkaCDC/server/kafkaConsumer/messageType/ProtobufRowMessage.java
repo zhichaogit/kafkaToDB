@@ -1,23 +1,32 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 import java.util.HashMap;
 
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Column;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Record;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 /**
  * 
  * @author xzc
  *  
  */
-public class ProtobufRowMessage extends RowMessage<Record> {
+public class ProtobufRowMessage extends RowMessage<byte[]> {
     private static Logger log                      = Logger.getLogger(ProtobufRowMessage.class);
 
     private int           offset                   = 0;
@@ -38,14 +47,19 @@ public class ProtobufRowMessage extends RowMessage<Record> {
 
     public ProtobufRowMessage() {}
 
-    public ProtobufRowMessage(MessageTypePara<Record> mtpara) throws UnsupportedEncodingException {
+    public ProtobufRowMessage(MessageTypePara<byte[]> mtpara) throws UnsupportedEncodingException {
         super(mtpara);
     }
 
     @Override
-    public boolean init(MessageTypePara<Record> mtpara_) throws UnsupportedEncodingException {
+    public boolean init(MessageTypePara<byte[]> mtpara_) throws UnsupportedEncodingException {
         super.init(mtpara_);
-        message = mtpara_.getMessage();
+	 try {
+	    byte[] rec = mtpara_.getMessage();
+            message = MessageDb.Record.parseFrom(rec);
+        } catch (InvalidProtocolBufferException e) {
+            e.printStackTrace();
+        }
         return true;
     }
 
@@ -152,8 +166,8 @@ public class ProtobufRowMessage extends RowMessage<Record> {
         boolean newHave = column.getNewHave();
         boolean oldNull = column.getOldNull();
         boolean newNull = column.getNewNull();
-        String oldValue = oldNull ? null : column.getOldValue().toStringUtf8();
-        String newValue = newNull ? null : column.getNewValue().toStringUtf8();
+        String oldValue = oldNull ? null : bytesToString(column.getOldValue(), mtpara.getEncoding());
+        String newValue = newNull ? null : bytesToString(column.getNewValue(), mtpara.getEncoding());
         
         //colID
         
@@ -165,6 +179,32 @@ public class ProtobufRowMessage extends RowMessage<Record> {
         return columnvalue;
     }
 
+    private static String bytesToString(ByteString src, String charSet) {
+        if (StringUtils.isEmpty(charSet)) {
+            charSet = charSet;
+        }
+        return bytesToString(src.toByteArray(), charSet);
+    }
+
+    private static String bytesToString(byte[] input, String charSet) {
+        if (ArrayUtils.isEmpty(input)) {
+            return StringUtils.EMPTY;
+        }
+        ByteBuffer buffer = ByteBuffer.allocate(input.length);
+        buffer.put(input);
+        buffer.flip();
+        Charset charset = null;
+        CharsetDecoder decoder = null;
+        CharBuffer charBuffer = null;
+        try {
+            charset = Charset.forName(charSet);
+            decoder = charset.newDecoder();
+            charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return charBuffer.toString();
+    }
 
 
 }
