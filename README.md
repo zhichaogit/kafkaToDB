@@ -40,7 +40,7 @@ usage: Consumer Server
 *    --dbuser <arg>      database server user, default: db__root
 *    --delim <arg>       field delimiter, default: ','(comma)
 * -e,--encode <arg>      character encoding of data, default: "utf8"
-* -f,--format <arg>      format of data, support "Unicom"  "HongQuan"  "Json" "Protobuf" now, default: ""
+* -f,--format <arg>      format of data, support "Unicom" "UnicomJson" "HongQuan"  "Json" "Protobuf" now, default: ""
 *    --full              pull data from beginning, default: false
 * -g,--group <arg>       group for this consumer, default: 0
 * -h,--help              show help information
@@ -104,3 +104,6 @@ Must have maven and JDK.
 # Protobuf
 *./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f Protobuf --full --dbuser trafodion --dbpw traf123 -s schemaname -t testTopic -f  --encode GBK --sto 20 --interval 5 -c 50 --key org.apache.kafka.common.serialization.ByteArrayDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
 *./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f Protobuf --full --dbuser trafodion --dbpw traf123 -s schemaname -t testTopic -f  --encode GBK --sto 20 --interval 5 -c 50 --key org.apache.kafka.common.serialization.ByteArrayDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer  --kafkauser username --kafkapw password
+
+# UnicomJson And authentication
+*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f UnicomJson --full --dbuser trafodion --dbpw traf123 -s schemaName  -t testTopic --sto 20 --interval 10  -c 500  --kafkauser username --kafkapw passwd
