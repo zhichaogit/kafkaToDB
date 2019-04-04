@@ -22,6 +22,7 @@ KafkaCDC depends some jar files(reference pom.xml):
 20. zkclient-0.10.jar
 21. zookeeper-3.4.10.jar
 22. protobuf-java-3.6.0.jar
+23. commons-lang3-3.4.jar
 
 jdbcT4-2.4.7.jar couldn't download it by maven ,so you should move it to 
 /home/${user}/.m2/repository/org/apache/trafodion/jdbc/t4/jdbcT4/2.4.7
@@ -99,3 +100,7 @@ Must have maven and JDK.
 
 # Json
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Json --full --dbuser trafodion --dbpw traf123 -s [schemaname] -t testTopic --sto 20 --interval 10 -c 500
+
+# Protobuf
+*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f Protobuf --full --dbuser trafodion --dbpw traf123 -s schemaname -t testTopic -f  --encode GBK --sto 20 --interval 5 -c 50 --key org.apache.kafka.common.serialization.ByteArrayDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
+*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f Protobuf --full --dbuser trafodion --dbpw traf123 -s schemaname -t testTopic -f  --encode GBK --sto 20 --interval 5 -c 50 --key org.apache.kafka.common.serialization.ByteArrayDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer  --kafkauser username --kafkapw password

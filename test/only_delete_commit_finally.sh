@@ -95,7 +95,7 @@ EOFsql\r"
   expect eof
 EOF
 # clean the environment
-UREXPECTDIR="/tmp"
+CUREXPECTDIR="/tmp"
 mkdir -p $CUREXPECTDIR
 if [ -f /tmp/${TOPIC}_result.log ];then
  rm -f /tmp/${TOPIC}_result.log
