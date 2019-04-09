@@ -358,8 +358,13 @@ public class ConsumerThread<T> extends Thread {
             log.debug("start insert message to table , urm [" + urm.toString() + "],"
                     + "tableState if null [" + (tableState == null) + "]");
         }
-
-        tableState.InsertMessageToTable(urm);
+	RowMessage<T> urmClone = null;
+	try {
+            urmClone = (RowMessage)urm.clone();
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+        }
+        tableState.InsertMessageToTable(urmClone);
         if (log.isDebugEnabled()) {
             log.debug("put table state in map :" + tableName + "  " + tableState.toString());
         }
