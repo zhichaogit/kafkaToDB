@@ -9,7 +9,7 @@ import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 
-public class RowMessage<T> {
+public class RowMessage<T> implements Cloneable{
     protected static Logger          log          = Logger.getLogger(RowMessage.class);
     public MessageTypePara<T>        mtpara       = null;
     public T                         message_     = null;
@@ -97,6 +97,10 @@ public class RowMessage<T> {
         }
 
         return true;
+    }
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 
     public String GetTableName() {
