@@ -3,6 +3,7 @@ package com.esgyn.kafkaCDC.server.kafkaConsumer;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Properties;
 import java.sql.Connection;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,6 +23,8 @@ import com.esgyn.kafkaCDC.server.esgynDB.TableState;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 
+import java.io.BufferedOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import kafka.consumer.ConsumerTimeoutException;
 
@@ -66,6 +69,7 @@ public class ConsumerThread<T> extends Thread {
     RowMessage<T>               urm     = null;
     // e.g.:com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.UnicomRowMessage
     private String              messageClass;
+    private String              outPutPath;
 
     private static Logger       log     = Logger.getLogger(ConsumerThread.class);
 
@@ -73,7 +77,7 @@ public class ConsumerThread<T> extends Thread {
             String delimiter_, String format_, String zookeeper_, String broker_, String topic_,
             String groupid_, String encoding_, String key_, String value_,String kafkauser_ ,
             String kafkapasswd_, int partitionID_,long streamTO_, long zkTO_, long commitCount_, 
-            String messageClass_) {
+            String messageClass_,String outPutPath_) {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
@@ -99,6 +103,7 @@ public class ConsumerThread<T> extends Thread {
         full = full_;
         skip = skip_;
         messageClass = messageClass_;
+        outPutPath = outPutPath_;
 
         tables = new HashMap<String, TableState>(0);
         Properties props = new Properties();
@@ -191,13 +196,42 @@ public class ConsumerThread<T> extends Thread {
         }
     }
 
-    public void commit_tables() {
+    public boolean commit_tables() {
         for (TableState tableState : tables.values()) {
-            if (!tableState.CommitTable()) {
-                return;
+	    try{
+		if (!tableState.CommitTable()) {
+                    if (log.isDebugEnabled()) {
+	  		log.debug("commit faild,write message to file.skip:["+skip+"],msgs count:["
+                                   +tableState.GetMsgs().size()+"]");
+                    }
+                       // write to file
+                        BufferedOutputStream bufferOutput = tableState.init_bufferOutput
+                                (outPutPath, tableState.GetSchemaName(), tableState.GetTableName());
+                        List<RowMessage> rms=tableState.GetMsgs();
+                        for (int i = 0; i < rms.size(); i++) {
+                            RowMessage rowMessage = rms.get(i);
+                            Object message = rowMessage.mtpara.getMessage();
+                            try {
+                                bufferOutput.write((String.valueOf(message)+"\n").getBytes());
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        tableState.flushAndClose_bufferOutput(bufferOutput);
+                    if (!skip) {
+                        return false;
+                    }
+		    return true;
+                }
+            }finally{
+                if (log.isDebugEnabled()) {
+                    log.trace("clear msgs cache :["+tableState.GetSchemaName()
+                              +"."+tableState.GetTableName()+"]");
+                }
+                tableState.GetMsgs().clear();
             }
         }
-
+	log.info("kafka commit.");
         kafkaconsumer.commitSync();
         for (TableState tableState : tables.values()) {
             esgyndb.AddInsMsgNum(tableState.GetCacheInsert());
@@ -214,6 +248,7 @@ public class ConsumerThread<T> extends Thread {
 
             tableState.ClearCache();
         }
+	return true;
     }
 
     public boolean ProcessRecord() {
@@ -228,7 +263,8 @@ public class ConsumerThread<T> extends Thread {
         cacheNum += records.count();
         ProcessMessages(records);
 
-            commit_tables();
+        if(!commit_tables())
+        return false ;//commit tables faild And not --skip
 
         return true;
     }
@@ -297,7 +333,7 @@ public class ConsumerThread<T> extends Thread {
                 }
 
                 tableState = new TableState(tableInfo);
-                if (!tableState.InitStmt(dbConn)) {
+                if (!tableState.InitStmt(dbConn,skip)) {
                     if (log.isDebugEnabled()) {
                         log.warn("init the table [" + tableName + "] fail!");
                     }
@@ -323,6 +359,7 @@ public class ConsumerThread<T> extends Thread {
             log.debug("operatorType[" + urm.GetOperatorType() + "]\n" + "cacheNum [" + cacheNum
                     + "]\n" + "commitCount [" + commitCount + "]");
         }
+
         if (urm.GetOperatorType().equals("K")) {
             commit_tables();
             if (log.isDebugEnabled()) {
@@ -345,7 +382,7 @@ public class ConsumerThread<T> extends Thread {
                 }
 
                 tableState = new TableState(tableInfo);
-                if (!tableState.InitStmt(dbConn)) {
+                if (!tableState.InitStmt(dbConn,skip)) {
                     if (log.isDebugEnabled()) {
                         log.warn("init the table [" + tableName + "] fail!");
                     }
@@ -353,17 +390,21 @@ public class ConsumerThread<T> extends Thread {
                 }
             }
         }
-
-        if (log.isDebugEnabled()) {
-            log.debug("start insert message to table , urm [" + urm.toString() + "],"
-                    + "tableState if null [" + (tableState == null) + "]");
-        }
+	
 	RowMessage<T> urmClone = null;
 	try {
             urmClone = (RowMessage)urm.clone();
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();
         }
+	//add the message to msgs cahce
+	tableState.GetMsgs().add(urmClone);
+
+        if (log.isDebugEnabled()) {
+            log.debug("start insert message to table , urm [" + urm.toString() + "],"
+                    + "tableState if null [" + (tableState == null) + "]");
+        }
+
         tableState.InsertMessageToTable(urmClone);
         if (log.isDebugEnabled()) {
             log.debug("put table state in map :" + tableName + "  " + tableState.toString());

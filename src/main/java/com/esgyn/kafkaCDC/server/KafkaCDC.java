@@ -75,6 +75,7 @@ public class KafkaCDC implements Runnable {
     String  kafkauser   = "";
     String  kafkapw     = "";
 
+    String  outpath     = null;
     String  tenantUser  = null;
     String  charEncoding= DEFAULT_ENCODING;
     String  key         = DEFAULT_KEY;
@@ -163,6 +164,9 @@ public class KafkaCDC implements Runnable {
          * -f,--format <arg> format of data, default: "" 
          * -g --group <arg> groupID 
          * -h --help show help information 
+         * -o --outpath write the error kafka message to this path when there are err mess.
+         *         No parameters specified: not write the err message
+         *         "-o /tmp/mypath" or "--outpath /tmp/mypath" : user-defined path
          * -p --partition <arg>the partition number (default is 16) 
          * -s --schema <arg> schema 
          * -t --topic <arg> topic 
@@ -205,6 +209,10 @@ public class KafkaCDC implements Runnable {
                 .desc("group for this consumer, default: 0").build();
         Option helpOption = Option.builder("h").longOpt("help").required(false)
                 .desc("show help information").build();
+        Option outpathOption = Option.builder("o").longOpt("outpath").required(false).hasArg()
+                .desc("write the error kafka message to this path when there are err mess."
+                        +"\n No parameters specified: not write the err message"
+                        +"\n \"-o /tmp/mypath\" or \"--outpath /tmp/mypath\" : user-defined path").build();
         Option partitionOption = Option.builder("p").longOpt("partition").required(false).hasArg()
                 .desc("partition number to process message, one thread only process "
                         + " the data from one partition, default: 16. the format: "
@@ -270,6 +278,7 @@ public class KafkaCDC implements Runnable {
         exeOptions.addOption(formatOption);
         exeOptions.addOption(groupOption);
         exeOptions.addOption(helpOption);
+        exeOptions.addOption(outpathOption);
         exeOptions.addOption(partitionOption);
         exeOptions.addOption(schemaOption);
         exeOptions.addOption(topicOption);
@@ -412,6 +421,7 @@ public class KafkaCDC implements Runnable {
                         : DEFAULT_INTERVAL;
         keepalive = cmdLine.hasOption("keepalive") ? true : false;
         key       = cmdLine.hasOption("key") ? cmdLine.getOptionValue("key") : DEFAULT_KEY;
+        outpath   = cmdLine.hasOption("outpath") ? cmdLine.getOptionValue("outpath") : null;
         skip      = cmdLine.hasOption("skip") ? true : false;
         streamTO  = cmdLine.hasOption("sto") ? Long.parseLong(cmdLine.getOptionValue("sto"))
                 : DEFAULT_STREAM_TO_MS;
@@ -552,6 +562,7 @@ public class KafkaCDC implements Runnable {
         strBuffer.append("\n\tkey         = " + me.key);
         strBuffer.append("\n\tvalue       = " + me.value);
         strBuffer.append("\n\tmessageClass= " + me.messageClass);
+        strBuffer.append("\n\toutpath     = " + me.outpath);
 
         strBuffer.append("\n\tstreamTO    = " + (me.streamTO / 1000) + "s");
         strBuffer.append("\n\tzkTO        = " + (me.zkTO / 1000) + "s");
@@ -569,7 +580,7 @@ public class KafkaCDC implements Runnable {
             ConsumerThread consumer = new ConsumerThread(me.esgyndb, me.full, me.skip, me.bigEndian,
                     me.delimiter, me.format, me.zookeeper, me.broker, me.topic, me.groupID,
                     me.charEncoding, me.key, me.value,me.kafkauser,me.kafkapw, partition,
-                    me.streamTO, me.zkTO,me.commitCount, me.messageClass);
+                    me.streamTO, me.zkTO,me.commitCount, me.messageClass,me.outpath);
             consumer.setName("ConsumerThread-" + partition);
             me.consumers.add(consumer);
             consumer.start();

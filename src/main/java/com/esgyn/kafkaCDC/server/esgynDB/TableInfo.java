@@ -13,6 +13,8 @@ import java.util.IdentityHashMap;
 import java.util.ArrayList;
 import org.apache.log4j.Logger;
 
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
+
 public class TableInfo {
     private String           schemaName    = null;
     private String           tableName     = null;
@@ -31,6 +33,7 @@ public class TableInfo {
 
     ArrayList<ColumnInfo>    keyColumns    = null;
     ArrayList<ColumnInfo>    columns       = null;
+    ArrayList<RowMessage>    msgs          = null;
     Map<Integer, ColumnInfo> columnMap     = null;
     Map<String, ColumnInfo>  columnNameMap = null;
     private static Logger    log           = Logger.getLogger(TableInfo.class);
@@ -42,6 +45,7 @@ public class TableInfo {
 
         columns = new ArrayList<ColumnInfo>(0);
         keyColumns = new ArrayList<ColumnInfo>(0);
+        msgs= new ArrayList<RowMessage>(0);
         columnMap = new HashMap<Integer, ColumnInfo>(0);
         columnNameMap = new HashMap<String, ColumnInfo>(0);
     }
@@ -94,6 +98,10 @@ public class TableInfo {
 
     public ArrayList<ColumnInfo> GetColumns() {
         return columns;
+    }
+
+    public ArrayList<RowMessage> getMsgs() {
+        return msgs;
     }
 
     public Map<Integer, ColumnInfo> GetColumnMap() {
