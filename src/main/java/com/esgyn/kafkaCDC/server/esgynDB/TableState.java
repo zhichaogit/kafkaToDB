@@ -544,9 +544,7 @@ public class TableState {
 
         try {
             insert_data();
-
             update_data();
-
             delete_data();
         } catch (BatchUpdateException bue) {
             commited = false;
