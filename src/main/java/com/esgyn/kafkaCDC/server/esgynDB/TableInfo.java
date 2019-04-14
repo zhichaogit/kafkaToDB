@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import org.apache.log4j.Logger;
 
-
 public class TableInfo {
     private String           schemaName    = null;
     private String           tableName     = null;

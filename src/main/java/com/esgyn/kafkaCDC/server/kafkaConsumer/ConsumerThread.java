@@ -328,7 +328,6 @@ public class ConsumerThread<T> extends Thread {
             log.debug("operatorType[" + urm.GetOperatorType() + "]\n" + "cacheNum [" + cacheNum
                     + "]\n" + "commitCount [" + commitCount + "]");
         }
-
         if (urm.GetOperatorType().equals("K")) {
             commit_tables();
             if (log.isDebugEnabled()) {
@@ -359,7 +358,6 @@ public class ConsumerThread<T> extends Thread {
                 }
             }
         }
-	
 	RowMessage<T> urmClone = null;
 	try {
             urmClone = (RowMessage)urm.clone();

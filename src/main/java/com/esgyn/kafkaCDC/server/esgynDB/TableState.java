@@ -39,7 +39,7 @@ public class TableState {
 
     private PreparedStatement              insertStmt  = null;
     private PreparedStatement              deleteStmt  = null;
-    private List<RowMessage>               msgs           = null;
+    private List<RowMessage>               msgs        = null;
     Map<String, RowMessage> insertRows  = null;
     Map<String, RowMessage> updateRows  = null;
     Map<String, RowMessage> deleteRows  = null;
@@ -765,7 +765,7 @@ public class TableState {
         return result;
     }
 
-    private void insert_data() throws Exception  {
+    private void insert_data() throws Exception {
         if (insertRows.size() <= 0)
             return;
 
@@ -787,7 +787,6 @@ public class TableState {
             }
 
             insert_row_data(cols);
-             
             errRows.put(offset, insertRM);
             offset++;
         }
@@ -1056,7 +1055,6 @@ public class TableState {
             log.trace("enter function");
         }
         msgs.add(urm);
-        urm.GetMessage();
 
         switch (urm.GetOperatorType()) {
             case "I":
@@ -1086,5 +1084,4 @@ public class TableState {
     public TableInfo GetTableInfo() {
         return tableInfo;
     }
-
 }
