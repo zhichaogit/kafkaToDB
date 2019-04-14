@@ -611,7 +611,9 @@ public class TableState {
             } catch (SQLException se) {
                 log.error("batch update table [" + schemaName + "." + tableName
                         + "] rollback throw SQLException: " + se.getMessage());
-            }
+            }finally{
+	        msgs.clear();
+	    }
         }
 
         return true;
@@ -633,7 +635,6 @@ public class TableState {
             }
         }
         flushAndClose_bufferOutput(bufferOutput);
-        msgs.clear();
     }
 
      public void printBatchErrMess(int[] insertCounts, Map<Integer, RowMessage> errRows) {
