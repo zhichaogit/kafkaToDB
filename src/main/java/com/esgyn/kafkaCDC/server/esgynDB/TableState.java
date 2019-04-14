@@ -15,6 +15,7 @@ import java.lang.IndexOutOfBoundsException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.ArrayList;
 import org.apache.log4j.Logger;
 
@@ -38,17 +39,14 @@ public class TableState {
 
     private PreparedStatement              insertStmt  = null;
     private PreparedStatement              deleteStmt  = null;
-    private BufferedOutputStream           bufferedOutput = null;
-
+    private List<RowMessage>               msgs           = null;
     Map<String, RowMessage> insertRows  = null;
     Map<String, RowMessage> updateRows  = null;
     Map<String, RowMessage> deleteRows  = null;
 
     ArrayList<ColumnInfo>                  keyColumns  = null;
     ArrayList<ColumnInfo>                  columns     = null;
-    ArrayList<RowMessage>                  msgs        = null;
     Map<Integer, ColumnInfo>               columnMap   = null;
-    Map<Integer, RowMessage>               errRows     = null;
 
     private static Logger                  log         = Logger.getLogger(TableState.class);
 
@@ -59,7 +57,6 @@ public class TableState {
         multiable = tableInfo.IsMultiable();
 
         keyColumns = tableInfo.GetKeyColumns();
-        msgs = tableInfo.getMsgs();
         columns = tableInfo.GetColumns();
         columnMap = tableInfo.GetColumnMap();
 
@@ -70,6 +67,7 @@ public class TableState {
         }
         updateRows = new HashMap<String, RowMessage>(0);
         deleteRows = new HashMap<String, RowMessage>(0);
+        msgs       = new ArrayList<RowMessage>();
     }
 
     public boolean InitStmt(Connection dbConn_,boolean skip) {
@@ -537,7 +535,7 @@ public class TableState {
         return 1;
     }
 
-    public boolean CommitTable( ) {
+    public boolean CommitTable(String outPutPath ) {
         if (log.isDebugEnabled()) {
             log.info("commit table [" + schemaName + "." + tableName + ", insert: "
                     + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
@@ -545,23 +543,13 @@ public class TableState {
         }
 
         try {
-	    errRows = new HashMap<Integer, RowMessage>(0);
-            insert_data(errRows);
-	    errRows.clear();
+            insert_data();
 
-	    errRows = new HashMap<Integer, RowMessage>(0);
-            update_data(errRows);
-	    errRows.clear();
+            update_data();
 
-	    errRows = new HashMap<Integer, RowMessage>(0);
-            delete_data(errRows);
-	    errRows.clear();
+            delete_data();
         } catch (BatchUpdateException bue) {
             commited = false;
-	    // print the error data 
-	    int[] insertCounts = bue.getUpdateCounts();
-            printErrMess(insertCounts,errRows);
-
             log.error("batch update table [" + schemaName + "." + tableName
                     + "] throw BatchUpdateException: " + bue.getMessage());
             SQLException se = bue;
@@ -618,6 +606,7 @@ public class TableState {
                     dbConn.commit();
                 } else {
                     dbConn.rollback();
+                    werrToFile(outPutPath);
                 }
             } catch (SQLException se) {
                 log.error("batch update table [" + schemaName + "." + tableName
@@ -627,12 +616,31 @@ public class TableState {
 
         return true;
     }
+    public void werrToFile(String outPutPath) {
+        if (log.isDebugEnabled()) {
+            log.debug("commit faild,write message to file.msgs count:["
+                       +msgs.size()+"]");
+        }
+        // write to file
+        BufferedOutputStream bufferOutput = init_bufferOutput(outPutPath, schemaName, tableName);
+        for (int i = 0; i < msgs.size(); i++) {
+            RowMessage rowMessage = msgs.get(i);
+            Object message = rowMessage.mtpara.getMessage();
+            try {
+                bufferOutput.write((String.valueOf(message)+"\n").getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        flushAndClose_bufferOutput(bufferOutput);
+        msgs.clear();
+    }
 
-     public void printErrMess(int[] insertCounts, Map<Integer, RowMessage> errRows) {
+     public void printBatchErrMess(int[] insertCounts, Map<Integer, RowMessage> errRows) {
         if (log.isDebugEnabled()) {
             log.trace("enter function");
         }
-	for (int i = 0; i < insertCounts.length; i++) {
+        for (int i = 0; i < insertCounts.length; i++) {
              if ( insertCounts[i] == Statement.EXECUTE_FAILED ) {
                  if (log.isDebugEnabled()) {
                      log.debug("Error on request #" + i +": Execute failed");
@@ -644,8 +652,8 @@ public class TableState {
                      mtpara = rowMessage.mtpara;
                      if (mtpara!=null) 
                      messagesource = mtpara.getMessage();
-                     if (messagesource!=null) 
-                     log.error("throw BatchUpdateException when deal whith the kafka message : ["+messagesource +"]");
+                     log.error("throw BatchUpdateException when deal whith the kafka message . offs"
+                             + "et:["+mtpara.getOffset()+"],message:["+mtpara.getMessage() +"]");
                      
                  }
              }
@@ -756,7 +764,7 @@ public class TableState {
         return result;
     }
 
-    private void insert_data(Map<Integer, RowMessage> errRows) throws Exception {
+    private void insert_data() throws Exception  {
         if (insertRows.size() <= 0)
             return;
 
@@ -770,24 +778,41 @@ public class TableState {
         }
 
         int offset = 0;
+        Map<Integer, RowMessage> errRows = new HashMap<Integer, RowMessage>(0);
         for (RowMessage insertRM : insertRows.values()) {
             Map<Integer, ColumnValue> cols = insertRM.GetColumns();
             if (log.isDebugEnabled()) {
                 log.debug("insert row offset: " + offset+ ",rowmessage:"+cols.get(0).GetCurValue());
             }
+
             insert_row_data(cols);
+             
             errRows.put(offset, insertRM);
             offset++;
         }
 
-        int[] batchResult = insertStmt.executeBatch();
+        try {
+            insertStmt.executeBatch();
+        } catch (BatchUpdateException bue) {
+            // print the error data 
+            int[] insertCounts = bue.getUpdateCounts();
+            printBatchErrMess(insertCounts,errRows);
+            throw bue;
+        } catch (IndexOutOfBoundsException iobe) {
+            
+           throw iobe;
+        }catch (SQLException se) {
+            throw se;
+        }finally {
+            errRows.clear();
+        }
 
         if (log.isTraceEnabled()) {
             log.trace("exit function");
         }
     }
 
-    private long update_row_data(Map<Integer, ColumnValue> row) throws Exception {
+    private long update_row_data(Map<Integer, ColumnValue> row) throws SQLException  {
         long result = 0;
 
         if (log.isTraceEnabled()) {
@@ -846,7 +871,7 @@ public class TableState {
         return result;
     }
 
-    public void update_data(Map<Integer, RowMessage> errRows) throws Exception {
+    public void update_data() throws SQLException  {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
@@ -860,6 +885,7 @@ public class TableState {
             return;
 
         int offset = 0;
+        Map<Integer, RowMessage> errRows = new HashMap<Integer, RowMessage>(0);
         for (RowMessage updateRow : updateRows.values()) {
             if (log.isDebugEnabled()) {
                 log.debug("update row offset: " + offset);
@@ -916,7 +942,7 @@ public class TableState {
         return result;
     }
 
-    private void delete_data(Map<Integer, RowMessage> errRows) throws Exception {
+    private void delete_data() throws Exception {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
@@ -930,16 +956,29 @@ public class TableState {
             return;
 
         int offset = 0;
+        Map<Integer, RowMessage> errRows = new HashMap<Integer, RowMessage>(0);
         for (RowMessage deleteRow : deleteRows.values()) {
             if (log.isDebugEnabled()) {
                 log.debug("delete row offset: " + offset);
             }
-	    errRows.put(offset, deleteRow);
+            errRows.put(offset, deleteRow);
             offset++;
             delete_row_data(deleteRow.GetColumns());
         }
-
-        int[] batchResult = deleteStmt.executeBatch();
+        try {
+            int[] batchResult = deleteStmt.executeBatch();
+        } catch (BatchUpdateException bue) {
+            // print the error data 
+            int[] insertCounts = bue.getUpdateCounts();
+            printBatchErrMess(insertCounts,errRows);
+            throw bue;
+        }catch (IndexOutOfBoundsException iobe) {
+           throw iobe;
+        }catch (SQLException se) {
+            throw se;
+        }finally {
+            errRows.clear();
+        }
 
         if (log.isTraceEnabled()) {
             log.trace("exit function");
@@ -1015,6 +1054,8 @@ public class TableState {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
+        msgs.add(urm);
+        urm.GetMessage();
 
         switch (urm.GetOperatorType()) {
             case "I":
@@ -1045,7 +1086,4 @@ public class TableState {
         return tableInfo;
     }
 
-    public ArrayList<RowMessage> GetMsgs() {
-        return msgs;
-    }
 }

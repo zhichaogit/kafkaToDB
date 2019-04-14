@@ -3,7 +3,6 @@ package com.esgyn.kafkaCDC.server.kafkaConsumer;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Properties;
 import java.sql.Connection;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,8 +22,6 @@ import com.esgyn.kafkaCDC.server.esgynDB.TableState;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 
-import java.io.BufferedOutputStream;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import kafka.consumer.ConsumerTimeoutException;
 
@@ -198,37 +195,9 @@ public class ConsumerThread<T> extends Thread {
 
     public boolean commit_tables() {
         for (TableState tableState : tables.values()) {
-	    try{
-		if (!tableState.CommitTable()) {
-                    if (log.isDebugEnabled()) {
-	  		log.debug("commit faild,write message to file.skip:["+skip+"],msgs count:["
-                                   +tableState.GetMsgs().size()+"]");
-                    }
-                       // write to file
-                        BufferedOutputStream bufferOutput = tableState.init_bufferOutput
-                                (outPutPath, tableState.GetSchemaName(), tableState.GetTableName());
-                        List<RowMessage> rms=tableState.GetMsgs();
-                        for (int i = 0; i < rms.size(); i++) {
-                            RowMessage rowMessage = rms.get(i);
-                            Object message = rowMessage.mtpara.getMessage();
-                            try {
-                                bufferOutput.write((String.valueOf(message)+"\n").getBytes());
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        tableState.flushAndClose_bufferOutput(bufferOutput);
-                    if (!skip) {
-                        return false;
-                    }
-		    return true;
-                }
-            }finally{
-                if (log.isDebugEnabled()) {
-                    log.trace("clear msgs cache :["+tableState.GetSchemaName()
-                              +"."+tableState.GetTableName()+"]");
-                }
-                tableState.GetMsgs().clear();
+    		if (!tableState.CommitTable(outPutPath)) {
+                if (!skip) 
+                return false;
             }
         }
 	log.info("kafka commit.");
@@ -347,7 +316,7 @@ public class ConsumerThread<T> extends Thread {
         }
 
         MessageTypePara typeMessage = new MessageTypePara(esgyndb, tables, tableState, dbConn,
-                delimiter, partitionID, msg, encoding, bigEndian);
+                delimiter, partitionID, msg, encoding, bigEndian,offset);
 
         if (!urm.init(typeMessage))
             return;
@@ -397,8 +366,6 @@ public class ConsumerThread<T> extends Thread {
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();
         }
-	//add the message to msgs cahce
-	tableState.GetMsgs().add(urmClone);
 
         if (log.isDebugEnabled()) {
             log.debug("start insert message to table , urm [" + urm.toString() + "],"
