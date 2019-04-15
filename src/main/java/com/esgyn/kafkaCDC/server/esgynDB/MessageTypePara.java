@@ -13,10 +13,11 @@ public class MessageTypePara<T> {
     private T                       message    = null;
     private String                  encoding   = null;
     private boolean                 bigEndian  = false;
+    private Long                    offset     = 0L ;
 
     public MessageTypePara(EsgynDB esgynDB_, Map<String, TableState> tables_,
             TableState tableState_, Connection dbConn_, String delimiter_, int thread_, T message_,
-            String encoding_, boolean bigEndian_) {
+            String encoding_, boolean bigEndian_,long offset_) {
         esgynDB = esgynDB_;
         tables = tables_;
         tableState = tableState_;
@@ -26,6 +27,7 @@ public class MessageTypePara<T> {
         message = message_;
         encoding = encoding_;
         bigEndian = bigEndian_;
+        offset = offset_;
     }
 
     public EsgynDB getEsgynDB() {
@@ -102,6 +104,14 @@ public class MessageTypePara<T> {
 
     public void setBigEndian(Boolean bigEndian) {
         this.bigEndian = bigEndian;
+    }
+
+    public Long getOffset() {
+        return offset;
+    }
+
+    public void setOffset(Long offset) {
+        this.offset = offset;
     }
 
 }

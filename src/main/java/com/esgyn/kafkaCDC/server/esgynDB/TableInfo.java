@@ -1,15 +1,8 @@
 package com.esgyn.kafkaCDC.server.esgynDB;
 
-import java.sql.Statement;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.PreparedStatement;
-import java.sql.BatchUpdateException;
-import java.lang.IndexOutOfBoundsException;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.ArrayList;
 import org.apache.log4j.Logger;
 

@@ -66,6 +66,7 @@ public class ConsumerThread<T> extends Thread {
     RowMessage<T>               urm     = null;
     // e.g.:com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.UnicomRowMessage
     private String              messageClass;
+    private String              outPutPath;
 
     private static Logger       log     = Logger.getLogger(ConsumerThread.class);
 
@@ -73,7 +74,7 @@ public class ConsumerThread<T> extends Thread {
             String delimiter_, String format_, String zookeeper_, String broker_, String topic_,
             String groupid_, String encoding_, String key_, String value_,String kafkauser_ ,
             String kafkapasswd_, int partitionID_,long streamTO_, long zkTO_, long commitCount_, 
-            String messageClass_) {
+            String messageClass_,String outPutPath_) {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
@@ -99,6 +100,7 @@ public class ConsumerThread<T> extends Thread {
         full = full_;
         skip = skip_;
         messageClass = messageClass_;
+        outPutPath = outPutPath_;
 
         tables = new HashMap<String, TableState>(0);
         Properties props = new Properties();
@@ -191,13 +193,14 @@ public class ConsumerThread<T> extends Thread {
         }
     }
 
-    public void commit_tables() {
+    public boolean commit_tables() {
         for (TableState tableState : tables.values()) {
-            if (!tableState.CommitTable()) {
-                return;
+    		if (!tableState.CommitTable(outPutPath)) {
+                if (!skip) 
+                return false;
             }
         }
-
+	log.info("kafka commit.");
         kafkaconsumer.commitSync();
         for (TableState tableState : tables.values()) {
             esgyndb.AddInsMsgNum(tableState.GetCacheInsert());
@@ -214,6 +217,7 @@ public class ConsumerThread<T> extends Thread {
 
             tableState.ClearCache();
         }
+	return true;
     }
 
     public boolean ProcessRecord() {
@@ -228,7 +232,8 @@ public class ConsumerThread<T> extends Thread {
         cacheNum += records.count();
         ProcessMessages(records);
 
-            commit_tables();
+        if(!commit_tables())
+        return false ;//commit tables faild And not --skip
 
         return true;
     }
@@ -297,7 +302,7 @@ public class ConsumerThread<T> extends Thread {
                 }
 
                 tableState = new TableState(tableInfo);
-                if (!tableState.InitStmt(dbConn)) {
+                if (!tableState.InitStmt(dbConn,skip)) {
                     if (log.isDebugEnabled()) {
                         log.warn("init the table [" + tableName + "] fail!");
                     }
@@ -311,7 +316,7 @@ public class ConsumerThread<T> extends Thread {
         }
 
         MessageTypePara typeMessage = new MessageTypePara(esgyndb, tables, tableState, dbConn,
-                delimiter, partitionID, msg, encoding, bigEndian);
+                delimiter, partitionID, msg, encoding, bigEndian,offset);
 
         if (!urm.init(typeMessage))
             return;
@@ -345,7 +350,7 @@ public class ConsumerThread<T> extends Thread {
                 }
 
                 tableState = new TableState(tableInfo);
-                if (!tableState.InitStmt(dbConn)) {
+                if (!tableState.InitStmt(dbConn,skip)) {
                     if (log.isDebugEnabled()) {
                         log.warn("init the table [" + tableName + "] fail!");
                     }
@@ -353,17 +358,18 @@ public class ConsumerThread<T> extends Thread {
                 }
             }
         }
-
-        if (log.isDebugEnabled()) {
-            log.debug("start insert message to table , urm [" + urm.toString() + "],"
-                    + "tableState if null [" + (tableState == null) + "]");
-        }
 	RowMessage<T> urmClone = null;
 	try {
             urmClone = (RowMessage)urm.clone();
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();
         }
+
+        if (log.isDebugEnabled()) {
+            log.debug("start insert message to table , urm [" + urm.toString() + "],"
+                    + "tableState if null [" + (tableState == null) + "]");
+        }
+
         tableState.InsertMessageToTable(urmClone);
         if (log.isDebugEnabled()) {
             log.debug("put table state in map :" + tableName + "  " + tableState.toString());
