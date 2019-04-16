@@ -200,7 +200,9 @@ public class ConsumerThread<T> extends Thread {
                 return false;
             }
         }
-	log.info("kafka commit.");
+	if (log.isDebugEnabled()) {
+	    log.trace("kafka commit.");
+	}
         kafkaconsumer.commitSync();
         for (TableState tableState : tables.values()) {
             esgyndb.AddInsMsgNum(tableState.GetCacheInsert());
