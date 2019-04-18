@@ -36,7 +36,6 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     String                emptystr                 = "";
     Record                message                  = null;
     EsgynDB               esgynDB                  = null;
-    
     private final int     INSERT_DRDS              = 0;
     private final int     UPDATE_DRDS              = 1;
     private final int     DELETE_DRDS              = 2;
@@ -76,8 +75,8 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             log.trace("enter function");
         }
         
-        // transaction information
         TableInfo tableInfo = null;
+        // transaction information
         String tableNamePro = message.getTableName();
         int keyColNum = message.getKeyColumnList().size(); // keycol size
         int colNum = message.getColumnList().size(); //col size
