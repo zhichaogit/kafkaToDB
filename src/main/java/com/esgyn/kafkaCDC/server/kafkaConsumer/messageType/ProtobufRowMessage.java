@@ -47,7 +47,8 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     private final int     TRUNCATE_TABLE_VAL       = 100;
     private final int     UPDATE_COMP_PK_SQL_VAL   = 115;
     private final int     SQL_DDL_VAL              = 160;
-
+    private final int     SOURCEORACLE             = 1;
+    private final int     SOURCEDRDS               = 2;
     public ProtobufRowMessage() {}
 
     public ProtobufRowMessage(MessageTypePara<byte[]> mtpara) throws UnsupportedEncodingException {
@@ -144,32 +145,24 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }
         //operationType
         switch (operationType) {
-            case INSERT_DRDS: {
-                operatorType = "I";
-                break;
-            }
-            case UPDATE_DRDS: {
-                operatorType = "U";
-                break;
-            }
-            case DELETE_DRDS: {
-                operatorType = "D";
-                break;
-            }
+            case INSERT_DRDS:
             case INSERT_VAL: {
                 operatorType = "I";
                 break;
             }
-            
+
+            case DELETE_DRDS: 
             case DELETE_VAL: {
                 operatorType = "D";
                 break;
             }
-            
+
+            case UPDATE_DRDS: 
             case UPDATE_COMP_SQL_VAL: {
                 operatorType = "U";
                 break;
             }
+
             case UPDATE_COMP_PK_SQL_VAL: {
                 operatorType = "K";
                 break;
@@ -208,7 +201,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         
         //need found col index form tableInfo when mysql(DRDS)
         switch (sourceType) {
-            case 1:
+            case SOURCEORACLE:
                 if (log.isDebugEnabled()) {
                     log.debug("the data maybe come form oracle,source col index:"+index);
                 }
@@ -217,7 +210,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 newValue = covertValue1(newNull,newValuebs,columnTypeName);
                 oldValue = covertValue1(oldNull,oldValuebs,columnTypeName);
                 break;
-            case 2:
+            case SOURCEDRDS:
                 if (log.isDebugEnabled()) {
                     log.debug("the data maybe come form mysql(DRDS),source col index:"+index);
                 }
@@ -256,6 +249,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }else {
 	    if(!mtpara.getEncoding().equals("UTF8")){
                 encode = mtpara.getEncoding();
+                if(!mtpara.getEncoding().equals("GBK"))
                 log.warn("the data from oracle  default encode is GBK,but you set: " +encode);
             }
             value = bytesToString(Valuebs, encode);
@@ -311,13 +305,9 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     private static boolean insertEmptyStr(String colTypeName) {
         switch (colTypeName) {
             case "NCHAR":
-                return true;
             case "NCHAR VARYING":
-                return true;
             case "LONG VARCHAR":
-                return true;
             case "Char":
-                return true;
             case "VARCHAR":
                 return true;
             default:
