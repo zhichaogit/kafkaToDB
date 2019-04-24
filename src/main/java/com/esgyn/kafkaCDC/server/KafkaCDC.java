@@ -10,7 +10,9 @@ import org.apache.commons.cli.ParseException;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
@@ -18,6 +20,12 @@ import org.apache.log4j.xml.DOMConfigurator;
 
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerThread;
+
+import kafka.javaapi.PartitionMetadata;
+import kafka.javaapi.TopicMetadata;
+import kafka.javaapi.TopicMetadataRequest;
+import kafka.javaapi.TopicMetadataResponse;
+import kafka.javaapi.consumer.SimpleConsumer;
 
 public class KafkaCDC implements Runnable {
     private final static String       DEFAULT_LOGCONFPATH   = "conf/log4j.xml";
@@ -51,6 +59,7 @@ public class KafkaCDC implements Runnable {
     String format       = null;
     String groupID      = null;
     int[]  partitions   = null;
+    String partString   = null;
     String topic        = null;
     String zookeeper    = null;
 
@@ -342,6 +351,7 @@ public class KafkaCDC implements Runnable {
         String partString =
                 cmdLine.hasOption("partition") ? cmdLine.getOptionValue("partition") : "16";
         String[] parts = partString.split(",");
+        if (!partString.equals("-1")) {
         ArrayList<Integer> tempParts = new ArrayList<Integer>(0);
         if (parts.length < 1) {
             HelpFormatter formatter = new HelpFormatter();
@@ -403,6 +413,7 @@ public class KafkaCDC implements Runnable {
                 formatter.printHelp("Consumer Server", exeOptions);
                 System.exit(0);
             }
+        }
         }
 
         defschema  = cmdLine.hasOption("schema") ? cmdLine.getOptionValue("schema") : null;
@@ -524,6 +535,9 @@ public class KafkaCDC implements Runnable {
                     + "They must exist or not exist at the same time ");
             System.exit(0);
         }
+        if (partString.equals("-1")) {
+            partitions=getPartitionArray(broker,topic);
+        }
     }
 
     public static void main(String[] args) {
@@ -606,5 +620,44 @@ public class KafkaCDC implements Runnable {
 
         Date endtime = new Date();
         log.info("exit time: " + sdf.format(endtime));
+    }
+
+    // get the partition int[]
+    private static int[] getPartitionArray(String brokerstr, String a_topic) {
+        int[] partitioncount=null;
+        String[] brokers = brokerstr.split(",");
+        for (String broker : brokers) {
+            String[] ipAndPort = broker.split(":");
+            SimpleConsumer consumer = null;
+            try {
+                
+                consumer = new SimpleConsumer(ipAndPort[0], Integer.valueOf(ipAndPort[1]), 
+                        100000, 64 * 1024,"leaderLookup"+new Date().getTime());
+                List<String> topics = Collections.singletonList(a_topic);
+                TopicMetadataRequest req = new TopicMetadataRequest(topics);
+                TopicMetadataResponse resp = consumer.send(req);
+
+                List<TopicMetadata> metaData = resp.topicsMetadata();
+               // just need one topic meataData
+                if(metaData.size()!=0) {
+                    for (TopicMetadata item : metaData) {
+                        List<PartitionMetadata> partitionsMetadata = item.partitionsMetadata();
+                        partitioncount=new int[partitionsMetadata.size()];
+                        for (int i = 0; i < partitionsMetadata.size(); i++) {
+                            partitioncount[i]=partitionsMetadata.get(i).partitionId();
+                        }
+                    }
+                    break;
+                }
+            } catch (Exception e) {
+                log.error("Error communicating with Broker [" + ipAndPort[0]
+                        + "] to find Leader for [" + a_topic + ", ] Reason: " + e);
+            } finally {
+                if (consumer != null)
+                    consumer.close();
+            }
+        }
+        Arrays.sort(partitioncount);
+        return partitioncount;
     }
 }
