@@ -649,11 +649,13 @@ public class TableState {
                  MessageTypePara mtpara=null;
                  if (rowMessage!=null) {
                      mtpara = rowMessage.mtpara;
+                     String parsedMess = rowMessage.message;
                      if (mtpara!=null) 
                      messagesource = mtpara.getMessage();
                      log.error("throw BatchUpdateException when deal whith the kafka message . offs"
-                             + "et:["+mtpara.getOffset()+"],message:["+mtpara.getMessage() +"]");
-                     
+                               + "et:["+mtpara.getOffset()+"],operate type:["+parsedMess+"],"
+                               + "source message:["+mtpara.getMessage() +"]\n"
+                               + "parsed message:["+parsedMess+"]"); 
                  }
              }
          }

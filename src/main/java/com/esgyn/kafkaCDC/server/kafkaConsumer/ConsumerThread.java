@@ -293,8 +293,6 @@ public class ConsumerThread<T> extends Thread {
         if (esgyndb.GetDefaultTable() != null) {
             if (tableState == null) {
                 TableInfo tableInfo = esgyndb.GetTableInfo(tableName);
-                log.error("tableinfo is null: " + (tableInfo == null) + tableInfo.GetSchemaName()
-                        + tableInfo.GetTableName());
                 if (tableInfo == null) {
                     if (log.isDebugEnabled()) {
                         log.warn("the table [" + tableName + "] is not exists!");

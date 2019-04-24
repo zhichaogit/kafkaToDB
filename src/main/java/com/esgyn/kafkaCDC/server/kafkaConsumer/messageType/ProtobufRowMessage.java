@@ -104,6 +104,14 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
           tableInfo = esgynDB.GetTableInfo(schemaName + "." + tableName);        
           int operationType = message.getOperationType();
 
+	if (tableInfo == null) {
+            if (log.isDebugEnabled()) {
+                log.error("Table [" + schemaName + "." + tableName
+                        + "] is not exist in EsgynDB.");
+            }
+
+                return false;
+        }
         StringBuffer strBuffer = null;
         if (log.isDebugEnabled()) {
             strBuffer = new StringBuffer();
@@ -260,9 +268,9 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     private String covertValue2(boolean valueNull,ByteString Valuebs,String colTypeName) {
         String value=null;
 	String encode="UTF8";
-        if (valueNull && Valuebs.size()!=0) {
+        if (valueNull) {
             value = null;
-        }else if(valueNull && Valuebs.size()==0){
+        }else if(Valuebs.size()==0){
             if(insertEmptyStr(colTypeName.toUpperCase()))
             value = "";
         }else{
@@ -271,6 +279,8 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 log.warn("the data from drds(mysql)  default encode is UTF8,but you set: " +encode);
             }
             value = bytesToString(Valuebs, encode);
+            if(value.equals("0000-00-00 00:00:00"))
+            value = null; 
         }
         return value;
     }
