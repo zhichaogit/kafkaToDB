@@ -29,6 +29,7 @@ public class EsgynDB {
     private static Logger  log         = Logger.getLogger(EsgynDB.class);
 
     private long           totalMsgNum = 0;
+    private long           kafkaMsgNum = 0;
 
     private long           messageNum  = 0;
     private long           insMsgNum   = 0;
@@ -433,6 +434,9 @@ public class EsgynDB {
     public synchronized void AddTotalNum(long totalMsgNum_) {
         totalMsgNum += totalMsgNum_;
     }
+    public synchronized void AddKafkaPollNum(long kafkaMsgNum_) {
+        kafkaMsgNum += kafkaMsgNum_;
+    }
 
     public void DisplayDatabase() {
         Long end = new Date().getTime();
@@ -447,6 +451,7 @@ public class EsgynDB {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
         StringBuffer strBuffer = new StringBuffer();
+        strBuffer.append("kafkaPoll states:\n\tkafkaPollNum ["+kafkaMsgNum+"]\n");
         strBuffer.append("consumer states: \n\tmessages [total: " + totalMsgNum
                 + ", process total: " + messageNum + ", process inc: " + incMessage
                 + "], speed [max: " + maxSpeed + "/s, avg: " + avgSpeed + "/s, cur: " + curSpeed
