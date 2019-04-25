@@ -60,7 +60,7 @@ public class KafkaCDC implements Runnable {
     String topic        = null;
     String zookeeper    = null;
 
-    boolean full        = false;
+    String  full         = null;
     boolean bigEndian   = false;
     boolean skip        = false;
     boolean keepalive   = false;
@@ -249,8 +249,12 @@ public class KafkaCDC implements Runnable {
                 .desc("field delimiter, default: ','(comma)").build();
         Option bigendianOption = Option.builder().longOpt("bigendian").required(false)
                 .desc("the data format is big endian, default: little endian").build();
-        Option fullOption = Option.builder().longOpt("full").required(false)
-                .desc("pull data from beginning, default: false").build();
+        Option fullOption = Option.builder().longOpt("full").required(false).hasArg()
+                .desc("pull data from beginning or End or specify the offset, "
+                        + "default: offset submitted last time."
+                        + "\n\ta. --full start : means pull the all data from the beginning(earliest)"
+                        + "\n\tb. --full end   : means pull the data from the end(latest)"
+                        + "\n\tc. --full 1547  : means pull the data from offset 1547 ").build();
         Option intervalOption = Option.builder().longOpt("interval").required(false).hasArg()
                 .desc("the print state time interval, the unit is second, default: 10s").build();
         Option keepaliveOption = Option.builder().longOpt("keepalive").required(false).hasArg()
@@ -423,7 +427,7 @@ public class KafkaCDC implements Runnable {
         dbpassword = cmdLine.hasOption("dbpw") ? cmdLine.getOptionValue("dbpw") : DEFAULT_PASSWORD;
 
         delimiter = cmdLine.hasOption("delim") ? cmdLine.getOptionValue("delim") : null;
-        full      = cmdLine.hasOption("full") ? true : false;
+        full      = cmdLine.hasOption("full") ? cmdLine.getOptionValue("full") : "";
         bigEndian = cmdLine.hasOption("bigendian") ? true : false;
         interval  =
                 cmdLine.hasOption("interval") ? Long.parseLong(cmdLine.getOptionValue("interval"))
@@ -498,6 +502,15 @@ public class KafkaCDC implements Runnable {
             log.error("the delimiter must be a single character. but it's [" + delimiter + "] now");
             formatter.printHelp("Consumer Server", exeOptions);
             System.exit(0);
+        }
+
+        if (!full.equals("")) {
+            boolean validLong = isValidLong(full);
+            full=full.toUpperCase();
+            if (!validLong&&!full.equals("START")&&!full.equals("END")) {
+              log.error("the --full must have a para: \"start\" or \"end\" or a Long Numeric types");
+              System.exit(0);
+            }
         }
 
         if (defschema == null && deftable != null) {
@@ -653,4 +666,12 @@ public class KafkaCDC implements Runnable {
 
         return partitioncount;
     }
+    private static boolean isValidLong(String str){
+        try{
+            long _v = Long.parseLong(str);
+            return true;
+        }catch(NumberFormatException e){
+          return false;
+        }
+     }
 }

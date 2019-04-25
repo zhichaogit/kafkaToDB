@@ -53,7 +53,7 @@ public class ConsumerThread<T> extends Thread {
     String                      kafkauser;
     String                      kafkapasswd;
 
-    boolean                     full;
+    String                      full;
     boolean                     skip;
     boolean                     bigEndian;
     String                      delimiter;
@@ -70,7 +70,7 @@ public class ConsumerThread<T> extends Thread {
 
     private static Logger       log     = Logger.getLogger(ConsumerThread.class);
 
-    public ConsumerThread(EsgynDB esgyndb_, boolean full_, boolean skip_, boolean bigEndian_,
+    public ConsumerThread(EsgynDB esgyndb_, String full_, boolean skip_, boolean bigEndian_,
             String delimiter_, String format_, String zookeeper_, String broker_, String topic_,
             String groupid_, String encoding_, String key_, String value_,String kafkauser_ ,
             String kafkapasswd_, int partitionID_,long streamTO_, long zkTO_, long commitCount_, 
@@ -133,9 +133,18 @@ public class ConsumerThread<T> extends Thread {
         TopicPartition partition = new TopicPartition(topic, partitionID);
         kafkaconsumer.assign(Arrays.asList(partition));
 
-        if (full) {
-            kafkaconsumer.poll(100);
-            kafkaconsumer.seekToBeginning(Arrays.asList(partition));
+        switch (full) {
+            case "START":
+                kafkaconsumer.seekToBeginning(Arrays.asList(partition));
+                break;
+            case "END":
+                kafkaconsumer.seekToEnd(Arrays.asList(partition));
+                break;
+            case "":
+                break;
+            default:
+                kafkaconsumer.seek(partition, Long.parseLong(full));
+                break;
         }
         // building RowMessage
         try {
