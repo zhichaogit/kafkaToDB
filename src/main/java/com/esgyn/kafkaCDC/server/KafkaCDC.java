@@ -7,12 +7,16 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.kafka.clients.CommonClientConfigs;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.config.SaslConfigs;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
@@ -20,12 +24,6 @@ import org.apache.log4j.xml.DOMConfigurator;
 
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerThread;
-
-import kafka.javaapi.PartitionMetadata;
-import kafka.javaapi.TopicMetadata;
-import kafka.javaapi.TopicMetadataRequest;
-import kafka.javaapi.TopicMetadataResponse;
-import kafka.javaapi.consumer.SimpleConsumer;
 
 public class KafkaCDC implements Runnable {
     private final static String       DEFAULT_LOGCONFPATH   = "conf/log4j.xml";
@@ -59,11 +57,10 @@ public class KafkaCDC implements Runnable {
     String format       = null;
     String groupID      = null;
     int[]  partitions   = null;
-    String partString   = null;
     String topic        = null;
     String zookeeper    = null;
 
-    boolean full        = false;
+    String  full         = null;
     boolean bigEndian   = false;
     boolean skip        = false;
     boolean keepalive   = false;
@@ -226,6 +223,7 @@ public class KafkaCDC implements Runnable {
                 .desc("partition number to process message, one thread only process "
                         + " the data from one partition, default: 16. the format: "
                         + "\"id [, id] ...\", id should be: \"id-id\". example: "
+                        + "\n\t   -p \"-1\" :means process the all partition of this topic."
                         + "\n\ta. -p \"1,4-5,8\" : means process the partition " + "1,4,5 and 8"
                         + "\n\tb. -p 4 : means process the partition 0,1,2 and 3"
                         + "\n\tc. -p \"2-2\" : means process the partition 2")
@@ -251,8 +249,12 @@ public class KafkaCDC implements Runnable {
                 .desc("field delimiter, default: ','(comma)").build();
         Option bigendianOption = Option.builder().longOpt("bigendian").required(false)
                 .desc("the data format is big endian, default: little endian").build();
-        Option fullOption = Option.builder().longOpt("full").required(false)
-                .desc("pull data from beginning, default: false").build();
+        Option fullOption = Option.builder().longOpt("full").required(false).hasArg()
+                .desc("pull data from beginning or End or specify the offset, "
+                        + "default: offset submitted last time."
+                        + "\n\ta. --full start : means pull the all data from the beginning(earliest)"
+                        + "\n\tb. --full end   : means pull the data from the end(latest)"
+                        + "\n\tc. --full 1547  : means pull the data from offset 1547 ").build();
         Option intervalOption = Option.builder().longOpt("interval").required(false).hasArg()
                 .desc("the print state time interval, the unit is second, default: 10s").build();
         Option keepaliveOption = Option.builder().longOpt("keepalive").required(false).hasArg()
@@ -425,7 +427,7 @@ public class KafkaCDC implements Runnable {
         dbpassword = cmdLine.hasOption("dbpw") ? cmdLine.getOptionValue("dbpw") : DEFAULT_PASSWORD;
 
         delimiter = cmdLine.hasOption("delim") ? cmdLine.getOptionValue("delim") : null;
-        full      = cmdLine.hasOption("full") ? true : false;
+        full      = cmdLine.hasOption("full") ? cmdLine.getOptionValue("full") : "";
         bigEndian = cmdLine.hasOption("bigendian") ? true : false;
         interval  =
                 cmdLine.hasOption("interval") ? Long.parseLong(cmdLine.getOptionValue("interval"))
@@ -502,6 +504,15 @@ public class KafkaCDC implements Runnable {
             System.exit(0);
         }
 
+        if (!full.equals("")) {
+            boolean validLong = isValidLong(full);
+            full=full.toUpperCase();
+            if (!validLong&&!full.equals("START")&&!full.equals("END")) {
+              log.error("the --full must have a para: \"start\" or \"end\" or a Long Numeric types");
+              System.exit(0);
+            }
+        }
+
         if (defschema == null && deftable != null) {
             HelpFormatter formatter = new HelpFormatter();
             log.error("if table is specified, schema must be specified too.");
@@ -536,7 +547,11 @@ public class KafkaCDC implements Runnable {
             System.exit(0);
         }
         if (partString.equals("-1")) {
-            partitions=getPartitionArray(broker,topic);
+            partitions=getPartitionArray(broker,topic,kafkauser,kafkapw);
+            if (partitions == null) {
+                log.error("the topic [" + topic + "] maybe not exist in the broker [" +broker+"]");
+                System.exit(0);
+            }
         }
     }
 
@@ -623,41 +638,40 @@ public class KafkaCDC implements Runnable {
     }
 
     // get the partition int[]
-    private static int[] getPartitionArray(String brokerstr, String a_topic) {
+    private static int[] getPartitionArray(String brokerstr, String a_topic,String kafkauser,
+            String kafkapasswd) {
         int[] partitioncount=null;
-        String[] brokers = brokerstr.split(",");
-        for (String broker : brokers) {
-            String[] ipAndPort = broker.split(":");
-            SimpleConsumer consumer = null;
-            try {
-                
-                consumer = new SimpleConsumer(ipAndPort[0], Integer.valueOf(ipAndPort[1]), 
-                        100000, 64 * 1024,"leaderLookup"+new Date().getTime());
-                List<String> topics = Collections.singletonList(a_topic);
-                TopicMetadataRequest req = new TopicMetadataRequest(topics);
-                TopicMetadataResponse resp = consumer.send(req);
 
-                List<TopicMetadata> metaData = resp.topicsMetadata();
-               // just need one topic meataData
-                if(metaData.size()!=0) {
-                    for (TopicMetadata item : metaData) {
-                        List<PartitionMetadata> partitionsMetadata = item.partitionsMetadata();
-                        partitioncount=new int[partitionsMetadata.size()];
-                        for (int i = 0; i < partitionsMetadata.size(); i++) {
-                            partitioncount[i]=partitionsMetadata.get(i).partitionId();
-                        }
-                    }
-                    break;
-                }
-            } catch (Exception e) {
-                log.error("Error communicating with Broker [" + ipAndPort[0]
-                        + "] to find Leader for [" + a_topic + ", ] Reason: " + e);
-            } finally {
-                if (consumer != null)
-                    consumer.close();
-            }
+        Properties props   = new Properties();
+        props.put("bootstrap.servers", brokerstr);
+        props.put("key.deserializer","org.apache.kafka.common.serialization.ByteArrayDeserializer");
+        props.put("value.deserializer",
+                "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+        if (!kafkauser.equals("")) {
+            props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
+            props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
+            props.put("sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule "
+                    + "required username=" + kafkauser + " password="+kafkapasswd+";");
         }
-        Arrays.sort(partitioncount);
+
+        KafkaConsumer<byte[], byte[]> kafkaConsumer = new KafkaConsumer(props);
+        List<PartitionInfo> partitionInfos = kafkaConsumer.partitionsFor(a_topic);
+        partitioncount= new int[partitionInfos.size()];
+        if (partitionInfos.size()!=0) {
+            for (int i = 0; i < partitionInfos.size(); i++) {
+                partitioncount[i]=partitionInfos.get(i).partition();
+            }
+            Arrays.sort(partitioncount);
+        }
+
         return partitioncount;
     }
+    private static boolean isValidLong(String str){
+        try{
+            long _v = Long.parseLong(str);
+            return true;
+        }catch(NumberFormatException e){
+          return false;
+        }
+     }
 }
