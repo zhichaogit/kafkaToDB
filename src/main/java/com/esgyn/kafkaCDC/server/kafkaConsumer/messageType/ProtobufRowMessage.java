@@ -194,6 +194,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 
 
     private ColumnValue get_column(Record message,Column column,TableInfo tableInfo) {
+        String colTypeName = null;
         int sourceType = message.getSourceType();//1.oracle 2.mysql(DRDS)
         offset = 0;
         int index = column.getIndex(); // column index
@@ -214,16 +215,16 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                     log.debug("the data maybe come form oracle,source col index:"+index);
                 }
                 ColumnInfo columnInfo = tableInfo.GetColumn(index);
-                String columnTypeName = columnInfo.GetTypeName();
-                newValue = covertValue1(newNull,newValuebs,columnTypeName);
-                oldValue = covertValue1(oldNull,oldValuebs,columnTypeName);
+                colTypeName = columnInfo.GetTypeName().trim();
+                newValue = covertValue1(newNull,newValuebs,colTypeName);
+                oldValue = covertValue1(oldNull,oldValuebs,colTypeName);
                 break;
             case SOURCEDRDS:
                 if (log.isDebugEnabled()) {
                     log.debug("the data maybe come form mysql(DRDS),source col index:"+index);
                 }
                 ColumnInfo colInfo = tableInfo.GetColumn("\"" + colname.toString() + "\"");
-                String colTypeName = colInfo.GetTypeName();
+                colTypeName = colInfo.GetTypeName().trim();
                 index    = colInfo.GetColumnID();
                 newValue = covertValue2(newNull,newValuebs,colTypeName);
                 oldValue = covertValue2(oldNull,oldValuebs,colTypeName);
@@ -240,7 +241,8 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 
         if (log.isDebugEnabled()) {
             log.debug("colindex [" + index + "] ,colname [" + colname + "]"
-                      + "cur value [" + newValue + "] old value [" + oldValue + "]");
+                      + "cur value [" + newValue + "] old value [" + oldValue + "]"
+                      + "columnTypeName ["+ colTypeName + "]");
         }
         return columnvalue;
     }
@@ -317,7 +319,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             case "NCHAR":
             case "NCHAR VARYING":
             case "LONG VARCHAR":
-            case "Char":
+            case "CHARACTER":
             case "VARCHAR":
                 return true;
             default:
