@@ -280,7 +280,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             }
             value = bytesToString(Valuebs, encode);
             if(value.equals("0000-00-00 00:00:00"))
-            value = null; 
+            value = "0001-01-01 00:00:00"; 
         }
         return value;
     }
