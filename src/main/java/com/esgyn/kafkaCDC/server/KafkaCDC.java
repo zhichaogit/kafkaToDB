@@ -656,14 +656,18 @@ public class KafkaCDC implements Runnable {
 
         KafkaConsumer<byte[], byte[]> kafkaConsumer = new KafkaConsumer(props);
         List<PartitionInfo> partitionInfos = kafkaConsumer.partitionsFor(a_topic);
-        partitioncount= new int[partitionInfos.size()];
-        if (partitionInfos.size()!=0) {
-            for (int i = 0; i < partitionInfos.size(); i++) {
-                partitioncount[i]=partitionInfos.get(i).partition();
+        if (partitionInfos!=null) {
+            partitioncount= new int[partitionInfos.size()];
+            if (partitionInfos.size()!=0) {
+                for (int i = 0; i < partitionInfos.size(); i++) {
+                    partitioncount[i]=partitionInfos.get(i).partition();
+                }
+                Arrays.sort(partitioncount);
             }
-            Arrays.sort(partitioncount);
+        }else {
+            log.error("the topic ["+ a_topic +"] is not exist in this broker ["+brokerstr +"]");
+            System.exit(0);
         }
-
         return partitioncount;
     }
     private static boolean isValidLong(String str){
