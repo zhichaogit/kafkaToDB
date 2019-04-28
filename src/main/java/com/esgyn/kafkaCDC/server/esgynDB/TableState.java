@@ -732,11 +732,16 @@ public class TableState {
         cacheDelete = 0;
     }
 
-    private long insert_row_data(Map<Integer, ColumnValue> row,StringBuffer strBuffer,int offset) throws Exception {
+    private long insert_row_data(Map<Integer, ColumnValue> row,int offset) throws Exception {
         long result = 1;
+        StringBuffer strBuffer=null;
 
         if (log.isTraceEnabled()) {
             log.trace("enter function,offset:["+offset+ "]");
+        }
+
+        if (log.isDebugEnabled()) {
+            strBuffer = new StringBuffer();
         }
 
         for (int i = 0; i < columns.size(); i++) {
@@ -760,6 +765,9 @@ public class TableState {
             insertStmt.addBatch();
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug(strBuffer.toString());
+        }
         if (log.isTraceEnabled()) {
             log.trace("exit function,offset:[" + offset + "], insert row: [" + result + "]");
         }
@@ -774,9 +782,7 @@ public class TableState {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
-        StringBuffer strBuffer =null;
         if (log.isDebugEnabled()) {
-            strBuffer = new StringBuffer();
             log.debug("insert rows [cache row: " + cacheInsert + ", cache: " +
                     + insertRows.size() + "]\n");
         }
@@ -786,16 +792,13 @@ public class TableState {
         for (RowMessage insertRM : insertRows.values()) {
             Map<Integer, ColumnValue> cols = insertRM.GetColumns();
             if (log.isDebugEnabled()) {
-                strBuffer.append("insert row offset: " + offset+ ",rowmessage:"
+                log.debug("insert row offset: " + offset+ ",rowmessage:"
                         +cols.get(0).GetCurValue()+"\n");
             }
 
-            insert_row_data(cols,strBuffer,offset);
+            insert_row_data(cols,offset);
             errRows.put(offset, insertRM);
             offset++;
-        }
-        if (log.isDebugEnabled()) {
-            log.debug(strBuffer.toString());
         }
 
         try {
@@ -819,11 +822,15 @@ public class TableState {
         }
     }
 
-    private long update_row_data(Map<Integer, ColumnValue> row,StringBuffer strBuffer,int offset) throws SQLException  {
+    private long update_row_data(Map<Integer, ColumnValue> row,int offset) throws SQLException  {
         long result = 0;
+        StringBuffer strBuffer = null;
 
         if (log.isTraceEnabled()) {
             log.trace("enter function,offset:["+offset+"]");
+        }
+        if (log.isDebugEnabled()) {
+            strBuffer = new StringBuffer();
         }
 
         ColumnInfo columnInfo = null;
@@ -864,7 +871,6 @@ public class TableState {
         if (log.isDebugEnabled()) {
             strBuffer.append("\tupdate sql [" + updateSql + "]\n");
             log.debug(strBuffer.toString());
-            strBuffer.setLength(0);
         }
 
         Statement st = dbConn.createStatement();
@@ -885,9 +891,7 @@ public class TableState {
             log.trace("enter function");
         }
 
-        StringBuffer strBuffer = null;
         if (log.isDebugEnabled()) {
-            strBuffer = new StringBuffer();
             log.debug("update rows [cache update row: " + cacheUpdate + ", cache updkey row: "
                     + cacheUpdkey + ", cache: " + updateRows.size() + "]");
         }
@@ -899,11 +903,11 @@ public class TableState {
         Map<Integer, RowMessage> errRows = new HashMap<Integer, RowMessage>(0);
         for (RowMessage updateRow : updateRows.values()) {
             if (log.isDebugEnabled()) {
-                strBuffer.append("update row offset: " + offset + "\n");
+                log.debug("update row offset: " + offset + "\n");
             }
             errRows.put(offset, updateRow);
             if (updateRow != null) {
-                update_row_data(updateRow.GetColumns(),strBuffer,offset);
+                update_row_data(updateRow.GetColumns(),offset);
                 offset++;
             }
         }
@@ -913,13 +917,17 @@ public class TableState {
         }
     }
 
-    private long delete_row_data(Map<Integer, ColumnValue> row,StringBuffer strBuffer,int offset) throws Exception {
+    private long delete_row_data(Map<Integer, ColumnValue> row,int offset) throws Exception {
         long result = 1;
+        StringBuffer strBuffer = null;
 
         if (log.isTraceEnabled()) {
             log.trace("enter function ,offset:["+offset +"]");
         }
 
+        if (log.isDebugEnabled()) {
+            strBuffer = new StringBuffer();
+        }
         for (int i = 0; i < keyColumns.size(); i++) {
             ColumnInfo keyInfo = keyColumns.get(i);
             ColumnValue keyValue = row.get(keyInfo.GetColumnOff());
@@ -946,6 +954,9 @@ public class TableState {
             deleteStmt.addBatch();
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug(strBuffer.toString());
+        }
         if (log.isTraceEnabled()) {
             log.trace("enter function,offset:["+ offset +"], delete row [" + result + "]");
         }
@@ -958,9 +969,7 @@ public class TableState {
             log.trace("enter function");
         }
 
-        StringBuffer strBuffer =null;
         if (log.isDebugEnabled()) {
-            strBuffer = new StringBuffer();
             log.debug("delete rows [cache row: " + cacheDelete + ", cache: " + deleteRows.size()
                     + "]");
         }
@@ -972,15 +981,13 @@ public class TableState {
         Map<Integer, RowMessage> errRows = new HashMap<Integer, RowMessage>(0);
         for (RowMessage deleteRow : deleteRows.values()) {
             if (log.isDebugEnabled()) {
-                strBuffer.append("delete row offset: " + offset + "\n");
+                log.debug("delete row offset: " + offset + "\n");
             }
             errRows.put(offset, deleteRow);
-            delete_row_data(deleteRow.GetColumns(),strBuffer,offset);
+            delete_row_data(deleteRow.GetColumns(),offset);
             offset++;
         }
-        if (log.isDebugEnabled()) {
-            log.debug(strBuffer.toString());
-        }
+
         try {
             int[] batchResult = deleteStmt.executeBatch();
         } catch (BatchUpdateException bue) {
