@@ -69,7 +69,7 @@ $KAFKA/bin/kafka-console-producer.sh --broker-list $BROKER --topic $TOPIC < $DAT
 #$KAFKA/bin/kafka-console-consumer.sh --zookeeper $ZOOKEEPER --topic $TOPIC --from-beginning
 KAFKA_CDC="$KAFKA_CDC"
 cd $KAFKA_CDC/bin;
-./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC --delim "${DELIM}" --full --sto 5 --interval 2
+./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC --delim "${DELIM}" --full start --sto 5 --interval 2
 
 #get result file from trafodion
 expect <<-EOF
