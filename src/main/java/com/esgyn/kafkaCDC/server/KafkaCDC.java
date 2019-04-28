@@ -57,6 +57,7 @@ public class KafkaCDC implements Runnable {
     String format       = null;
     String groupID      = null;
     int[]  partitions   = null;
+    int[]  existParts   = null;
     String topic        = null;
     String zookeeper    = null;
 
@@ -546,12 +547,20 @@ public class KafkaCDC implements Runnable {
                     + "They must exist or not exist at the same time ");
             System.exit(0);
         }
+        existParts=getPartitionArray(broker,topic,kafkauser,kafkapw);
         if (partString.equals("-1")) {
-            partitions=getPartitionArray(broker,topic,kafkauser,kafkapw);
+            partitions=existParts;
             if (partitions == null) {
                 log.error("the topic [" + topic + "] maybe not exist in the broker [" +broker+"]");
                 System.exit(0);
             }
+        }else {
+           List notExistPartitions = getNotExistParts(partitions, existParts);
+           if (notExistPartitions.size() !=0) {
+            log.error("there is partitons :"+Arrays.toString(existParts)+"in the topic:["+topic+"]"
+                    + ",but the partitions you specify :"+notExistPartitions + "is not exist in this topic");
+            System.exit(0);
+          }
         }
     }
 
@@ -674,4 +683,18 @@ public class KafkaCDC implements Runnable {
           return false;
         }
      }
+    private static List getNotExistParts(int[] partsArr,int[] existPartsArr) {
+        List existPartitions = new ArrayList<Integer>();
+        List notExistPartitions = new ArrayList<Integer>();
+
+        for (int i = 0; i < existPartsArr.length; i++) {
+            existPartitions.add(existPartsArr[i]);
+        }
+        for (int i = 0; i < partsArr.length; i++) {
+            if (!existPartitions.contains(partsArr[i])) {
+                notExistPartitions.add(partsArr[i]);
+            }
+        }
+        return notExistPartitions;
+    }
 }
