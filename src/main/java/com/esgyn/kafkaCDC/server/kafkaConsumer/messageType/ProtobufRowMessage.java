@@ -293,14 +293,14 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         return value;
     }
 
-    private static String bytesToString(ByteString src, String charSet) {
+    public static String bytesToString(ByteString src, String charSet) {
         if (StringUtils.isEmpty(charSet)) {
             charSet = charSet;
         }
         return bytesToString(src.toByteArray(), charSet);
     }
 
-    private static String bytesToString(byte[] input, String charSet) {
+    public static String bytesToString(byte[] input, String charSet) {
         if (ArrayUtils.isEmpty(input)) {
             return StringUtils.EMPTY;
         }
@@ -320,7 +320,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         return charBuffer.toString();
     }
     //if string type
-    private static boolean insertEmptyStr(String colTypeName) {
+    public static boolean insertEmptyStr(String colTypeName) {
         switch (colTypeName) {
             case "NCHAR":
             case "NCHAR VARYING":

@@ -647,7 +647,7 @@ public class KafkaCDC implements Runnable {
     }
 
     // get the partition int[]
-    private static int[] getPartitionArray(String brokerstr, String a_topic,String kafkauser,
+    public static int[] getPartitionArray(String brokerstr, String a_topic,String kafkauser,
             String kafkapasswd) {
         int[] partitioncount=null;
 
@@ -679,7 +679,7 @@ public class KafkaCDC implements Runnable {
         }
         return partitioncount;
     }
-    private static boolean isValidLong(String str){
+    public static boolean isValidLong(String str){
         try{
             long _v = Long.parseLong(str);
             return true;
@@ -687,7 +687,7 @@ public class KafkaCDC implements Runnable {
           return false;
         }
      }
-    private static List getNotExistParts(int[] partsArr,int[] existPartsArr) {
+    public static List getNotExistParts(int[] partsArr,int[] existPartsArr) {
         List existPartitions = new ArrayList<Integer>();
         List notExistPartitions = new ArrayList<Integer>();
 
