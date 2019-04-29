@@ -254,8 +254,11 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         if (valueNull && Valuebs.size()!=0 ) {
             value = null;
         }else if(valueNull && Valuebs.size()==0){
-	    if(insertEmptyStr(colTypeName.toUpperCase()))
-            value = "";
+	    if(insertEmptyStr(colTypeName.toUpperCase())){
+              value = "";
+            }else if (insert0(colTypeName.toUpperCase())){
+              value = "0";
+            }
         }else {
 	    if(!mtpara.getEncoding().equals("UTF8")){
                 encode = mtpara.getEncoding();
@@ -273,8 +276,11 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         if (valueNull) {
             value = null;
         }else if(Valuebs.size()==0){
-            if(insertEmptyStr(colTypeName.toUpperCase()))
-            value = "";
+            if(insertEmptyStr(colTypeName.toUpperCase())){
+              value = "";
+            }else if (insert0(colTypeName.toUpperCase())){
+              value = "0";
+            }
         }else{
             if(!mtpara.getEncoding().equals("UTF8")){
                 encode = mtpara.getEncoding();
@@ -313,7 +319,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }
         return charBuffer.toString();
     }
-
+    //if string type
     private static boolean insertEmptyStr(String colTypeName) {
         switch (colTypeName) {
             case "NCHAR":
@@ -326,6 +332,24 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 return false;
         }
         
+    }
+    // if num type
+    private static boolean insert0(String colTypeName) {
+        switch (colTypeName) {
+            case "SIGNED SMALLINT":
+            case "SIGNED INTEGER":
+            case "SIGNED NUMERIC":
+            case "UNSIGNED NUMERIC":
+            case "SIGNED DECIMAL":
+            case "UNSIGNED DECIMAL":
+            case "DOUBLE":
+            case "UNSIGNED SMALLINT":
+            case "SIGNED TINYINT":
+            case "UNSIGNED TINYINT":
+                return true;
+            default:
+                return false;
+        }
     }
 
 }

@@ -227,7 +227,8 @@ public class ConsumerThread<T> extends Thread {
 
             esgyndb.AddTotalNum(cacheNum);
             cacheNum = 0;
-
+            esgyndb.AddKafkaPollNum(kafkaPollNum);
+            kafkaPollNum = 0;
             tableState.ClearCache();
         }
         if (tables.size()==0) {
