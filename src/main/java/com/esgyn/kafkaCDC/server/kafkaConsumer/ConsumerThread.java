@@ -46,6 +46,7 @@ public class ConsumerThread<T> extends Thread {
     int                         partitionID;
     long                        commitCount;
     long                        cacheNum;
+    long                        kafkaPollNum;
 
     String                      encoding;
     String                      key;
@@ -89,6 +90,7 @@ public class ConsumerThread<T> extends Thread {
         zkTO = zkTO_;
         commitCount = commitCount_;
         cacheNum = 0;
+        kafkaPollNum = 0;
         bigEndian = bigEndian_;
 
         format = format_;
@@ -210,7 +212,7 @@ public class ConsumerThread<T> extends Thread {
             }
         }
 	if (log.isDebugEnabled()) {
-	    log.trace("kafka commit.");
+	    log.trace("kafka commit.tables:[" + tables.size() + "]");
 	}
         kafkaconsumer.commitSync();
         for (TableState tableState : tables.values()) {
@@ -225,8 +227,13 @@ public class ConsumerThread<T> extends Thread {
 
             esgyndb.AddTotalNum(cacheNum);
             cacheNum = 0;
-
+            esgyndb.AddKafkaPollNum(kafkaPollNum);
+            kafkaPollNum = 0;
             tableState.ClearCache();
+        }
+        if (tables.size()==0) {
+            esgyndb.AddKafkaPollNum(kafkaPollNum);
+            kafkaPollNum = 0;
         }
 	return true;
     }
@@ -241,6 +248,7 @@ public class ConsumerThread<T> extends Thread {
             return false; // timed out
 
         cacheNum += records.count();
+        kafkaPollNum +=records.count();
         ProcessMessages(records);
 
         if(!commit_tables())

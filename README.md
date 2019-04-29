@@ -41,7 +41,11 @@ usage: Consumer Server
 *    --delim <arg>       field delimiter, default: ','(comma)
 * -e,--encode <arg>      character encoding of data, default: "utf8"
 * -f,--format <arg>      format of data, support "Unicom" "UnicomJson" "HongQuan"  "Json" "Protobuf" now, default: ""
-*    --full              pull data from beginning, default: false
+*    --full              pull data from beginning or End or specify the<br>
+                         offset, default: offset submitted last time.<br>
+                         a. --full start : means pull the all data from the beginning(earliest)<br>
+                         b. --full end   : means pull the data from the end(latest)<br>
+                         c. --full 1547  : means pull the data from offset 1547<br>
 * -g,--group <arg>       group for this consumer, default: 0
 * -h,--help              show help information
 *    --interval <arg>    the print state time interval, the unit is second,default: 10s
@@ -53,6 +57,7 @@ usage: Consumer Server
 * -p,--partition <arg>   partition number to process message, one thread only process<br>
                          the data from one partition,default: 16. the format: "id [, id] ...", id <br>
                          should be: "id-id". example:<br>
+                            -p "-1" :means process the all partition of this topic.<br>
                          a. -p "1,4-5,8" : means process the partition 1,4,5 and 8<br>
                          b. -p 4 : means process the partition 0,1,2 and 3 <br>
                          c. -p "2-2" : means process the partition 2<br>
@@ -87,23 +92,23 @@ Must create the schema and tables first of all.
 Must have maven and JDK.
 
 # normal
-* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -s SEABASE --table tab -t test --full --dbuser trafodion --dbpw traf123
-* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -s SEABASE --table tab -t test --full --sto 20 --interval 10 --sto 20  --dbuser trafodion --dbpw traf123 -c 500 -delim "|"
+* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -s SEABASE --table tab -t test --full start -dbuser trafodion --dbpw traf123
+* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -s SEABASE --table tab -t test --full start --sto 20 --interval 10 --sto 20  --dbuser trafodion --dbpw traf123 -c 500 -delim "|"
 # HongQuan
-* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -s SEABASE --table tab -t g_ad --full --dbuser trafodion --dbpw traf123 -f HongQuan -s kafkaCDC --table hqTable  --sto 20 --interval 10 --zkto 20 --key org.apache.kafka.common.serialization.LongDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
+* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -s SEABASE --table tab -t g_ad --full start --dbuser trafodion --dbpw traf123 -f HongQuan -s kafkaCDC --table hqTable  --sto 20 --interval 10 --zkto 20 --key org.apache.kafka.common.serialization.LongDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
 
 # Unicom
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom  -t test
-* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --full --dbuser trafodion --dbpw traf123 -t test
-* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --full --dbuser trafodion --dbpw traf123 -s SEABASE  -t test
-* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --full --dbuser trafodion --dbpw traf123 -s SEABASE --table tab -t test --sto 20 --interval 10 --zkto 20 --dbip localhost -c 500
+* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --full start --dbuser trafodion --dbpw traf123 -t test
+* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --full start --dbuser trafodion --dbpw traf123 -s SEABASE  -t test
+* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --full start --dbuser trafodion --dbpw traf123 -s SEABASE --table tab -t test --sto 20 --interval 10 --zkto 20 --dbip localhost -c 500
 
 # Json
-* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Json --full --dbuser trafodion --dbpw traf123 -s [schemaname] -t testTopic --sto 20 --interval 10 -c 500
+* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Json --full start --dbuser trafodion --dbpw traf123 -s [schemaname] -t testTopic --sto 20 --interval 10 -c 500
 
 # Protobuf
-*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f Protobuf --full --dbuser trafodion --dbpw traf123 -s schemaname -t testTopic -f  --encode GBK --sto 20 --interval 5 -c 50 --key org.apache.kafka.common.serialization.ByteArrayDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
-*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f Protobuf --full --dbuser trafodion --dbpw traf123 -s schemaname -t testTopic -f  --encode GBK --sto 20 --interval 5 -c 50 --key org.apache.kafka.common.serialization.ByteArrayDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer  --kafkauser username --kafkapw password
+*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f Protobuf --full start --dbuser trafodion --dbpw traf123 -s schemaname -t testTopic -f  --encode GBK --sto 20 --interval 5 -c 50 --key org.apache.kafka.common.serialization.ByteArrayDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
+*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f Protobuf --full start --dbuser trafodion --dbpw traf123 -s schemaname -t testTopic -f  --encode GBK --sto 20 --interval 5 -c 50 --key org.apache.kafka.common.serialization.ByteArrayDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer  --kafkauser username --kafkapw password
 
 # UnicomJson And authentication
-*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f UnicomJson --full --dbuser trafodion --dbpw traf123 -s schemaName  -t testTopic --sto 20 --interval 10  -c 500  --kafkauser username --kafkapw passwd
+*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f UnicomJson --full start --dbuser trafodion --dbpw traf123 -s schemaName  -t testTopic --sto 20 --interval 10  -c 500  --kafkauser username --kafkapw passwd

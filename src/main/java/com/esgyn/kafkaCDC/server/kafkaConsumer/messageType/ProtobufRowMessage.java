@@ -194,6 +194,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 
 
     private ColumnValue get_column(Record message,Column column,TableInfo tableInfo) {
+        String colTypeName = null;
         int sourceType = message.getSourceType();//1.oracle 2.mysql(DRDS)
         offset = 0;
         int index = column.getIndex(); // column index
@@ -214,16 +215,16 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                     log.debug("the data maybe come form oracle,source col index:"+index);
                 }
                 ColumnInfo columnInfo = tableInfo.GetColumn(index);
-                String columnTypeName = columnInfo.GetTypeName();
-                newValue = covertValue1(newNull,newValuebs,columnTypeName);
-                oldValue = covertValue1(oldNull,oldValuebs,columnTypeName);
+                colTypeName = columnInfo.GetTypeName().trim();
+                newValue = covertValue1(newNull,newValuebs,colTypeName);
+                oldValue = covertValue1(oldNull,oldValuebs,colTypeName);
                 break;
             case SOURCEDRDS:
                 if (log.isDebugEnabled()) {
                     log.debug("the data maybe come form mysql(DRDS),source col index:"+index);
                 }
                 ColumnInfo colInfo = tableInfo.GetColumn("\"" + colname.toString() + "\"");
-                String colTypeName = colInfo.GetTypeName();
+                colTypeName = colInfo.GetTypeName().trim();
                 index    = colInfo.GetColumnID();
                 newValue = covertValue2(newNull,newValuebs,colTypeName);
                 oldValue = covertValue2(oldNull,oldValuebs,colTypeName);
@@ -240,7 +241,8 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 
         if (log.isDebugEnabled()) {
             log.debug("colindex [" + index + "] ,colname [" + colname + "]"
-                      + "cur value [" + newValue + "] old value [" + oldValue + "]");
+                      + "cur value [" + newValue + "] old value [" + oldValue + "]"
+                      + "columnTypeName ["+ colTypeName + "]");
         }
         return columnvalue;
     }
@@ -252,8 +254,11 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         if (valueNull && Valuebs.size()!=0 ) {
             value = null;
         }else if(valueNull && Valuebs.size()==0){
-	    if(insertEmptyStr(colTypeName.toUpperCase()))
-            value = "";
+	    if(insertEmptyStr(colTypeName.toUpperCase())){
+              value = "";
+            }else if (insert0(colTypeName.toUpperCase())){
+              value = "0";
+            }
         }else {
 	    if(!mtpara.getEncoding().equals("UTF8")){
                 encode = mtpara.getEncoding();
@@ -271,8 +276,11 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         if (valueNull) {
             value = null;
         }else if(Valuebs.size()==0){
-            if(insertEmptyStr(colTypeName.toUpperCase()))
-            value = "";
+            if(insertEmptyStr(colTypeName.toUpperCase())){
+              value = "";
+            }else if (insert0(colTypeName.toUpperCase())){
+              value = "0";
+            }
         }else{
             if(!mtpara.getEncoding().equals("UTF8")){
                 encode = mtpara.getEncoding();
@@ -280,19 +288,19 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             }
             value = bytesToString(Valuebs, encode);
             if(value.equals("0000-00-00 00:00:00"))
-            value = null; 
+            value = "0001-01-01 00:00:00"; 
         }
         return value;
     }
 
-    private static String bytesToString(ByteString src, String charSet) {
+    public static String bytesToString(ByteString src, String charSet) {
         if (StringUtils.isEmpty(charSet)) {
             charSet = charSet;
         }
         return bytesToString(src.toByteArray(), charSet);
     }
 
-    private static String bytesToString(byte[] input, String charSet) {
+    public static String bytesToString(byte[] input, String charSet) {
         if (ArrayUtils.isEmpty(input)) {
             return StringUtils.EMPTY;
         }
@@ -311,19 +319,37 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }
         return charBuffer.toString();
     }
-
-    private static boolean insertEmptyStr(String colTypeName) {
+    //if string type
+    public static boolean insertEmptyStr(String colTypeName) {
         switch (colTypeName) {
             case "NCHAR":
             case "NCHAR VARYING":
             case "LONG VARCHAR":
-            case "Char":
+            case "CHARACTER":
             case "VARCHAR":
                 return true;
             default:
                 return false;
         }
         
+    }
+    // if num type
+    private static boolean insert0(String colTypeName) {
+        switch (colTypeName) {
+            case "SIGNED SMALLINT":
+            case "SIGNED INTEGER":
+            case "SIGNED NUMERIC":
+            case "UNSIGNED NUMERIC":
+            case "SIGNED DECIMAL":
+            case "UNSIGNED DECIMAL":
+            case "DOUBLE":
+            case "UNSIGNED SMALLINT":
+            case "SIGNED TINYINT":
+            case "UNSIGNED TINYINT":
+                return true;
+            default:
+                return false;
+        }
     }
 
 }
