@@ -206,7 +206,7 @@ public class ConsumerThread<T> extends Thread {
 
     public boolean commit_tables() {
         for (TableState tableState : tables.values()) {
-    		if (!tableState.CommitTable(outPutPath)) {
+    		if (!tableState.CommitTable(outPutPath,format)) {
                 if (!skip) 
                 return false;
             }

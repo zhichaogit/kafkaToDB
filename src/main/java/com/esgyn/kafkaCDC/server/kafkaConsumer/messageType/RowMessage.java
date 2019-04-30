@@ -8,12 +8,15 @@ import org.apache.log4j.Logger;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Record;
 
 public class RowMessage<T> implements Cloneable{
     protected static Logger          log          = Logger.getLogger(RowMessage.class);
     public MessageTypePara<T>        mtpara       = null;
     public T                         message_     = null;
     public String                    message      = null;
+    public Record                    messagePro   = null;
+    public byte[]                    data         = null;
     public String                    schemaName   = null;
     public String                    tableName    = null;
     public String                    delimiter    = "\\,";

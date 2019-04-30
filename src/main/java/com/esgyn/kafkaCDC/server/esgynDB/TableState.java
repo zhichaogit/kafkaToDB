@@ -24,6 +24,7 @@ import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 public class TableState {
     private String                         schemaName  = null;
     private String                         tableName   = null;
+    private String                         format      = null;
 
     private long                           cacheInsert = 0;
     private long                           cacheUpdate = 0;
@@ -535,13 +536,13 @@ public class TableState {
         return 1;
     }
 
-    public boolean CommitTable(String outPutPath ) {
+    public boolean CommitTable(String outPutPath,String format_ ) {
         if (log.isDebugEnabled()) {
             log.info("commit table [" + schemaName + "." + tableName + ", insert: "
                     + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
                     + deleteRows.size() + "] ");
         }
-
+        format=format_;
         try {
             insert_data();
             update_data();
@@ -649,14 +650,39 @@ public class TableState {
                  MessageTypePara mtpara=null;
                  if (rowMessage!=null) {
                      mtpara = rowMessage.mtpara;
-                     String parsedMess = rowMessage.message;
-                     if (mtpara!=null) 
-                     messagesource = mtpara.getMessage();
-
-                     log.error("throw BatchUpdateException when deal whith the kafka message . offs"
-                               + "et:["+mtpara.getOffset()+"],operate type:["+parsedMess+"],"
-                               + "source message:["+mtpara.getMessage() +"]\n"
-                               + "parsed message:["+parsedMess+"]"); 
+                     if (mtpara!=null) {
+   
+                     switch (format) {
+                        case "Protobuf":
+                            log.error("Error on request #" + i +": Execute failed,\n"
+                                    + "throw BatchUpdateException when deal whith the kafka message . offs"
+                                    + "et:["+mtpara.getOffset()+"],operate type:["+rowMessage.GetOperatorType()+"],"
+                                    + "source message:["+mtpara.getMessage() +"]\n"
+                                    + "parsed message:["+rowMessage.messagePro+"]");
+                            break;
+                        case "Json":
+                        case "Unicom":
+                        case "UnicomJson":
+                            log.error("Error on request #" + i +": Execute failed,\n"
+                                    + "throw BatchUpdateException when deal whith the kafka message . offs"
+                                    + "et:["+mtpara.getOffset()+"],operate type:["+rowMessage.GetOperatorType()+"],"
+                                    + "source message:["+mtpara.getMessage() +"]");
+                            break;
+                        case "HongQuan":
+                            log.error("Error on request #" + i +": Execute failed,\n"
+                                    + "throw BatchUpdateException when deal whith the kafka message . offs"
+                                    + "et:["+mtpara.getOffset()+"],operate type:["+rowMessage.GetOperatorType()+"],"
+                                    + "source message:["+mtpara.getMessage() +"]\n"
+                                    + "parsed message:["+new String((rowMessage.data))+"]");
+                            break;
+                        default:
+                            log.error("Error on request #" + i +": Execute failed,\n"
+                                    + "throw BatchUpdateException when deal whith the kafka message . offs"
+                                    + "et:["+mtpara.getOffset()+"],operate type:["+rowMessage.GetOperatorType()+"],"
+                                    + "source message:["+mtpara.getMessage() +"]");
+                            break;
+                     }
+                    }
                  }
              }
          }
