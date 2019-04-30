@@ -783,7 +783,13 @@ public class TableState {
                     strBuffer.append("\tcolumn: " + i + ", value [" + columnValue.GetCurValue() 
                                      + "]\n");
                 }
-                insertStmt.setString(i + 1, columnValue.GetCurValue());
+                try {
+                    insertStmt.setString(i + 1, columnValue.GetCurValue());
+                } catch (Exception e) {
+                    log.error("\nThere is a error when set value to insertStmt, the paramInt,["
+                            +(i+1)+","+columnValue.GetCurValue()+"]");
+                    throw e;
+                }
             }
         }
 
@@ -821,8 +827,12 @@ public class TableState {
                 log.debug("insert row offset: " + offset+ ",rowmessage:"
                         +cols.get(0).GetCurValue()+"\n");
             }
-
-            insert_row_data(cols,offset);
+            try {
+                insert_row_data(cols,offset);
+            } catch (Exception e) {
+                matchErr(insertRM);
+                throw e;
+            }
             errRows.put(offset, insertRM);
             offset++;
         }
@@ -900,7 +910,12 @@ public class TableState {
         }
 
         Statement st = dbConn.createStatement();
-        st.executeUpdate(updateSql);
+        try {
+            st.executeUpdate(updateSql);
+        } catch (SQLException se) {
+            log.error("\nthere is a error when execute the update sql,the execute sql:["+updateSql+"]");
+            throw se;
+        }
         st.close();
 
         result = 1;
@@ -933,7 +948,12 @@ public class TableState {
             }
             errRows.put(offset, updateRow);
             if (updateRow != null) {
-                update_row_data(updateRow.GetColumns(),offset);
+                try {
+                    update_row_data(updateRow.GetColumns(),offset);
+                } catch (SQLException se) {
+                    matchErr(updateRow);
+                    throw se;
+                }
                 offset++;
             }
         }
@@ -972,7 +992,13 @@ public class TableState {
                     strBuffer.append("\tkey id:" + i + ", column id:" + keyInfo.GetColumnOff() 
                             + ", key [" + keyValue.GetOldValue() + "]");
                 }
-                deleteStmt.setString(i + 1, keyValue.GetOldValue());
+                try {
+                    deleteStmt.setString(i + 1, keyValue.GetOldValue());
+                } catch (Exception e) {
+                    log.error("\nThere is a error when set value to deleteStmt, the paramInt,["
+                            +(i+1)+","+keyValue.GetOldValue()+"]");
+                    throw e;
+                }
             }
         }
 
@@ -1010,7 +1036,12 @@ public class TableState {
                 log.debug("delete row offset: " + offset + "\n");
             }
             errRows.put(offset, deleteRow);
+            try {
             delete_row_data(deleteRow.GetColumns(),offset);
+            } catch (Exception e) {
+                matchErr(deleteRow);
+                throw e;
+            }
             offset++;
         }
 
@@ -1032,6 +1063,37 @@ public class TableState {
         if (log.isTraceEnabled()) {
             log.trace("exit function");
         }
+    }
+    public void matchErr(RowMessage operateRM) {
+        if (operateRM.mtpara!=null) {
+            switch (format) {
+                case "Protobuf":
+                    log.error("kafka offset:["+operateRM.mtpara.getOffset()+"],"
+                            + "operate type:["+operateRM.GetOperatorType()+"],"
+                            + "source message:["+operateRM.mtpara.getMessage() +"]\n"
+                            + "parsed message:["+operateRM.messagePro+"]");
+                    break;
+                case "Json":
+                case "Unicom":
+                case "UnicomJson":
+                    log.error("kafka offset:["+operateRM.mtpara.getOffset()+"],"
+                            + "operate type:["+operateRM.GetOperatorType()+"],"
+                            + "source message:["+operateRM.mtpara.getMessage() +"]\n");
+                    break;
+                case "HongQuan":
+                    log.error("kafka offset:["+operateRM.mtpara.getOffset()+"],"
+                            + "operate type:["+operateRM.GetOperatorType()+"],"
+                            + "source message:["+operateRM.mtpara.getMessage() +"]\n"
+                            + "parsed message:["+new String((operateRM.data)) +"]");
+                    break;
+
+                default:
+                    log.error("kafka offset:["+operateRM.mtpara.getOffset()+"],"
+                            + "operate type:["+operateRM.GetOperatorType()+"],"
+                            + "source message:["+operateRM.mtpara.getMessage() +"]");
+                    break;
+            }
+            }
     }
 
     public String GetTableName() {
