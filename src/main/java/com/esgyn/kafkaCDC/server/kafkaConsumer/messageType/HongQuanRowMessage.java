@@ -19,7 +19,6 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
     private static Logger           log         = Logger.getLogger(HongQuanRowMessage.class);
 
     private int                     length      = 0;
-    private byte[]                  data        = null;
     private EsgynDB                 esgyndb     = null;
     private Map<String, TableState> tables      = null;
     private int[]                   fieldSizes  = null;

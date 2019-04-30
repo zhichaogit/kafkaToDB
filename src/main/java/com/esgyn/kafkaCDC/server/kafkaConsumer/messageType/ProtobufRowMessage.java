@@ -34,7 +34,6 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 
     String                catlogName               = null;
     String                emptystr                 = "";
-    Record                message                  = null;
     EsgynDB               esgynDB                  = null;
     private final int     INSERT_DRDS              = 0;
     private final int     UPDATE_DRDS              = 1;
@@ -60,7 +59,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         super.init(mtpara_);
 	 try {
 	    byte[] rec = mtpara_.getMessage();
-            message = MessageDb.Record.parseFrom(rec);
+            messagePro = MessageDb.Record.parseFrom(rec);
         } catch (InvalidProtocolBufferException e) {
             log.error("parseFrom Record has error ,make sure you data pls"+ e.getMessage());
             e.printStackTrace();
@@ -78,9 +77,9 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         
         TableInfo tableInfo = null;
         // transaction information
-        String tableNamePro = message.getTableName();
-        int keyColNum = message.getKeyColumnList().size(); // keycol size
-        int colNum = message.getColumnList().size(); //col size
+        String tableNamePro = messagePro.getTableName();
+        int keyColNum = messagePro.getKeyColumnList().size(); // keycol size
+        int colNum = messagePro.getColumnList().size(); //col size
 
         String[] names = tableNamePro.split("[.]");
         if (names.length == 3) {
@@ -102,7 +101,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         if (tableName==null) 
           tableName = esgynDB.GetDefaultTable();
           tableInfo = esgynDB.GetTableInfo(schemaName + "." + tableName);        
-          int operationType = message.getOperationType();
+          int operationType = messagePro.getOperationType();
 
 	if (tableInfo == null) {
             if (log.isDebugEnabled()) {
@@ -116,7 +115,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         if (log.isDebugEnabled()) {
             strBuffer = new StringBuffer();
 
-            strBuffer.append("Raw message:[" + message.toString() + "]\n");
+            strBuffer.append("Raw message:[" + messagePro.toString() + "]\n");
             strBuffer.append(
                     "Operator Info: [Table Name: " + tableName + ", Type: " + operationType + "]\n");
         }
@@ -124,7 +123,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         columns = new HashMap<Integer, ColumnValue>(0);
         // get keycolumn
         for (int i = 0; i < keyColNum; i++) {
-            Column column = message.getKeyColumnList().get(i);
+            Column column = messagePro.getKeyColumnList().get(i);
             if (log.isDebugEnabled()) {
                 strBuffer.append("\tColumn: " + column);
             }
@@ -137,17 +136,17 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 }
             }
 
-            ColumnValue columnvalue = get_column(message,column,tableInfo);
+            ColumnValue columnvalue = get_column(messagePro,column,tableInfo);
 
             columns.put(columnvalue.GetColumnID(), columnvalue);
         }
         // get column
         for (int i = 0; i < colNum; i++) {
-            Column column = message.getColumnList().get(i);
+            Column column = messagePro.getColumnList().get(i);
             if (log.isDebugEnabled()) {
                 strBuffer.append("\tColumn: " + column);
             }
-            ColumnValue columnvalue = get_column(message,column,tableInfo);
+            ColumnValue columnvalue = get_column(messagePro,column,tableInfo);
 
             columns.put(columnvalue.GetColumnID(), columnvalue);
         }

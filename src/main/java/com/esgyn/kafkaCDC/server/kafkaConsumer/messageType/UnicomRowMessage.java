@@ -25,7 +25,6 @@ public class UnicomRowMessage extends RowMessage<String> {
     String                catlogName        = null;
     String                timestamp         = null;
     String                emptystr          = "";
-    String                message           = null;
 
     public UnicomRowMessage() {}
 

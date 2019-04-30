@@ -27,7 +27,6 @@ public class JsonRowMessage extends RowMessage<String> {
     JsonNode              dataJsonNode       = null;
     JsonNode              oldJsonNode        = null;
     EsgynDB               esgynDB            = null;
-    String                message            = null;
 
     public JsonRowMessage() {}
 

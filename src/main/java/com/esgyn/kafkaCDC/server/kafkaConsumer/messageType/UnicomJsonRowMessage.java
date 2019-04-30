@@ -27,7 +27,6 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
     JsonNode              columnJsonNode     = null;
     JsonNode              keyColJsonNode     = null;
     EsgynDB               esgynDB            = null;
-    String                message            = null;
     String                colNewData         = null;
     String                colOldData         = null;
 
