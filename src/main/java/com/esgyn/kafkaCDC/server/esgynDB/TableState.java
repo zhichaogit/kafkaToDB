@@ -390,9 +390,8 @@ public class TableState {
 
     public long UpdateRowWithKey(RowMessage rowMessage) {
         if (log.isTraceEnabled()) {
-            log.trace("exit function");
+            log.trace("enter function");
         }
-
         Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
         String message = rowMessage.GetMessage();
         String oldkey = get_key_value(message, rowValues, false);
@@ -406,71 +405,55 @@ public class TableState {
         if (oldkey == null || newkey == null)
             return 0;
 
-        RowMessage insertRM = insertRows.get(oldkey);
-        if (insertRM !=null) {
+        RowMessage insertRM = insertRows.get(newkey);
+
+        if (insertRM != null) {
             Map<Integer, ColumnValue> insertRow = insertRM.GetColumns();
             if (insertRow != null) {
-                /*
-                 * exist in insert map, must be not exist in update and delete update the 
-                 * insert row in memory
-                 */
-                for (ColumnValue value : rowValues.values()) {
-                    insertRow.put(value.GetColumnID(), new ColumnValue(value));
+            /*
+             * exist in insert map, must be not exist in update and delete update the insert row in
+             * memory
+             */
+                if (insertRow != null) {
+                    if (log.isDebugEnabled()) {
+                        log.error("updkey row key is exist in insert cache,newkey [" + newkey + "]," 
+                            +"the message ["+ message + "]");
+                    }
+                    return 0;
                 }
-
-                if (log.isDebugEnabled()) {
-                    log.debug("updkey row key [" + oldkey + "] exist in insert cache");
-                }
-
-                // remove old key
-                insertRows.remove(oldkey);
-
-                // insert the new key
-                insertRM.columns = insertRow;
-                insertRows.put(newkey, insertRM);
-
-                // delete the old key on disk
-                if (!oldkey.equals(newkey))
-                deleteRows.put(oldkey, rowMessage);
             }
         } else {
+        if (log.isTraceEnabled()) {
+                log.trace("the newkey ["+newkey+"] not exist in insertRows");
+            }
             RowMessage deleteRM = deleteRows.get(oldkey);
+
             if (deleteRM != null) {
-            Map<Integer, ColumnValue> deleterow = deleteRM.GetColumns();
+                Map<Integer, ColumnValue> deleterow = deleteRM.GetColumns();
                 if (deleterow != null) {
                     if (log.isDebugEnabled()) {
-                        log.error("update row key is exist in delete cache [" + oldkey
-                                + "], the message [" + message + "]");
+                        log.error("update row key is exist in delete cache [" + oldkey + "]," 
+                            +"the message ["+ message + "]");
                     }
                     return 0;
                 }
             } else {
+                if (log.isTraceEnabled()) {
+                    log.trace("update row key is not exist in delete cache ");
+                }
                 RowMessage updateRM = updateRows.get(oldkey);
-                
                 Map<Integer, ColumnValue> updateRow = null;
                 if (updateRM != null) {
                     updateRow = updateRM.GetColumns();
                     if (log.isDebugEnabled()) {
-                        log.debug(
-                            "updkey row [key: " + oldkey + "] in update cache [" + updateRow + "]");
+                        log.debug("updkey row [key: " + oldkey + "] in update cache [" + updateRow + "]");
                     }
                     if (updateRow != null) {
-                        ColumnValue cacheValue;
-
-                        for (ColumnValue value : rowValues.values()) {
-                            cacheValue = updateRow.get(value.GetColumnID());
-                            if (cacheValue != null) {
-                                value = new ColumnValue(value.GetColumnID(), value.GetCurValue(),
-                                        cacheValue.GetOldValue());
-                                updateRow.put(value.GetColumnID(), value);
-                            } else {
-                                updateRow.put(value.GetColumnID(), new ColumnValue(value));
-                            }
-                        }
-                        // delete the old update message
                         updateRows.remove(oldkey);
                     }
-                } else {
+
+                updateRows.put(newkey, rowMessage);
+                }else {
                     updateRow = new HashMap<Integer, ColumnValue>(0);
                     for (ColumnValue value : rowValues.values()) {
                         updateRow.put(value.GetColumnID(), new ColumnValue(value));
@@ -478,25 +461,17 @@ public class TableState {
                     updateRM = rowMessage;
                     updateRM.columns = updateRow;
                 }
-
                 // add new insert message
                 updateRows.put(newkey, updateRM);
-
-                // delete the data on the disk
-                if (!oldkey.equals(newkey)){
-                    rowMessage.columns = rowValues;
-                    deleteRows.put(oldkey, rowMessage);
-                }  
             }
         }
-
         cacheUpdkey++;
+
         if (log.isTraceEnabled()) {
-            log.trace("exit function cache updkey [rows: " + cacheUpdkey + ", insert: "
+            log.trace("exit function cache updateKey [rows: " + cacheUpdkey + ", insert: "
                     + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
                     + deleteRows.size() + "]");
         }
-
         return 1;
     }
 
