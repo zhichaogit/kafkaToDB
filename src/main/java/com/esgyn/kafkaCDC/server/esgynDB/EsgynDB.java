@@ -43,6 +43,10 @@ public class EsgynDB {
     private long           updateNum   = 0;
     private long           deleteNum   = 0;
 
+    private long           errInsertNum   = 0;
+    private long           errUpdateNum   = 0;
+    private long           errDeleteNum   = 0;
+
     private long           maxSpeed    = 0;
     private long           interval    = 0;
 
@@ -431,6 +435,18 @@ public class EsgynDB {
         deleteNum += deleteNum_;
     }
 
+    public synchronized void AddErrInsertNum(long errInsertNum_) {
+        errInsertNum += errInsertNum_;
+    }
+
+    public synchronized void AddErrUpdateNum(long errUpdateNum_) {
+        errUpdateNum += errUpdateNum_;
+    }
+
+    public synchronized void AddErrDeleteNum(long errDeleteNum_) {
+        errDeleteNum += errDeleteNum_;
+    }
+
     public synchronized void AddTotalNum(long totalMsgNum_) {
         totalMsgNum += totalMsgNum_;
     }
@@ -449,6 +465,12 @@ public class EsgynDB {
             maxSpeed = curSpeed;
         DecimalFormat df = new DecimalFormat("####0.000");
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        String totalMess = String.format("\t%-50s"
+                + " database opertors " + "[insert: " + insertNum + ", update: " + updateNum
+                + ", delete: " + deleteNum + "]\n"
+                + "\t%-50s faild count [insert: " + errInsertNum + ", update: " + errUpdateNum
+                + ", delete: " + errDeleteNum + "]\n", "messages [I: " + insMsgNum + ", U: " + updMsgNum
+                + ", K: " + keyMsgNum + ", D: " + delMsgNum + "]","");
 
         StringBuffer strBuffer = new StringBuffer();
         strBuffer.append("kafkaPoll states:\n\tkafkaPollNum ["+kafkaMsgNum+"]\n");
@@ -456,10 +478,7 @@ public class EsgynDB {
                 + ", process total: " + messageNum + ", process inc: " + incMessage
                 + "], speed [max: " + maxSpeed + "/s, avg: " + avgSpeed + "/s, cur: " + curSpeed
                 + "/s]\n\ttime [run: " + df.format(useTime) + "s, start: " + sdf.format(startTime)
-                + ", cur: " + sdf.format(endTime) + "]\n\tmessages [I: " + insMsgNum + ", U: "
-                + updMsgNum + ", K: " + keyMsgNum + ", D: " + delMsgNum + "]\tdatabase opertors "
-                + "[insert: " + insertNum + ", update: " + updateNum + ", delete: " + deleteNum
-                + "]\n");
+                + ", cur: " + sdf.format(endTime) + "]\n" + totalMess);
         for (TableInfo tableInfo : tables.values()) {
             tableInfo.DisplayStat(strBuffer);
         }

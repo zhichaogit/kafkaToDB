@@ -17,6 +17,10 @@ public class TableInfo {
     private long             keyMsgNum     = 0;
     private long             delMsgNum     = 0;
 
+    private long             errInsNum     = 0;
+    private long             errUpdNum     = 0;
+    private long             errDelNum     = 0;
+
     private long             insertNum     = 0;
     private long             updateNum     = 0;
     private long             deleteNum     = 0;
@@ -125,12 +129,27 @@ public class TableInfo {
         delMsgNum += rows;
     }
 
+    public synchronized void IncErrInsNum(long rows) {
+        errInsNum += rows;
+    }
+
+    public synchronized void IncErrUpdNum(long rows) {
+        errUpdNum += rows;
+    }
+
+    public synchronized void IncErrDelNum(long rows) {
+        errDelNum += rows;
+    }
+
+
+
     public void DisplayStat(StringBuffer strBuffer) {
         String tableString = String.format(
-                "\t%-32s messages [I: %d, U: %d, K: %d, D: %d], table"
-                        + " operators [insert: %d, update: %d, delete: %d]\n",
-                schemaName + "." + tableName, insMsgNum, updMsgNum, keyMsgNum, delMsgNum, insertNum,
-                updateNum, deleteNum);
+                "\t%-50s messages [I: %d, U: %d, K: %d, D: %d]\n"
+                        + "\t%-50s table operators   [insert: %d, update: %d, delete: %d]\n"
+                        + "\t%-50s table faild count [insert: %d, update: %d, delete: %d]\n",
+                schemaName + "." + tableName, insMsgNum, updMsgNum, keyMsgNum, delMsgNum, "",
+                insertNum, updateNum, deleteNum,"" ,errInsNum, errUpdNum, errDelNum);
         strBuffer.append(tableString);
     }
 }

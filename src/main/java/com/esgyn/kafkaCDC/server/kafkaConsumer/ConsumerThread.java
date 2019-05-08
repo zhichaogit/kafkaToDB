@@ -207,6 +207,12 @@ public class ConsumerThread<T> extends Thread {
     public boolean commit_tables() {
         for (TableState tableState : tables.values()) {
     		if (!tableState.CommitTable(outPutPath,format)) {
+                esgyndb.AddErrInsertNum(tableState.GetErrInsertRows());
+                esgyndb.AddErrUpdateNum(tableState.GetErrUpdateRows());
+                esgyndb.AddErrDeleteNum(tableState.GetErrDeleteRows());
+                esgyndb.AddKafkaPollNum(kafkaPollNum);
+                kafkaPollNum = 0;
+                tableState.ClearCache();
                 if (!skip) 
                 return false;
             }

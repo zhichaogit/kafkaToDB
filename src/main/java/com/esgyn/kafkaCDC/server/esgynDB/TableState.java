@@ -31,9 +31,13 @@ public class TableState {
     private long                           cacheUpdkey = 0;
     private long                           cacheDelete = 0;
 
+    private long                           errInsert   = 0;
+    private long                           errUpdate   = 0;
+    private long                           errDelete   = 0;
+
     private boolean                        commited    = true;
     private boolean                        havePK      = false;
-    private boolean                        multiable   = false;;
+    private boolean                        multiable   = false;
 
     private Connection                     dbConn      = null;
     private TableInfo                      tableInfo   = null;
@@ -659,6 +663,7 @@ public class TableState {
                      }
                     }
                  }
+                 errInsert ++;
              }
          }
         if (log.isDebugEnabled()) {
@@ -723,6 +728,10 @@ public class TableState {
             tableInfo.IncDelMsgNum(cacheDelete);
         }
 
+            tableInfo.IncErrInsNum(errInsert);
+            tableInfo.IncErrUpdNum(errUpdate);
+            tableInfo.IncDelMsgNum(errDelete);
+
         insertRows.clear();
         updateRows.clear();
         deleteRows.clear();
@@ -731,6 +740,10 @@ public class TableState {
         cacheUpdate = 0;
         cacheUpdkey = 0;
         cacheDelete = 0;
+
+        errInsert = 0;
+        errUpdate = 0;
+        errDelete = 0;
     }
 
     private long insert_row_data(Map<Integer, ColumnValue> row,int offset) throws Exception {
@@ -806,6 +819,7 @@ public class TableState {
                 insert_row_data(cols,offset);
             } catch (Exception e) {
                 matchErr(insertRM);
+                errInsert++;
                 throw e;
             }
             errRows.put(offset, insertRM);
@@ -820,9 +834,10 @@ public class TableState {
             printBatchErrMess(insertCounts,errRows);
             throw bue;
         } catch (IndexOutOfBoundsException iobe) {
-            
+           errInsert++;
            throw iobe;
         }catch (SQLException se) {
+            errInsert++;
             throw se;
         }finally {
             errRows.clear();
@@ -927,6 +942,7 @@ public class TableState {
                     update_row_data(updateRow.GetColumns(),offset);
                 } catch (SQLException se) {
                     matchErr(updateRow);
+                    errUpdate++;
                     throw se;
                 }
                 offset++;
@@ -1015,6 +1031,7 @@ public class TableState {
             delete_row_data(deleteRow.GetColumns(),offset);
             } catch (Exception e) {
                 matchErr(deleteRow);
+                errDelete++;
                 throw e;
             }
             offset++;
@@ -1024,12 +1041,15 @@ public class TableState {
             int[] batchResult = deleteStmt.executeBatch();
         } catch (BatchUpdateException bue) {
             // print the error data 
-            int[] insertCounts = bue.getUpdateCounts();
-            printBatchErrMess(insertCounts,errRows);
+            int[] deleteCounts = bue.getUpdateCounts();
+            printBatchErrMess(deleteCounts,errRows);
+            errDelete+=deleteCounts.length;
             throw bue;
         }catch (IndexOutOfBoundsException iobe) {
+            errDelete++;
            throw iobe;
         }catch (SQLException se) {
+            errDelete++;
             throw se;
         }finally {
             errRows.clear();
@@ -1134,6 +1154,18 @@ public class TableState {
 
     public long GetDeleteRows() {
         return commited ? deleteRows.size() : 0;
+    }
+
+    public long GetErrInsertRows() {
+        return errInsert;
+    }
+
+    public long GetErrUpdateRows() {
+        return errUpdate;
+    }
+
+    public long GetErrDeleteRows() {
+        return errDelete;
     }
 
     public long InsertMessageToTable(RowMessage urm) {
