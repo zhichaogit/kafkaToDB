@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Properties;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.kafka.common.errors.WakeupException;
@@ -338,8 +339,20 @@ public class ConsumerThread<T> extends Thread {
         if (!urm.init(typeMessage))
             return;
 
-        if (!urm.AnalyzeMessage())
+        if (!urm.AnalyzeMessage()){
+            if (esgyndb.GetDefaultTable() != null) {
+                if (log.isTraceEnabled()) {
+                    log.trace("colse the InsertStmt And DeleteStmt");
+                }
+                try {
+                    tableState.getInsertStmt().close();
+                    tableState.getDeleteStmt().close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
             return;
+        }
 
         if (log.isDebugEnabled()) {
             log.debug("operatorType[" + urm.GetOperatorType() + "]\n" + "cacheNum [" + cacheNum
