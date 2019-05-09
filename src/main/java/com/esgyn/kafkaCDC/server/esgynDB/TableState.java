@@ -25,6 +25,7 @@ public class TableState {
     private String                         schemaName  = null;
     private String                         tableName   = null;
     private String                         format      = null;
+    private int                            retry       = 0;
 
     private long                           cacheInsert = 0;
     private long                           cacheUpdate = 0;
@@ -578,18 +579,10 @@ public class TableState {
             commited = false;
             log.error("batch update table [" + schemaName + "." + tableName
                     + "] throw SQLException: " + se.getMessage());
-            if (log.isDebugEnabled()) {
-                do {
-                    se.printStackTrace();
-                    se = se.getNextException();
-                } while (se != null);
-            } else {
+            do {
                 se.printStackTrace();
                 se = se.getNextException();
-                if (se != null) {
-                    se.printStackTrace();
-                }
-            }
+            } while (se != null);
 
             return false;
         } catch (Exception e) {
@@ -602,7 +595,18 @@ public class TableState {
         } finally {
             try {
                 if (commited) {
-                    dbConn.commit();
+                    try {
+                      dbConn.commit();
+                    }catch(SQLException se){
+                      int errorCode = se.getErrorCode();
+                      if (retry<3 && (errorCode==8616 || errorCode==-8616)) {
+                        retry++;
+                        log.warn("commit table conflict, retry["+retry+"] time");
+                        dbConn.rollback();
+                        CommitTable(outPutPath,format);
+                      }
+                      throw se;
+                    }
                 } else {
                     dbConn.rollback();
                     werrToFile(outPutPath);
