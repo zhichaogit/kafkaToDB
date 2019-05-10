@@ -1211,12 +1211,4 @@ public class TableState {
     public TableInfo GetTableInfo() {
         return tableInfo;
     }
-
-    public PreparedStatement getInsertStmt() {
-        return insertStmt;
-    }
-
-    public PreparedStatement getDeleteStmt() {
-        return deleteStmt;
-    }
 }

@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Properties;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.kafka.common.errors.WakeupException;
@@ -320,12 +319,6 @@ public class ConsumerThread<T> extends Thread {
                 }
 
                 tableState = new TableState(tableInfo);
-                if (!tableState.InitStmt(dbConn,skip)) {
-                    if (log.isDebugEnabled()) {
-                        log.warn("init the table [" + tableName + "] fail!");
-                    }
-                    return;
-                }
             } else {
                 if (log.isTraceEnabled()) {
                     log.debug(" tableInfo if null [" + (tableState.GetTableInfo() == null) + "]");
@@ -339,20 +332,8 @@ public class ConsumerThread<T> extends Thread {
         if (!urm.init(typeMessage))
             return;
 
-        if (!urm.AnalyzeMessage()){
-            if (esgyndb.GetDefaultTable() != null) {
-                if (log.isTraceEnabled()) {
-                    log.trace("colse the InsertStmt And DeleteStmt");
-                }
-                try {
-                    tableState.getInsertStmt().close();
-                    tableState.getDeleteStmt().close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
+        if (!urm.AnalyzeMessage())
             return;
-        }
 
         if (log.isDebugEnabled()) {
             log.debug("operatorType[" + urm.GetOperatorType() + "]\n" + "cacheNum [" + cacheNum
@@ -380,16 +361,18 @@ public class ConsumerThread<T> extends Thread {
                 }
 
                 tableState = new TableState(tableInfo);
-                if (!tableState.InitStmt(dbConn,skip)) {
-                    if (log.isDebugEnabled()) {
-                        log.warn("init the table [" + tableName + "] fail!");
-                    }
-                    return;
-                }
             }
         }
-	RowMessage<T> urmClone = null;
-	try {
+
+        if (!tableState.InitStmt(dbConn,skip)) {
+            if (log.isDebugEnabled()) {
+                log.warn("init the table [" + tableName + "] fail!");
+            }
+            return;
+        }
+
+	    RowMessage<T> urmClone = null;
+	    try {
             urmClone = (RowMessage)urm.clone();
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();
