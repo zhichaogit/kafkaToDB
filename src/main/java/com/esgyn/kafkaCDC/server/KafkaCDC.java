@@ -12,6 +12,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.config.SaslConfigs;
 
+import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -53,6 +54,7 @@ public class KafkaCDC implements Runnable {
     private static Logger log = Logger.getLogger(KafkaCDC.class);
 
     long   commitCount  = DEFAULT_COMMIT_COUNT;
+    boolean aconn       = false;
     String broker       = DEFAULT_BROKER;
     String format       = null;
     String groupID      = null;
@@ -164,6 +166,8 @@ public class KafkaCDC implements Runnable {
          * Get command line args
          * 
          * Cmd line params: 
+         *    --aconn <arg>  specify one connection for esgyndb,not need arg.
+         *                  default: multiple connections
          * -b --broker <arg> broker location (node0:9092[,node1:9092]) 
          * -c --commit <arg> num message per Kakfa synch/pull (num recs, default is 5000) 
          * -d --dbip <arg> database server ip 
@@ -199,6 +203,9 @@ public class KafkaCDC implements Runnable {
          *    --kafkapw <arg> kafka passwd , default: ""
          */
         Options exeOptions = new Options();
+        Option aconnOption = Option.builder().longOpt("aconn").required(false)
+                .desc("specify one connection for esgyndb,not need arg."
+                        + " default: multiple connections").build();
         Option brokerOption = Option.builder("b").longOpt("broker").required(false).hasArg().desc(
                 "bootstrap.servers setting, ex: <node>:9092, default: " + "\"localhost:9092\"")
                 .build();
@@ -283,6 +290,7 @@ public class KafkaCDC implements Runnable {
         Option kafkapwOption = Option.builder().longOpt("kafkapw").required(false).hasArg()
                 .desc("kafka password , default: \"\"").build();
 
+        exeOptions.addOption(aconnOption);
         exeOptions.addOption(brokerOption);
         exeOptions.addOption(commitOption);
         exeOptions.addOption(dbipOption);
@@ -343,6 +351,7 @@ public class KafkaCDC implements Runnable {
         }
 
         // for the required options, move the value
+        aconn = cmdLine.hasOption("aconn") ? true : false;
         broker = cmdLine.hasOption("broker") ? cmdLine.getOptionValue("broker") : DEFAULT_BROKER;
         commitCount = cmdLine.hasOption("commit") ? Long.parseLong(cmdLine.getOptionValue("commit"))
                 : DEFAULT_COMMIT_COUNT;
@@ -582,6 +591,7 @@ public class KafkaCDC implements Runnable {
 
         strBuffer.append("KafkaCDC start time: " + sdf.format(starttime));
         strBuffer.append("\n\tbigendian   = " + me.bigEndian);
+        strBuffer.append("\n\toneConnect  = " + me.aconn);
         strBuffer.append("\n\tbroker      = " + me.broker);
         strBuffer.append("\n\tcommitCount = " + me.commitCount);
         strBuffer.append("\n\tdelimiter   = \"" + me.delimiter + "\"");
@@ -613,12 +623,16 @@ public class KafkaCDC implements Runnable {
                 me.dbpassword, me.interval, me.commitCount, me.format.equals("HongQuan"));
         me.consumers = new ArrayList<ConsumerThread>(0);
 
+        Connection dbConn   = null;
+        if (me.aconn)
+        dbConn = me.esgyndb.CreateConnection(false);
+
         for (int partition : me.partitions) {
             // connect to kafka w/ either zook setting
             ConsumerThread consumer = new ConsumerThread(me.esgyndb, me.full, me.skip, me.bigEndian,
                     me.delimiter, me.format, me.zookeeper, me.broker, me.topic, me.groupID,
                     me.charEncoding, me.key, me.value,me.kafkauser,me.kafkapw, partition,
-                    me.streamTO, me.zkTO,me.commitCount, me.messageClass,me.outpath);
+                    me.streamTO, me.zkTO,me.commitCount, me.messageClass,me.outpath,dbConn,me.aconn);
             consumer.setName("ConsumerThread-" + partition);
             me.consumers.add(consumer);
             consumer.start();
@@ -640,6 +654,10 @@ public class KafkaCDC implements Runnable {
             }
         }
 
+        if (me.aconn) {
+            log.info("close connection");
+            me.esgyndb.CloseConnection(dbConn);
+        }
         log.info("all of sub threads were stoped");
 
         Date endtime = new Date();
