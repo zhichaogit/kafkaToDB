@@ -145,11 +145,11 @@ public class TableInfo {
 
     public void DisplayStat(StringBuffer strBuffer) {
         String tableString = String.format(
-                "\t%-50s messages [I: %d, U: %d, K: %d, D: %d]\n"
-                        + "\t%-50s table operators   [insert: %d, update: %d, delete: %d]\n"
-                        + "\t%-50s table faild count [insert: %d, update: %d, delete: %d]\n",
-                schemaName + "." + tableName, insMsgNum, updMsgNum, keyMsgNum, delMsgNum, "",
-                insertNum, updateNum, deleteNum,"" ,errInsNum, errUpdNum, errDelNum);
+                "  %s\tMsgs [ %d, %d, %d, %d]"
+                        + " DMLs [ %d, %d, %d]"
+                        + " Fails [ %d, %d, %d]\n",
+                schemaName + "." + tableName, insMsgNum, updMsgNum, keyMsgNum, delMsgNum,
+                insertNum, updateNum, deleteNum, errInsNum, errUpdNum, errDelNum);
         strBuffer.append(tableString);
     }
 }

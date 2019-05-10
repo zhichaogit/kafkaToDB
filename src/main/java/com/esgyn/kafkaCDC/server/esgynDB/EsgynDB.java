@@ -465,20 +465,17 @@ public class EsgynDB {
             maxSpeed = curSpeed;
         DecimalFormat df = new DecimalFormat("####0.000");
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-        String totalMess = String.format("\t%-50s"
-                + " database opertors " + "[insert: " + insertNum + ", update: " + updateNum
-                + ", delete: " + deleteNum + "]\n"
-                + "\t%-50s faild count [insert: " + errInsertNum + ", update: " + errUpdateNum
-                + ", delete: " + errDeleteNum + "]\n", "messages [I: " + insMsgNum + ", U: " + updMsgNum
-                + ", K: " + keyMsgNum + ", D: " + delMsgNum + "]","");
 
         StringBuffer strBuffer = new StringBuffer();
-        strBuffer.append("kafkaPoll states:\n\tkafkaPollNum ["+kafkaMsgNum+"]\n");
-        strBuffer.append("consumer states: \n\tmessages [total: " + totalMsgNum
-                + ", process total: " + messageNum + ", process inc: " + incMessage
-                + "], speed [max: " + maxSpeed + "/s, avg: " + avgSpeed + "/s, cur: " + curSpeed
-                + "/s]\n\ttime [run: " + df.format(useTime) + "s, start: " + sdf.format(startTime)
-                + ", cur: " + sdf.format(endTime) + "]\n" + totalMess);
+        strBuffer.append("kafkaPoll states:\n  kafkaPollNum ["+kafkaMsgNum+"]\n");
+        strBuffer.append("Consumer messages [ " + totalMsgNum
+                + " processed: " + messageNum + " increased: " + incMessage
+                + "], speed(n/s) [max: " + maxSpeed + ", avg: " + avgSpeed + ", cur: " + curSpeed
+                + "]\n  Run time        [ " + df.format(useTime) + "s, start: " + sdf.format(startTime)
+                + ", cur: " + sdf.format(endTime) + "]\n  KafkaTotalMsgs  [I: " + insMsgNum + ", U: " + updMsgNum
+                + ", K: " + keyMsgNum + ", D: " + delMsgNum + "] DMLs [insert: " + insertNum + ", update: " + updateNum
+                + ", delete: " + deleteNum + "] Fails [insert: " + errInsertNum + ", update: " + errUpdateNum
+                + ", delete: " + errDeleteNum + "]\n");
         for (TableInfo tableInfo : tables.values()) {
             tableInfo.DisplayStat(strBuffer);
         }
