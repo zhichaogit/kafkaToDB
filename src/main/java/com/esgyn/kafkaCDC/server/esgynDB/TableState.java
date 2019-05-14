@@ -579,10 +579,18 @@ public class TableState {
             commited = false;
             log.error("batch update table [" + schemaName + "." + tableName
                     + "] throw SQLException: " + se.getMessage());
-            do {
+            if (log.isDebugEnabled()) {
+                do {
+                    se.printStackTrace();
+                    se = se.getNextException();
+                } while (se != null);
+            } else {
                 se.printStackTrace();
                 se = se.getNextException();
-            } while (se != null);
+                if (se != null) {
+                    se.printStackTrace();
+                }
+            }
 
             return false;
         } catch (Exception e) {
