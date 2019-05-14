@@ -413,18 +413,16 @@ public class TableState {
 
         if (insertRM != null) {
             Map<Integer, ColumnValue> insertRow = insertRM.GetColumns();
-            if (insertRow != null) {
             /*
              * exist in insert map, must be not exist in update and delete update the insert row in
              * memory
              */
-                if (insertRow != null) {
-                    if (log.isDebugEnabled()) {
-                        log.error("updkey row key is exist in insert cache,newkey [" + newkey + "]," 
-                            +"the message ["+ message + "]");
-                    }
-                    return 0;
+            if (insertRow != null) {
+                if (log.isDebugEnabled()) {
+                    log.error("updkey row key is exist in insert cache,newkey [" + newkey + "],"
+                        +"the message ["+ message + "]");
                 }
+                return 0;
             }
         } else {
         if (log.isTraceEnabled()) {
@@ -453,10 +451,22 @@ public class TableState {
                         log.debug("updkey row [key: " + oldkey + "] in update cache [" + updateRow + "]");
                     }
                     if (updateRow != null) {
+                        ColumnValue cacheValue;
+
+                        for (ColumnValue value : rowValues.values()) {
+                            cacheValue = updateRow.get(value.GetColumnID());
+                            if (cacheValue != null) {
+                                value = new ColumnValue(value.GetColumnID(), value.GetCurValue(),
+                                        cacheValue.GetOldValue());
+                                updateRow.put(value.GetColumnID(), value);
+                            } else {
+                                updateRow.put(value.GetColumnID(), new ColumnValue(value));
+                            }
+                        }
+                        updateRM.columns=updateRow;
+                        // delete the old update message
                         updateRows.remove(oldkey);
                     }
-
-                updateRows.put(newkey, rowMessage);
                 }else {
                     updateRow = new HashMap<Integer, ColumnValue>(0);
                     for (ColumnValue value : rowValues.values()) {
