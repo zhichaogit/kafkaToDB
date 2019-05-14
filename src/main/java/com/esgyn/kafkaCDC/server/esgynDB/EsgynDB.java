@@ -43,6 +43,10 @@ public class EsgynDB {
     private long           updateNum   = 0;
     private long           deleteNum   = 0;
 
+    private long           errInsertNum   = 0;
+    private long           errUpdateNum   = 0;
+    private long           errDeleteNum   = 0;
+
     private long           maxSpeed    = 0;
     private long           interval    = 0;
 
@@ -431,6 +435,18 @@ public class EsgynDB {
         deleteNum += deleteNum_;
     }
 
+    public synchronized void AddErrInsertNum(long errInsertNum_) {
+        errInsertNum += errInsertNum_;
+    }
+
+    public synchronized void AddErrUpdateNum(long errUpdateNum_) {
+        errUpdateNum += errUpdateNum_;
+    }
+
+    public synchronized void AddErrDeleteNum(long errDeleteNum_) {
+        errDeleteNum += errDeleteNum_;
+    }
+
     public synchronized void AddTotalNum(long totalMsgNum_) {
         totalMsgNum += totalMsgNum_;
     }
@@ -451,15 +467,15 @@ public class EsgynDB {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
         StringBuffer strBuffer = new StringBuffer();
-        strBuffer.append("kafkaPoll states:\n\tkafkaPollNum ["+kafkaMsgNum+"]\n");
-        strBuffer.append("consumer states: \n\tmessages [total: " + totalMsgNum
-                + ", process total: " + messageNum + ", process inc: " + incMessage
-                + "], speed [max: " + maxSpeed + "/s, avg: " + avgSpeed + "/s, cur: " + curSpeed
-                + "/s]\n\ttime [run: " + df.format(useTime) + "s, start: " + sdf.format(startTime)
-                + ", cur: " + sdf.format(endTime) + "]\n\tmessages [I: " + insMsgNum + ", U: "
-                + updMsgNum + ", K: " + keyMsgNum + ", D: " + delMsgNum + "]\tdatabase opertors "
-                + "[insert: " + insertNum + ", update: " + updateNum + ", delete: " + deleteNum
-                + "]\n");
+        strBuffer.append("kafkaPoll states:\n  kafkaPollNum ["+kafkaMsgNum+"]\n");
+        strBuffer.append("Consumer messages [ " + totalMsgNum
+                + " processed: " + messageNum + " increased: " + incMessage
+                + "], speed(n/s) [max: " + maxSpeed + ", avg: " + avgSpeed + ", cur: " + curSpeed
+                + "]\n  Run time        [ " + df.format(useTime) + "s, start: " + sdf.format(startTime)
+                + ", cur: " + sdf.format(endTime) + "]\n  KafkaTotalMsgs  [I: " + insMsgNum + ", U: " + updMsgNum
+                + ", K: " + keyMsgNum + ", D: " + delMsgNum + "] DMLs [insert: " + insertNum + ", update: " + updateNum
+                + ", delete: " + deleteNum + "] Fails [insert: " + errInsertNum + ", update: " + errUpdateNum
+                + ", delete: " + errDeleteNum + "]\n");
         for (TableInfo tableInfo : tables.values()) {
             tableInfo.DisplayStat(strBuffer);
         }

@@ -31,9 +31,13 @@ public class TableState {
     private long                           cacheUpdkey = 0;
     private long                           cacheDelete = 0;
 
+    private long                           errInsert   = 0;
+    private long                           errUpdate   = 0;
+    private long                           errDelete   = 0;
+
     private boolean                        commited    = true;
     private boolean                        havePK      = false;
-    private boolean                        multiable   = false;;
+    private boolean                        multiable   = false;
 
     private Connection                     dbConn      = null;
     private TableInfo                      tableInfo   = null;
@@ -390,9 +394,8 @@ public class TableState {
 
     public long UpdateRowWithKey(RowMessage rowMessage) {
         if (log.isTraceEnabled()) {
-            log.trace("exit function");
+            log.trace("enter function");
         }
-
         Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
         String message = rowMessage.GetMessage();
         String oldkey = get_key_value(message, rowValues, false);
@@ -406,53 +409,46 @@ public class TableState {
         if (oldkey == null || newkey == null)
             return 0;
 
-        RowMessage insertRM = insertRows.get(oldkey);
-        if (insertRM !=null) {
+        RowMessage insertRM = insertRows.get(newkey);
+
+        if (insertRM != null) {
             Map<Integer, ColumnValue> insertRow = insertRM.GetColumns();
+            /*
+             * exist in insert map, must be not exist in update and delete update the insert row in
+             * memory
+             */
             if (insertRow != null) {
-                /*
-                 * exist in insert map, must be not exist in update and delete update the 
-                 * insert row in memory
-                 */
-                for (ColumnValue value : rowValues.values()) {
-                    insertRow.put(value.GetColumnID(), new ColumnValue(value));
-                }
-
                 if (log.isDebugEnabled()) {
-                    log.debug("updkey row key [" + oldkey + "] exist in insert cache");
+                    log.error("updkey row key is exist in insert cache,newkey [" + newkey + "],"
+                        +"the message ["+ message + "]");
                 }
-
-                // remove old key
-                insertRows.remove(oldkey);
-
-                // insert the new key
-                insertRM.columns = insertRow;
-                insertRows.put(newkey, insertRM);
-
-                // delete the old key on disk
-                if (!oldkey.equals(newkey))
-                deleteRows.put(oldkey, rowMessage);
+                return 0;
             }
         } else {
+        if (log.isTraceEnabled()) {
+                log.trace("the newkey ["+newkey+"] not exist in insertRows");
+            }
             RowMessage deleteRM = deleteRows.get(oldkey);
+
             if (deleteRM != null) {
-            Map<Integer, ColumnValue> deleterow = deleteRM.GetColumns();
+                Map<Integer, ColumnValue> deleterow = deleteRM.GetColumns();
                 if (deleterow != null) {
                     if (log.isDebugEnabled()) {
-                        log.error("update row key is exist in delete cache [" + oldkey
-                                + "], the message [" + message + "]");
+                        log.error("update row key is exist in delete cache [" + oldkey + "]," 
+                            +"the message ["+ message + "]");
                     }
                     return 0;
                 }
             } else {
+                if (log.isTraceEnabled()) {
+                    log.trace("update row key is not exist in delete cache ");
+                }
                 RowMessage updateRM = updateRows.get(oldkey);
-                
                 Map<Integer, ColumnValue> updateRow = null;
                 if (updateRM != null) {
                     updateRow = updateRM.GetColumns();
                     if (log.isDebugEnabled()) {
-                        log.debug(
-                            "updkey row [key: " + oldkey + "] in update cache [" + updateRow + "]");
+                        log.debug("updkey row [key: " + oldkey + "] in update cache [" + updateRow + "]");
                     }
                     if (updateRow != null) {
                         ColumnValue cacheValue;
@@ -467,10 +463,11 @@ public class TableState {
                                 updateRow.put(value.GetColumnID(), new ColumnValue(value));
                             }
                         }
+                        updateRM.columns=updateRow;
                         // delete the old update message
                         updateRows.remove(oldkey);
                     }
-                } else {
+                }else {
                     updateRow = new HashMap<Integer, ColumnValue>(0);
                     for (ColumnValue value : rowValues.values()) {
                         updateRow.put(value.GetColumnID(), new ColumnValue(value));
@@ -478,25 +475,17 @@ public class TableState {
                     updateRM = rowMessage;
                     updateRM.columns = updateRow;
                 }
-
                 // add new insert message
                 updateRows.put(newkey, updateRM);
-
-                // delete the data on the disk
-                if (!oldkey.equals(newkey)){
-                    rowMessage.columns = rowValues;
-                    deleteRows.put(oldkey, rowMessage);
-                }  
             }
         }
-
         cacheUpdkey++;
+
         if (log.isTraceEnabled()) {
-            log.trace("exit function cache updkey [rows: " + cacheUpdkey + ", insert: "
+            log.trace("exit function cache updateKey [rows: " + cacheUpdkey + ", insert: "
                     + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
                     + deleteRows.size() + "]");
         }
-
         return 1;
     }
 
@@ -684,6 +673,7 @@ public class TableState {
                      }
                     }
                  }
+                 errInsert ++;
              }
          }
         if (log.isDebugEnabled()) {
@@ -748,6 +738,10 @@ public class TableState {
             tableInfo.IncDelMsgNum(cacheDelete);
         }
 
+            tableInfo.IncErrInsNum(errInsert);
+            tableInfo.IncErrUpdNum(errUpdate);
+            tableInfo.IncDelMsgNum(errDelete);
+
         insertRows.clear();
         updateRows.clear();
         deleteRows.clear();
@@ -756,6 +750,10 @@ public class TableState {
         cacheUpdate = 0;
         cacheUpdkey = 0;
         cacheDelete = 0;
+
+        errInsert = 0;
+        errUpdate = 0;
+        errDelete = 0;
     }
 
     private long insert_row_data(Map<Integer, ColumnValue> row,int offset) throws Exception {
@@ -831,6 +829,7 @@ public class TableState {
                 insert_row_data(cols,offset);
             } catch (Exception e) {
                 matchErr(insertRM);
+                errInsert++;
                 throw e;
             }
             errRows.put(offset, insertRM);
@@ -845,9 +844,10 @@ public class TableState {
             printBatchErrMess(insertCounts,errRows);
             throw bue;
         } catch (IndexOutOfBoundsException iobe) {
-            
+           errInsert++;
            throw iobe;
         }catch (SQLException se) {
+            errInsert++;
             throw se;
         }finally {
             errRows.clear();
@@ -952,6 +952,7 @@ public class TableState {
                     update_row_data(updateRow.GetColumns(),offset);
                 } catch (SQLException se) {
                     matchErr(updateRow);
+                    errUpdate++;
                     throw se;
                 }
                 offset++;
@@ -1040,6 +1041,7 @@ public class TableState {
             delete_row_data(deleteRow.GetColumns(),offset);
             } catch (Exception e) {
                 matchErr(deleteRow);
+                errDelete++;
                 throw e;
             }
             offset++;
@@ -1049,12 +1051,15 @@ public class TableState {
             int[] batchResult = deleteStmt.executeBatch();
         } catch (BatchUpdateException bue) {
             // print the error data 
-            int[] insertCounts = bue.getUpdateCounts();
-            printBatchErrMess(insertCounts,errRows);
+            int[] deleteCounts = bue.getUpdateCounts();
+            printBatchErrMess(deleteCounts,errRows);
+            errDelete+=deleteCounts.length;
             throw bue;
         }catch (IndexOutOfBoundsException iobe) {
+            errDelete++;
            throw iobe;
         }catch (SQLException se) {
+            errDelete++;
             throw se;
         }finally {
             errRows.clear();
@@ -1159,6 +1164,18 @@ public class TableState {
 
     public long GetDeleteRows() {
         return commited ? deleteRows.size() : 0;
+    }
+
+    public long GetErrInsertRows() {
+        return errInsert;
+    }
+
+    public long GetErrUpdateRows() {
+        return errUpdate;
+    }
+
+    public long GetErrDeleteRows() {
+        return errDelete;
     }
 
     public long InsertMessageToTable(RowMessage urm) {
