@@ -554,7 +554,7 @@ public class TableState {
                     + "] throw BatchUpdateException: " + bue.getMessage());
             SQLException se = bue;
 
-            if (true) {
+            if (log.isDebugEnabled()) {
                 do {
                     se.printStackTrace();
                     se = se.getNextException();
