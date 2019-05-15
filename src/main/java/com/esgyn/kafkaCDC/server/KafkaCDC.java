@@ -636,14 +636,6 @@ public class KafkaCDC implements Runnable {
             consumer.setName("ConsumerThread-" + partition);
             me.consumers.add(consumer);
             consumer.start();
-            if (me.aconn) {
-                try {
-                    log.info("waiting consumer [" + consumer.getName() + "] stop");
-                    consumer.join();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
         }
 
         me.running = me.partitions.length;
@@ -652,14 +644,13 @@ public class KafkaCDC implements Runnable {
 
         log.info("start up CtrlCThread");
         ctrltrhead.run();
-        if (!me.aconn) {
-            for (ConsumerThread consumer : me.consumers) {
-                try {
-                    log.info("waiting consumer [" + consumer.getName() + "] stop");
-                    consumer.join();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+
+        for (ConsumerThread consumer : me.consumers) {
+            try {
+                log.info("waiting consumer [" + consumer.getName() + "] stop");
+                consumer.join();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 

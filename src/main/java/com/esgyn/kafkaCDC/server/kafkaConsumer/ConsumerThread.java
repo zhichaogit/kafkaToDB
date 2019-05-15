@@ -211,8 +211,17 @@ public class ConsumerThread<T> extends Thread {
             log.trace("exit function");
         }
     }
-
     public boolean commit_tables() {
+        if (aconn) {
+            synchronized (ConsumerThread.class) {
+                return commit_tables_();
+            }
+        }else {
+            return commit_tables_();
+        }
+    }
+
+    public boolean commit_tables_() {
         for (TableState tableState : tables.values()) {
     		if (!tableState.CommitTable(outPutPath,format)) {
                 esgyndb.AddErrInsertNum(tableState.GetErrInsertRows());
@@ -225,9 +234,9 @@ public class ConsumerThread<T> extends Thread {
                 return false;
             }
         }
-	if (log.isDebugEnabled()) {
-	    log.trace("kafka commit.tables:[" + tables.size() + "]");
-	}
+        if (log.isDebugEnabled()) {
+            log.trace("kafka commit.tables:[" + tables.size() + "]");
+        }
         kafkaconsumer.commitSync();
         for (TableState tableState : tables.values()) {
             esgyndb.AddInsMsgNum(tableState.GetCacheInsert());
@@ -377,16 +386,22 @@ public class ConsumerThread<T> extends Thread {
                 tableState = new TableState(tableInfo);
             }
         }
-
-        if (!tableState.InitStmt(dbConn,skip)) {
+        boolean isInitStmt=false;
+        if (aconn) {
+            synchronized (ConsumerThread.class) {
+              isInitStmt= tableState.InitStmt(dbConn,skip);
+            }
+        }else {
+            isInitStmt= tableState.InitStmt(dbConn,skip);
+        }
+        if (!isInitStmt) {
             if (log.isDebugEnabled()) {
                 log.warn("init the table [" + tableName + "] fail!");
             }
             return;
         }
-
-	    RowMessage<T> urmClone = null;
-	    try {
+	RowMessage<T> urmClone = null;
+	try {
             urmClone = (RowMessage)urm.clone();
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();
