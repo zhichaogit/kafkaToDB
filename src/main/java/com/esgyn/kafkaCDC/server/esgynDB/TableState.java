@@ -25,6 +25,7 @@ public class TableState {
     private String                         schemaName  = null;
     private String                         tableName   = null;
     private String                         format      = null;
+    private int                            retry       = 0;
 
     private long                           cacheInsert = 0;
     private long                           cacheUpdate = 0;
@@ -591,7 +592,18 @@ public class TableState {
         } finally {
             try {
                 if (commited) {
-                    dbConn.commit();
+                    try {
+                      dbConn.commit();
+                    }catch(SQLException se){
+                      int errorCode = se.getErrorCode();
+                      if (retry<3 && (errorCode==8616 || errorCode==-8616)) {
+                        retry++;
+                        log.warn("commit table conflict, retry["+retry+"] time");
+                        dbConn.rollback();
+                        CommitTable(outPutPath,format);
+                      }
+                      throw se;
+                    }
                 } else {
                     dbConn.rollback();
                     werrToFile(outPutPath);
@@ -644,8 +656,10 @@ public class TableState {
                      switch (format) {
                         case "Protobuf":
                             log.error("Error on request #" + i +": Execute failed,\n"
-                                    + "throw BatchUpdateException when deal whith the kafka message . offs"
-                                    + "et:["+mtpara.getOffset()+"],operate type:["+rowMessage.GetOperatorType()+"],"
+                                    + "throw BatchUpdateException when deal whith the kafka message ."
+                                    + "offset:["+mtpara.getOffset()+"],"
+                                    + "table:["+rowMessage.schemaName+"."+rowMessage.tableName+"],"
+                                    + "operate type:["+rowMessage.GetOperatorType()+"],"
                                     + "source message:["+mtpara.getMessage() +"]\n"
                                     + "parsed message:["+rowMessage.messagePro+"]");
                             break;
@@ -653,21 +667,27 @@ public class TableState {
                         case "Unicom":
                         case "UnicomJson":
                             log.error("Error on request #" + i +": Execute failed,\n"
-                                    + "throw BatchUpdateException when deal whith the kafka message . offs"
-                                    + "et:["+mtpara.getOffset()+"],operate type:["+rowMessage.GetOperatorType()+"],"
+                                    + "throw BatchUpdateException when deal whith the kafka message ."
+                                    + "offset:["+mtpara.getOffset()+"],"
+                                    + "table:["+rowMessage.schemaName+"."+rowMessage.tableName+"],"
+                                    + "operate type:["+rowMessage.GetOperatorType()+"],"
                                     + "source message:["+mtpara.getMessage() +"]");
                             break;
                         case "HongQuan":
                             log.error("Error on request #" + i +": Execute failed,\n"
-                                    + "throw BatchUpdateException when deal whith the kafka message . offs"
-                                    + "et:["+mtpara.getOffset()+"],operate type:["+rowMessage.GetOperatorType()+"],"
+                                    + "throw BatchUpdateException when deal whith the kafka message ."
+                                    + "table:["+rowMessage.schemaName+"."+rowMessage.tableName+"],"
+                                    + "offset:["+mtpara.getOffset()+"],"
+                                    + "operate type:["+rowMessage.GetOperatorType()+"],"
                                     + "source message:["+mtpara.getMessage() +"]\n"
                                     + "parsed message:["+new String((rowMessage.data))+"]");
                             break;
                         default:
                             log.error("Error on request #" + i +": Execute failed,\n"
-                                    + "throw BatchUpdateException when deal whith the kafka message . offs"
-                                    + "et:["+mtpara.getOffset()+"],operate type:["+rowMessage.GetOperatorType()+"],"
+                                    + "throw BatchUpdateException when deal whith the kafka message ."
+                                    + "table:["+rowMessage.schemaName+"."+rowMessage.tableName+"],"
+                                    + "offset:["+mtpara.getOffset()+"],"
+                                    + "operate type:["+rowMessage.GetOperatorType()+"],"
                                     + "source message:["+mtpara.getMessage() +"]");
                             break;
                      }
@@ -1074,6 +1094,7 @@ public class TableState {
             switch (format) {
                 case "Protobuf":
                     log.error("kafka offset:["+operateRM.mtpara.getOffset()+"],"
+                            + "table:["+operateRM.schemaName+"."+operateRM.tableName+"],"
                             + "operate type:["+operateRM.GetOperatorType()+"],"
                             + "source message:["+operateRM.mtpara.getMessage() +"]\n"
                             + "parsed message:["+operateRM.messagePro+"]");
@@ -1082,11 +1103,13 @@ public class TableState {
                 case "Unicom":
                 case "UnicomJson":
                     log.error("kafka offset:["+operateRM.mtpara.getOffset()+"],"
+                            + "table:["+operateRM.schemaName+"."+operateRM.tableName+"],"
                             + "operate type:["+operateRM.GetOperatorType()+"],"
                             + "source message:["+operateRM.mtpara.getMessage() +"]\n");
                     break;
                 case "HongQuan":
                     log.error("kafka offset:["+operateRM.mtpara.getOffset()+"],"
+                            + "table:["+operateRM.schemaName+"."+operateRM.tableName+"],"
                             + "operate type:["+operateRM.GetOperatorType()+"],"
                             + "source message:["+operateRM.mtpara.getMessage() +"]\n"
                             + "parsed message:["+new String((operateRM.data)) +"]");
@@ -1094,6 +1117,7 @@ public class TableState {
 
                 default:
                     log.error("kafka offset:["+operateRM.mtpara.getOffset()+"],"
+                            + "table:["+operateRM.schemaName+"."+operateRM.tableName+"],"
                             + "operate type:["+operateRM.GetOperatorType()+"],"
                             + "source message:["+operateRM.mtpara.getMessage() +"]");
                     break;

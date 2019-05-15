@@ -325,12 +325,6 @@ public class ConsumerThread<T> extends Thread {
                 }
 
                 tableState = new TableState(tableInfo);
-                if (!tableState.InitStmt(dbConn,skip)) {
-                    if (log.isDebugEnabled()) {
-                        log.warn("init the table [" + tableName + "] fail!");
-                    }
-                    return;
-                }
             } else {
                 if (log.isTraceEnabled()) {
                     log.debug(" tableInfo if null [" + (tableState.GetTableInfo() == null) + "]");
@@ -373,16 +367,18 @@ public class ConsumerThread<T> extends Thread {
                 }
 
                 tableState = new TableState(tableInfo);
-                if (!tableState.InitStmt(dbConn,skip)) {
-                    if (log.isDebugEnabled()) {
-                        log.warn("init the table [" + tableName + "] fail!");
-                    }
-                    return;
-                }
             }
         }
-	RowMessage<T> urmClone = null;
-	try {
+
+        if (!tableState.InitStmt(dbConn,skip)) {
+            if (log.isDebugEnabled()) {
+                log.warn("init the table [" + tableName + "] fail!");
+            }
+            return;
+        }
+
+	    RowMessage<T> urmClone = null;
+	    try {
             urmClone = (RowMessage)urm.clone();
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();
