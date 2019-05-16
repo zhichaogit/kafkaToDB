@@ -64,6 +64,7 @@ public class ConsumerThread<T> extends Thread {
     KafkaConsumer<?, ?>         kafkaconsumer;
     private final AtomicBoolean running = new AtomicBoolean(true);
     Connection                  dbConn  = null;
+    boolean                     aconn   = false;
     RowMessage<T>               urm     = null;
     // e.g.:com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.UnicomRowMessage
     private String              messageClass;
@@ -75,7 +76,7 @@ public class ConsumerThread<T> extends Thread {
             String delimiter_, String format_, String zookeeper_, String broker_, String topic_,
             String groupid_, String encoding_, String key_, String value_,String kafkauser_ ,
             String kafkapasswd_, int partitionID_,long streamTO_, long zkTO_, long commitCount_, 
-            String messageClass_,String outPutPath_) {
+            String messageClass_,String outPutPath_,Connection dbConn_,boolean aconn_) {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
@@ -103,10 +104,14 @@ public class ConsumerThread<T> extends Thread {
         skip = skip_;
         messageClass = messageClass_;
         outPutPath = outPutPath_;
+        aconn = aconn_;
 
         tables = new HashMap<String, TableState>(0);
         Properties props = new Properties();
 
+        if (aconn) {
+            dbConn=dbConn_;
+        }
         if (zookeeper != null) {
             props.put("zookeeper.connect", zookeeper);
         } else {
@@ -174,6 +179,7 @@ public class ConsumerThread<T> extends Thread {
         }
 
         try {
+            if (!aconn)
             dbConn = esgyndb.CreateConnection(false);
             log.info("consumer server started.");
             while (running.get()) {
@@ -193,8 +199,10 @@ public class ConsumerThread<T> extends Thread {
         } finally {
             log.info("commit the cached record");
             commit_tables();
-            log.info("close connection");
-            esgyndb.CloseConnection(dbConn);
+            if (!aconn) {
+                log.info("close connection");
+                esgyndb.CloseConnection(dbConn);
+            }
             esgyndb.DisplayDatabase();
             kafkaconsumer.close();
             running.set(false);
@@ -203,8 +211,17 @@ public class ConsumerThread<T> extends Thread {
             log.trace("exit function");
         }
     }
-
     public boolean commit_tables() {
+        if (aconn) {
+            synchronized (ConsumerThread.class) {
+                return commit_tables_();
+            }
+        }else {
+            return commit_tables_();
+        }
+    }
+
+    public boolean commit_tables_() {
         for (TableState tableState : tables.values()) {
     		if (!tableState.CommitTable(outPutPath,format)) {
                 esgyndb.AddErrInsertNum(tableState.GetErrInsertRows());
@@ -217,9 +234,9 @@ public class ConsumerThread<T> extends Thread {
                 return false;
             }
         }
-	if (log.isDebugEnabled()) {
-	    log.trace("kafka commit.tables:[" + tables.size() + "]");
-	}
+        if (log.isDebugEnabled()) {
+            log.trace("kafka commit.tables:[" + tables.size() + "]");
+        }
         kafkaconsumer.commitSync();
         for (TableState tableState : tables.values()) {
             esgyndb.AddInsMsgNum(tableState.GetCacheInsert());
@@ -369,16 +386,22 @@ public class ConsumerThread<T> extends Thread {
                 tableState = new TableState(tableInfo);
             }
         }
-
-        if (!tableState.InitStmt(dbConn,skip)) {
+        boolean isInitStmt=false;
+        if (aconn) {
+            synchronized (ConsumerThread.class) {
+              isInitStmt= tableState.InitStmt(dbConn,skip);
+            }
+        }else {
+            isInitStmt= tableState.InitStmt(dbConn,skip);
+        }
+        if (!isInitStmt) {
             if (log.isDebugEnabled()) {
                 log.warn("init the table [" + tableName + "] fail!");
             }
             return;
         }
-
-	    RowMessage<T> urmClone = null;
-	    try {
+	RowMessage<T> urmClone = null;
+	try {
             urmClone = (RowMessage)urm.clone();
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();

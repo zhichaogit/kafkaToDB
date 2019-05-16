@@ -30,7 +30,7 @@ jdbcT4-2.4.7.jar couldn't download it by maven ,so you should move it to
 
 # KafkaCDC
 usage: Consumer Server
-
+*    --aconn <arg>       specify one connection for esgyndb,not need arg.default: multiple connections
 * -b,--broker <arg>      bootstrap.servers setting, ex: <node>:9092,default: "localhost:9092"
 *    --bigendian         the data format is big endian, default: little endian
 * -c,--commit <arg>      num message per Kakfa synch/pull, default: 5000
