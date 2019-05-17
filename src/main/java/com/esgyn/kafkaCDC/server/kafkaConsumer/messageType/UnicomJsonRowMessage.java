@@ -141,7 +141,7 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
 
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("",e);
         }
 
 

@@ -157,15 +157,12 @@ public class ConsumerThread<T> extends Thread {
         try {
             urm = (RowMessage<T>) Class.forName(messageClass).newInstance();
         } catch (InstantiationException ine) {
-            log.error("when forName messageClass,there is a error: [" + ine.getMessage() + "]");
-            ine.printStackTrace();
-        } catch (IllegalAccessException ine) {
-            log.error("when forName messageClass,there is a error: [" + ine.getMessage() + "]");
-            ine.printStackTrace();
+            log.error("when forName messageClass,there is a error: [" + ine.getMessage() + "]",ine);
+        } catch (IllegalAccessException iae) {
+            log.error("when forName messageClass,there is a error: [" + iae.getMessage() + "]",iae);
         } catch (ClassNotFoundException cnfe) {
             log.error("when forName messageClass,there is a error: [" + cnfe.getMessage()
-                    + "]make sure the full-qualified name is right");
-            cnfe.printStackTrace();
+                    + "]make sure the full-qualified name is right",cnfe);
         }
 
         if (log.isTraceEnabled()) {
@@ -290,11 +287,9 @@ public class ConsumerThread<T> extends Thread {
             try {
                 ProcessMessage(record);
             } catch (ArrayIndexOutOfBoundsException aiooe) {
-                log.error("table schema is not matched with data, raw data: [" + record + "]");
-                aiooe.printStackTrace();
+                log.error("table schema is not matched with data, raw data: [" + record + "]",aiooe);
             } catch (UnsupportedEncodingException uee) {
-                log.error("the encoding is not supported in java, raw data: [" + record + "]");
-                uee.printStackTrace();
+                log.error("the encoding is not supported in java, raw data: [" + record + "]",uee);
             }
         } // for each msg
         if (log.isTraceEnabled()) {
@@ -404,7 +399,7 @@ public class ConsumerThread<T> extends Thread {
 	try {
             urmClone = (RowMessage)urm.clone();
         } catch (CloneNotSupportedException e) {
-            e.printStackTrace();
+            log.error("clone the RowMessage failed.",e);
         }
 
         if (log.isDebugEnabled()) {

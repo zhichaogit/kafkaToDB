@@ -117,7 +117,7 @@ public class TableState {
         } catch (SQLException e) {
             log.error("Prepare insert stmt exception, SQL:[" + insertSql + "]");
             do {
-                e.printStackTrace();
+                log.error("",e);
                 e = e.getNextException();
             } while (e != null);
         }
@@ -149,7 +149,7 @@ public class TableState {
         } catch (SQLException e) {
             log.error("Prepare delete stmt exception, SQL [" + deleteSql + "]");
             do {
-                e.printStackTrace();
+                log.error("",e);
                 e = e.getNextException();
             } while (e != null);
         }
@@ -545,7 +545,7 @@ public class TableState {
 
             if (log.isDebugEnabled()) {
                 do {
-                    se.printStackTrace();
+                    log.error("",se);
                     se = se.getNextException();
                 } while (se != null);
             } else {
@@ -560,8 +560,7 @@ public class TableState {
         } catch (IndexOutOfBoundsException iobe) {
             commited = false;
             log.error("batch update table [" + schemaName + "." + tableName
-                    + "] throw IndexOutOfBoundsException: " + iobe.getMessage());
-            iobe.printStackTrace();
+                    + "] throw IndexOutOfBoundsException: " , iobe);
 
             return false;
         } catch (SQLException se) {
@@ -570,14 +569,14 @@ public class TableState {
                     + "] throw SQLException: " + se.getMessage());
             if (log.isDebugEnabled()) {
                 do {
-                    se.printStackTrace();
+                    log.error("",se);
                     se = se.getNextException();
                 } while (se != null);
             } else {
-                se.printStackTrace();
+                log.error("",se);
                 se = se.getNextException();
                 if (se != null) {
-                    se.printStackTrace();
+                    log.error("",se);
                 }
             }
 
@@ -585,8 +584,7 @@ public class TableState {
         } catch (Exception e) {
             commited = false;
             log.error("batch update table [" + schemaName + "." + tableName + "] throw Exception: "
-                    + e.getMessage());
-            e.printStackTrace();
+                    , e);
 
             return false;
         } finally {
@@ -631,7 +629,7 @@ public class TableState {
             try {
                 bufferOutput.write((String.valueOf(message)+"\n").getBytes());
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("throw IOException when write err message to file ",e);
             }
         }
         flushAndClose_bufferOutput(bufferOutput);
@@ -726,7 +724,7 @@ public class TableState {
             try {
                bufferedOutput = new BufferedOutputStream(new FileOutputStream(fullOutPutPath,true));
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                log.error("file notfound when init Outputpath buffer.",e);
             } 
         }
         if (log.isDebugEnabled()) {
@@ -741,7 +739,7 @@ public class TableState {
                 bufferedOutput.flush();
                 bufferedOutput.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("throw IOException when flush or close output buffer.",e);
             }
         }
     }

@@ -61,8 +61,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 	    byte[] rec = mtpara_.getMessage();
             messagePro = MessageDb.Record.parseFrom(rec);
         } catch (InvalidProtocolBufferException e) {
-            log.error("parseFrom Record has error ,make sure you data pls"+ e.getMessage());
-            e.printStackTrace();
+            log.error("parseFrom Record has error ,make sure you data pls",e);
             return false;
         }
         esgynDB = mtpara.getEsgynDB();
@@ -314,7 +313,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             decoder = charset.newDecoder();
             charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error("",ex);
         }
         return charBuffer.toString();
     }
