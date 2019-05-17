@@ -43,6 +43,9 @@ public class ConsumerThread<T> extends Thread {
     String                      groupid;
     long                        streamTO;
     long                        zkTO;
+    int                         hbTO;
+    int                         seTO;
+    int                         reqTO;
     int                         partitionID;
     long                        commitCount;
     long                        cacheNum;
@@ -75,8 +78,9 @@ public class ConsumerThread<T> extends Thread {
     public ConsumerThread(EsgynDB esgyndb_, String full_, boolean skip_, boolean bigEndian_,
             String delimiter_, String format_, String zookeeper_, String broker_, String topic_,
             String groupid_, String encoding_, String key_, String value_,String kafkauser_ ,
-            String kafkapasswd_, int partitionID_,long streamTO_, long zkTO_, long commitCount_, 
-            String messageClass_,String outPutPath_,Connection dbConn_,boolean aconn_) {
+            String kafkapasswd_, int partitionID_,long streamTO_, long zkTO_, int hbTO_,int seTO_,
+            int reqTO_,long commitCount_, String messageClass_,String outPutPath_,
+            Connection dbConn_, boolean aconn_) {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
@@ -89,6 +93,9 @@ public class ConsumerThread<T> extends Thread {
         partitionID = partitionID_;
         streamTO = streamTO_;
         zkTO = zkTO_;
+        hbTO = hbTO_;
+        seTO = seTO_;
+        reqTO = reqTO_;
         commitCount = commitCount_;
         cacheNum = 0;
         kafkaPollNum = 0;
@@ -120,8 +127,9 @@ public class ConsumerThread<T> extends Thread {
         props.put("group.id", groupid);
         props.put("enable.auto.commit", "false");
         props.put("max.partition.fetch.bytes", 10485760);
-        props.put("auto.commit.interval.ms", "1000");
-        props.put("session.timeout.ms", "30000");
+        props.put("heartbeat.interval.ms", hbTO);
+        props.put("session.timeout.ms", seTO);
+        props.put("request.timeout.ms", reqTO);
         props.put("key.deserializer", key);
         props.put("value.deserializer", value);
         props.put("max.poll.records", (int) commitCount);
