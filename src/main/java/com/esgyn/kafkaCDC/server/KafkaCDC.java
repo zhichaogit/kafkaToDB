@@ -141,17 +141,47 @@ public class KafkaCDC implements Runnable {
 
     public void run() {
         log.info("keepalive thread start to run");
+        boolean alreadydisconnected=false;
         while (running != 0) {
             try {
                 Thread.sleep(interval);
-                if (keepalive && !esgyndb.KeepAlive()) {
+                /*if (keepalive && !esgyndb.KeepAlive()) {
                     log.error("keepalive thread is disconnected from EsgynDB!");
+                    break;
+                }*/
+                if (alreadydisconnected) {
                     break;
                 }
                 esgyndb.DisplayDatabase();
-                for (ConsumerThread consumer : consumers) {
+                boolean firstAliveConsumer=true;
+                for (int i = 0; i < consumers.size(); i++) {
+                    ConsumerThread consumer=consumers.get(i);
                     if (!consumer.GetState()) {
                         running--;
+                    }else {
+                        if (aconn&&firstAliveConsumer) {
+                            // single conn
+                            if (keepalive && !consumer.KeepAliveEveryConn()) {
+                                log.error("All Thread is disconnected from EsgynDB!");
+                                alreadydisconnected=true;
+                                break;
+                            }
+                            firstAliveConsumer=false;
+                        }else if(!aconn){
+                            //multiple conn
+                            if (keepalive && !consumer.KeepAliveEveryConn()) {
+                                log.error(consumer.getName()+" Thread is disconnected from EsgynDB!"
+                                        + "\n this thread will stop");
+                                try {
+                                    consumer.Close();
+                                    consumer.join();
+                                    consumers.remove(i);
+                                    log.info(consumer.getName() + " stoped success.");
+                                } catch (Exception e) {
+                                    log.error("wait " + consumer.getName() + " stoped fail!",e);
+                                }
+                            }
+                        }
                     }
                 }
             } catch (InterruptedException ie) {

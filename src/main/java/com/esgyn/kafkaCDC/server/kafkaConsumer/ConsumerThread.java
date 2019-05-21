@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Properties;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.kafka.common.errors.WakeupException;
@@ -69,6 +72,7 @@ public class ConsumerThread<T> extends Thread {
     KafkaConsumer<?, ?>         kafkaconsumer;
     private final AtomicBoolean running = new AtomicBoolean(true);
     Connection                  dbConn  = null;
+    String                      keepQuery= "values(1);";
     boolean                     aconn   = false;
     RowMessage<T>               urm     = null;
     // e.g.:com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.UnicomRowMessage
@@ -483,6 +487,43 @@ public class ConsumerThread<T> extends Thread {
         }
     }
 
+    public boolean KeepAliveEveryConn() {
+        if (dbConn!=null) {
+            if (aconn) {
+                synchronized (ConsumerThread.class) {
+                    execKeepAliveStmt();
+                }
+            }else {
+                execKeepAliveStmt();
+            }
+        }
+        return true;
+    }
+    public boolean execKeepAliveStmt() {
+        ResultSet columnRS = null;
+        try {
+            log.info("prepare the keepaliveEveryConn stmt, query:" + keepQuery);
+            PreparedStatement keepStmt = dbConn.prepareStatement(keepQuery);
+            columnRS = keepStmt.executeQuery();
+            while (columnRS.next()) {
+                columnRS.getString("(EXPR)");
+            }
+            dbConn.commit();
+        } catch (SQLException e) {
+            log.error("",e);
+            return false;
+        } finally {
+            if (columnRS != null) {
+                try {
+                    columnRS.close();
+                } catch (SQLException e) {
+                    log.error("",e);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 
     public int GetConsumerID() {
         return partitionID;
