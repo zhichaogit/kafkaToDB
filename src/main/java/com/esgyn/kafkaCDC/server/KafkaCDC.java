@@ -32,6 +32,9 @@ public class KafkaCDC implements Runnable {
     private final long                DEFAULT_STREAM_TO_MS  = 60;
     // the unit is second, 10s
     private final long                DEFAULT_ZOOK_TO_MS    = 10;
+    private final int                 DEFAULT_HEATBEAT_TO_MS= 10;
+    private final int                 DEFAULT_SESSION_TO_MS = 30;
+    private final int                 DEFAULT_REQUEST_TO_MS = 305;
     private final long                DEFAULT_COMMIT_COUNT  = 5000;
     private final long                DEFAULT_PARALLE       = 16;
     // the unit is second, 10s
@@ -69,6 +72,9 @@ public class KafkaCDC implements Runnable {
     boolean keepalive   = false;
     long    streamTO    = DEFAULT_STREAM_TO_MS;
     long    zkTO        = DEFAULT_ZOOK_TO_MS;
+    int     hbTO        = DEFAULT_HEATBEAT_TO_MS;
+    int     seTO        = DEFAULT_SESSION_TO_MS;
+    int     reqTO       = DEFAULT_REQUEST_TO_MS;
     long    interval    = DEFAULT_INTERVAL;
 
     String  dbip        = DEFAULT_IPADDR;
@@ -199,6 +205,9 @@ public class KafkaCDC implements Runnable {
          *    --value <arg> value deserializer, default is:
          *                org.apache.kafka.common.serialization.StringDeserializer 
          *    --zkto <arg> zk T/O (default is 10000ms)
+         *    --hbto <arg>        heartbeat.interval.ms, default: 10s
+         *    --seto <arg>        session.timeout.ms, default: 30s
+         *    --reqto <arg>       request.timeout.ms, default: 305s
          *    --kafkauser <arg> kafka user name , default: ""
          *    --kafkapw <arg> kafka passwd , default: ""
          */
@@ -285,6 +294,12 @@ public class KafkaCDC implements Runnable {
                 .build();
         Option zktoOption = Option.builder().longOpt("zkto").required(false).hasArg()
                 .desc("zookeeper time-out limit, default: 10s").build();
+        Option hbtoOption = Option.builder().longOpt("hbto").required(false).hasArg()
+                .desc("heartbeat.interval.ms, default: 10s").build();
+        Option setoOption = Option.builder().longOpt("seto").required(false).hasArg()
+                .desc("session.timeout.ms, default: 30s").build();
+        Option reqtoOption = Option.builder().longOpt("reqto").required(false).hasArg()
+                .desc("request.timeout.ms, default: 305s").build();
         Option kafkauserOption = Option.builder().longOpt("kafkauser").required(false).hasArg()
                 .desc("kafka user name , default: \"\"").build();
         Option kafkapwOption = Option.builder().longOpt("kafkapw").required(false).hasArg()
@@ -304,6 +319,9 @@ public class KafkaCDC implements Runnable {
         exeOptions.addOption(topicOption);
         exeOptions.addOption(versionOption);
         exeOptions.addOption(zkOption);
+        exeOptions.addOption(hbtoOption);
+        exeOptions.addOption(setoOption);
+        exeOptions.addOption(reqtoOption);
 
         exeOptions.addOption(dbportOption);
         exeOptions.addOption(dbuserOption);
@@ -453,12 +471,21 @@ public class KafkaCDC implements Runnable {
         value    = cmdLine.hasOption("value") ? cmdLine.getOptionValue("value") : DEFAULT_VALUE;
         zkTO     = cmdLine.hasOption("zkto") ? Long.parseLong(cmdLine.getOptionValue("zkto"))
                 : DEFAULT_ZOOK_TO_MS;
+        hbTO     = cmdLine.hasOption("hbto") ? Integer.parseInt(cmdLine.getOptionValue("hbto"))
+                : DEFAULT_HEATBEAT_TO_MS;
+        seTO     = cmdLine.hasOption("seto") ? Integer.parseInt(cmdLine.getOptionValue("seto"))
+                : DEFAULT_SESSION_TO_MS;
+        reqTO     = cmdLine.hasOption("reqto") ? Integer.parseInt(cmdLine.getOptionValue("reqto"))
+                : DEFAULT_REQUEST_TO_MS;
         kafkauser = cmdLine.hasOption("kafkauser") ? cmdLine.getOptionValue("kafkauser"):"";
         kafkapw = cmdLine.hasOption("kafkapw") ? cmdLine.getOptionValue("kafkapw"):"";
 
         interval *= 1000;
         streamTO *= 1000;
         zkTO *= 1000;
+        hbTO *= 1000;
+        seTO *= 1000;
+        reqTO *= 1000;
 
         if (defschema != null) {
             if (defschema.startsWith("[") && defschema.endsWith("]")) {
@@ -537,7 +564,7 @@ public class KafkaCDC implements Runnable {
             formatter.printHelp("Consumer Server", exeOptions);
             System.exit(0);
         }
-        // interval ||streamTO ||zkTO can't be "0"
+        // interval ||streamTO ||zkTO || hbTO || seTO ||reqTo can't be "0"
         if (interval <= 0) {
             log.error("the interval parameter can't less than or equal \"0\" ");
             System.exit(0);
@@ -548,6 +575,18 @@ public class KafkaCDC implements Runnable {
         }
         if (zkTO <= 0) {
             log.error("the zkTO parameter can't less than or equal \"0\" ");
+            System.exit(0);
+        }
+        if (hbTO <= 0) {
+            log.error("the hbTO parameter can't less than or equal \"0\" ");
+            System.exit(0);
+        }
+        if (seTO <= 0) {
+            log.error("the seTO parameter can't less than or equal \"0\" ");
+            System.exit(0);
+        }
+        if (reqTO <= 0) {
+            log.error("the reqTO parameter can't less than or equal \"0\" ");
             System.exit(0);
         }
         if ((!kafkapw.equals("") && kafkauser.equals("")) || 
@@ -614,6 +653,9 @@ public class KafkaCDC implements Runnable {
 
         strBuffer.append("\n\tstreamTO    = " + (me.streamTO / 1000) + "s");
         strBuffer.append("\n\tzkTO        = " + (me.zkTO / 1000) + "s");
+        strBuffer.append("\n\tbhTO        = " + (me.hbTO / 1000) + "s");
+        strBuffer.append("\n\tseTO        = " + (me.seTO / 1000) + "s");
+        strBuffer.append("\n\treqTO       = " + (me.reqTO / 1000) + "s");
         strBuffer.append("\n\tkafkauser   = " + me.kafkauser);
         strBuffer.append("\n\tkafkapasswd = " + me.kafkapw);
         strBuffer.append("\n\tdburl       = " + me.dburl);
@@ -632,7 +674,8 @@ public class KafkaCDC implements Runnable {
             ConsumerThread consumer = new ConsumerThread(me.esgyndb, me.full, me.skip, me.bigEndian,
                     me.delimiter, me.format, me.zookeeper, me.broker, me.topic, me.groupID,
                     me.charEncoding, me.key, me.value,me.kafkauser,me.kafkapw, partition,
-                    me.streamTO, me.zkTO,me.commitCount, me.messageClass,me.outpath,dbConn,me.aconn);
+                    me.streamTO, me.zkTO,me.hbTO,me.seTO,me.reqTO,me.commitCount, me.messageClass,
+                    me.outpath,dbConn,me.aconn);
             consumer.setName("ConsumerThread-" + partition);
             me.consumers.add(consumer);
             consumer.start();

@@ -265,6 +265,11 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 log.warn("the data from oracle  default encode is GBK,but you set: " +encode);
             }
             value = bytesToString(Valuebs, encode);
+            if(value.equals("0000-00-00 00:00:00")) {
+                value = "0001-01-01 00:00:00"; 
+            }else if (value.equals("0000-00-00")){
+                value = "0001-01-01"; 
+            }
         }
         return value;
     }
@@ -286,8 +291,11 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 log.warn("the data from drds(mysql)  default encode is UTF8,but you set: " +encode);
             }
             value = bytesToString(Valuebs, encode);
-            if(value.equals("0000-00-00 00:00:00"))
-            value = "0001-01-01 00:00:00"; 
+            if(value.equals("0000-00-00 00:00:00")) {
+                value = "0001-01-01 00:00:00"; 
+            }else if (value.equals("0000-00-00")){
+                value = "0001-01-01"; 
+            }
         }
         return value;
     }
