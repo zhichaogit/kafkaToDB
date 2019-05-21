@@ -46,6 +46,7 @@ usage: Consumer Server
                          a. --full start : means pull the all data from the beginning(earliest)<br>
                          b. --full end   : means pull the data from the end(latest)<br>
                          c. --full 1547  : means pull the data from offset 1547<br>
+                         d. --full "yyyy-MM-dd HH:mm:ss"  : means pull the data from this date<br>
 * -g,--group <arg>       group for this consumer, default: 0
 * -h,--help              show help information
 *    --hbto <arg>        heartbeat.interval.ms, default: 10s
@@ -62,7 +63,6 @@ usage: Consumer Server
                          a. -p "1,4-5,8" : means process the partition 1,4,5 and 8<br>
                          b. -p 4 : means process the partition 0,1,2 and 3 <br>
                          c. -p "2-2" : means process the partition 2<br>
-                         d. --full yyyy-MM-dd HH:mm:ss  : means pull the data from this date<br>
 *    --reqto <arg>       request.timeout.ms, default: 305s
 * -s,--schema <arg>      default database schema, use the schema from data without this option, <br>
                          you should write like this [schemaName] if schemaName is lowerCase. default:null<>
