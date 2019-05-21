@@ -115,7 +115,7 @@ public class JsonRowMessage extends RowMessage<String> {
                 log.warn("\"position\" not exist in json data");
             }
         } catch (IOException e) {
-            log.error("",e);
+            log.error("an exception has occured when AnalyzeMessage",e);
         }
 
         StringBuffer strBuffer = null;

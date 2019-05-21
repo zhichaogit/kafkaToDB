@@ -313,7 +313,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             decoder = charset.newDecoder();
             charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
         } catch (Exception ex) {
-            log.error("",ex);
+            log.error("an exception has occured when bytesToString",ex);
         }
         return charBuffer.toString();
     }

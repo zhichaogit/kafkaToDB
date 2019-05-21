@@ -114,9 +114,9 @@ public class EsgynDB {
                     log.error("init schema [" + defschema + "] fail, cann't find any table!");
             }
         } catch (SQLException sqle) {
-            log.error("",sqle);
+            log.error("SQLException has occurred when init_schemas.",sqle);
         } catch (Exception e) {
-            log.error("",e);
+            log.error("Exception has occurred when init_schemas.",e);
         } finally {
             CloseConnection(dbconn);
         }
@@ -152,9 +152,9 @@ public class EsgynDB {
                     deftable=null;
             }
         } catch (SQLException sqle) {
-            log.error("",sqle);
+            log.error("SQLException has occurred when init_schema.",sqle);
         } catch (Exception e) {
-            log.error("",e);
+            log.error("Exception has occurred when init_schema.",e);
         }
 
         if (log.isTraceEnabled()) {
@@ -230,9 +230,9 @@ public class EsgynDB {
             log.debug(strBuffer.toString());
             psmt.close();
         } catch (SQLException sqle) {
-            log.error("",sqle);
+            log.error("SQLException has occurred when init_culumns.",sqle);
         } catch (Exception e) {
-            log.error("",e);
+            log.error("Exception has occurred when init_culumns",e);
         }
 
         if (log.isTraceEnabled()) {
@@ -297,9 +297,9 @@ public class EsgynDB {
             }
             psmt.close();
         } catch (SQLException sqle) {
-            log.error("",sqle);
+            log.error("SQLException has occurred when init_keys",sqle);
         } catch (Exception e) {
-            log.error("",e);
+            log.error("Exception has occurred when init_keys",e);
         }
 
         if (log.isTraceEnabled()) {
@@ -324,12 +324,12 @@ public class EsgynDB {
             dbConn = DriverManager.getConnection(dburl, dbuser, dbpassword);
             dbConn.setAutoCommit(autocommit);
         } catch (SQLException se) {
-            log.error("SQL error: ",se);
+            log.error("SQLException has occurred when CreateConnection:",se);
         } catch (ClassNotFoundException ce) {
-            log.error("driver class not found: " ,ce);
+            log.error("driver class not found when CreateConnection:: " ,ce);
             System.exit(1);
         } catch (Exception e) {
-            log.error("create connect error: " , e);
+            log.error("create connect error when CreateConnection:: " , e);
             System.exit(1);
         }
 
