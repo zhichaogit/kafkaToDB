@@ -56,7 +56,7 @@ public class TableState {
 
     private static Logger                  log         = Logger.getLogger(TableState.class);
 
-    public TableState(TableInfo tableInfo_) {
+    public TableState(TableInfo tableInfo_,String format_) {
         tableInfo = tableInfo_;
         schemaName = tableInfo.GetSchemaName();
         tableName = tableInfo.GetTableName();
@@ -65,6 +65,7 @@ public class TableState {
         keyColumns = tableInfo.GetKeyColumns();
         columns = tableInfo.GetColumns();
         columnMap = tableInfo.GetColumnMap();
+        format = format_;
 
         if (multiable) {
             insertRows = new IdentityHashMap<String, RowMessage>(0);
@@ -286,7 +287,9 @@ public class TableState {
             }
 
             if (havePK && !curValue.equals(oldValue)) {
-                log.error("U message cann't update the keys," + " message [" + message + "]");
+                log.error("U message cann't update the keys,"
+                        + "tablename ["+schemaName+"."+tableName+"],curValue ["+curValue+"],oldValue "
+                        + "["+oldValue+"] ,keyCol:"+keyInfo.GetColumnName()+"message [" + message + "]\n");
                 return 0;
             }
         }
@@ -302,7 +305,7 @@ public class TableState {
         Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
 
         String message = rowMessage.GetMessage();
-        if (check_update_key(rowValues, message) == 0)
+        if (!format.equals("Protobuf") && (check_update_key(rowValues, message) == 0))
             return 0;
 
         String key = get_key_value(message, rowValues, false);
@@ -594,7 +597,6 @@ public class TableState {
                       dbConn.commit();
                     }catch(SQLException se){
                       int errorCode = se.getErrorCode();
-                      log.error("errorCode:"+errorCode);
                       if (retry<3 && (errorCode==8616 || errorCode==-8616)) {
                         retry++;
                         log.warn("commit table conflict, retry["+retry+"] time");
