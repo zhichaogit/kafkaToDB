@@ -1,5 +1,6 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
@@ -12,6 +13,7 @@ import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.log4j.Logger;
@@ -143,7 +145,7 @@ public class ConsumerThread<T> extends Thread {
 
 
         kafkaconsumer = new KafkaConsumer(props);
-
+        KafkaCDCUtils utils = new KafkaCDCUtils();
 
         TopicPartition partition = new TopicPartition(topic, partitionID);
         kafkaconsumer.assign(Arrays.asList(partition));
@@ -158,7 +160,11 @@ public class ConsumerThread<T> extends Thread {
             case "":
                 break;
             default:
-                kafkaconsumer.seek(partition, Long.parseLong(full));
+                if (utils.isDateStr(full)) {
+                    seekToTime(kafkaconsumer, partition, utils);
+                }else {
+                    kafkaconsumer.seek(partition, Long.parseLong(full));
+                }
                 break;
         }
         // building RowMessage
@@ -440,6 +446,45 @@ public class ConsumerThread<T> extends Thread {
 
         if (log.isTraceEnabled()) {
             log.trace("exit function");
+        }
+    }
+
+    public void seekToTime(KafkaConsumer<?, ?> kafkaconsumer,TopicPartition partition,KafkaCDCUtils utils) {
+        long offset=0;
+        long beginOffset=0;
+        boolean offsetGreaterThanEnd=false;
+
+        //get offset by startTime
+        String dateFormat = utils.whichDateFormat(full);
+        long startDateStamp = utils.dateToStamp(full, dateFormat);
+
+        Map<TopicPartition, Long> startMap = new HashMap<>();
+        startMap.put(partition, startDateStamp);
+        Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes = kafkaconsumer.offsetsForTimes(startMap);
+        OffsetAndTimestamp offsetAndTimestamp = offsetsForTimes.get(partition);
+        //if offsetAndTimestamp is null means offsetGreaterThanEnd
+        if (offsetAndTimestamp!=null) {
+            offset = offsetAndTimestamp.offset();
+        }else {
+            offsetGreaterThanEnd=true;
+        }
+        //get begin offset
+        ArrayList<TopicPartition> partitions = new ArrayList<>();
+        partitions.add(partition);
+        Map<TopicPartition, Long> beginningOffsets = kafkaconsumer.beginningOffsets(partitions);
+        if (beginningOffsets!=null) {
+            beginOffset = beginningOffsets.get(partition);
+        }
+
+        if (offset <beginOffset) {
+            log.info("poll the data from beginning:"+beginOffset);
+            kafkaconsumer.seekToBeginning(partitions);;
+        }else if (offsetGreaterThanEnd) {
+            log.info("poll the data from latest");
+            kafkaconsumer.seekToEnd(partitions);
+        }else {
+            log.info("poll the data from offset:"+offset);
+            kafkaconsumer.seek(partition, offset);
         }
     }
 

@@ -25,6 +25,7 @@ import org.apache.log4j.xml.DOMConfigurator;
 
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerThread;
+import com.esgyn.kafkaCDC.server.kafkaConsumer.KafkaCDCUtils;
 
 public class KafkaCDC implements Runnable {
     private final static String       DEFAULT_LOGCONFPATH   = "conf/log4j.xml";
@@ -271,7 +272,8 @@ public class KafkaCDC implements Runnable {
                         + "default: offset submitted last time."
                         + "\n\ta. --full start : means pull the all data from the beginning(earliest)"
                         + "\n\tb. --full end   : means pull the data from the end(latest)"
-                        + "\n\tc. --full 1547  : means pull the data from offset 1547 ").build();
+                        + "\n\tc. --full 1547  : means pull the data from offset 1547 "
+                        + "\n\td. --full yyyy-MM-dd HH:mm:ss  : means pull the data from this date").build();
         Option intervalOption = Option.builder().longOpt("interval").required(false).hasArg()
                 .desc("the print state time interval, the unit is second, default: 10s").build();
         Option keepaliveOption = Option.builder().longOpt("keepalive").required(false).hasArg()
@@ -541,11 +543,13 @@ public class KafkaCDC implements Runnable {
             System.exit(0);
         }
 
+        KafkaCDCUtils utils = new KafkaCDCUtils();
         if (!full.equals("")) {
             boolean validLong = isValidLong(full);
             full=full.toUpperCase();
-            if (!validLong&&!full.equals("START")&&!full.equals("END")) {
-              log.error("the --full must have a para: \"start\" or \"end\" or a Long Numeric types");
+            if (!validLong&&!utils.isDateStr(full)&&!full.equals("START")&&!full.equals("END")) {
+              log.error("the --full must have a para: \"start\" or \"end\" or a Long Numeric types"
+                      + "or date types e.g.(yyyy-MM-dd HH:mm:ss)");
               System.exit(0);
             }
         }
