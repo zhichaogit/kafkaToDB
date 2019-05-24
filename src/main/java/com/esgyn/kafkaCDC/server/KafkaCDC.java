@@ -120,8 +120,7 @@ public class KafkaCDC implements Runnable {
                     consumer.join();
                     log.info(consumer.getName() + " stoped success.");
                 } catch (Exception e) {
-                    log.error("wait " + consumer.getName() + " stoped fail!");
-                    e.printStackTrace();
+                    log.error("wait " + consumer.getName() + " stoped fail!",e);
                 }
             }
 
@@ -155,12 +154,10 @@ public class KafkaCDC implements Runnable {
                     }
                 }
             } catch (InterruptedException ie) {
-                log.error("keepalive throw InterruptedException " + ie.getMessage());
-                ie.printStackTrace();
+                log.error("keepalive throw InterruptedException " ,ie);
                 break;
             } catch (Exception e) {
-                log.error("keepalive throw Exception " + e.getMessage());
-                e.printStackTrace();
+                log.error("keepalive throw Exception " ,e);
                 break;
             }
         }
@@ -620,8 +617,7 @@ public class KafkaCDC implements Runnable {
         try {
             me.init(args);
         } catch (ParseException pe) {
-            log.error("parse parameters error:" + pe.getMessage());
-            pe.printStackTrace();
+            log.error("parse parameters error:" + pe);
             System.exit(0);
         }
         Date starttime = new Date();
@@ -693,7 +689,7 @@ public class KafkaCDC implements Runnable {
                 log.info("waiting consumer [" + consumer.getName() + "] stop");
                 consumer.join();
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("consumerthread join exception",e);
             }
         }
 

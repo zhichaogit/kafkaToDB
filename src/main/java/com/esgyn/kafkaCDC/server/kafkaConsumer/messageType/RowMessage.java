@@ -66,8 +66,7 @@ public class RowMessage<T> implements Cloneable{
         try {
             message = new String(((String) message_).getBytes(mtpara.getEncoding()), "UTF-8");
         } catch (UnsupportedEncodingException usee) {
-            log.error("the encoding is not supported in java [" + usee.getMessage() + "]");
-            usee.printStackTrace();
+            log.error("the encoding is not supported in java [" + usee.getMessage() + "]",usee);
         }
 
         String[] formats = message.split(delimiter);
