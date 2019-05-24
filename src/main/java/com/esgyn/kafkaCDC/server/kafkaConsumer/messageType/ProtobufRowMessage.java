@@ -258,7 +258,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
               value = "0";
             }
         }else {
-	    if(!mtpara.getEncoding().equals("UTF8")){
+	        if(!mtpara.getEncoding().equals("UTF8")){
                 encode = mtpara.getEncoding();
                 if(!mtpara.getEncoding().equals("GBK"))
                 log.warn("the data from oracle  default encode is GBK,but you set: " +encode);
@@ -321,7 +321,27 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             decoder = charset.newDecoder();
             charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
         } catch (Exception ex) {
-            log.error("an exception has occured when bytesToString",ex);
+            if (charSet.equals("GBK")) {
+                ByteBuffer buffer2 = ByteBuffer.allocate(input.length);
+                buffer2.put(input);
+                buffer2.flip();
+                Charset charset2 = null;
+                CharsetDecoder decoder2 = null;
+                CharBuffer charBuffer2 = null;
+                try {
+                    charset2 = Charset.forName("UTF8");
+                    decoder2 = charset2.newDecoder();
+                    charBuffer2 = decoder2.decode(buffer2.asReadOnlyBuffer());
+                    log.warn("oracle data by UTF8 is success:"+charBuffer2.toString()+",the colindex ["+index+"],"
+                            + "the colname["+colname+"],charset["+charSet+"],the source message:"+messagePro.toString());
+                    return charBuffer2.toString();
+                }catch (Exception e) {
+                    log.error("",e);
+                }
+            }
+            log.error("an exception has occured when bytesToString,the colindex ["+index+"],"
+                    + "the colname["+colname+"],charset["+charSet+"],the source message:"+messagePro.toString()+""
+                    ,ex);
         }
         return charBuffer.toString();
     }

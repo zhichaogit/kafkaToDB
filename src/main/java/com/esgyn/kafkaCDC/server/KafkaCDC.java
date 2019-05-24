@@ -503,7 +503,7 @@ public class KafkaCDC implements Runnable {
             }
         }
         dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/catelog=Trafodion;"
-                + "applicationName=KafkaCDC";
+                + "applicationName=KafkaCDC;connectionTimeout=600";
         if (tenantUser != null)
             dburl += ";tenantName=" + tenantUser;
 

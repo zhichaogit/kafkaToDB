@@ -594,6 +594,7 @@ public class TableState {
                       dbConn.commit();
                     }catch(SQLException se){
                       int errorCode = se.getErrorCode();
+                      log.error("errorCode:"+errorCode);
                       if (retry<3 && (errorCode==8616 || errorCode==-8616)) {
                         retry++;
                         log.warn("commit table conflict, retry["+retry+"] time");
@@ -608,7 +609,7 @@ public class TableState {
                 }
             } catch (SQLException se) {
                 log.error("batch update table [" + schemaName + "." + tableName
-                        + "] rollback throw SQLException: " + se.getMessage());
+                        + "],errorcode["+se.getErrorCode()+"],rollback throw SQLException: " ,se);
             }finally{
 	        msgs.clear();
 	    }
