@@ -21,6 +21,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.log4j.Logger;
 
+import com.esgyn.kafkaCDC.server.KafkaCDC;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.TableState;
@@ -78,6 +79,7 @@ public class ConsumerThread<T> extends Thread {
     // e.g.:com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.UnicomRowMessage
     private String              messageClass;
     private String              outPutPath;
+    private KafkaCDC            kafkaCDC;
 
     private static Logger       log     = Logger.getLogger(ConsumerThread.class);
 
@@ -86,7 +88,7 @@ public class ConsumerThread<T> extends Thread {
             String groupid_, String encoding_, String key_, String value_,String kafkauser_ ,
             String kafkapasswd_, int partitionID_,long streamTO_, long zkTO_, int hbTO_,int seTO_,
             int reqTO_,long commitCount_, String messageClass_,String outPutPath_,
-            Connection dbConn_, boolean aconn_) {
+            Connection dbConn_, boolean aconn_, KafkaCDC kafkaCDC_) {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
@@ -118,6 +120,7 @@ public class ConsumerThread<T> extends Thread {
         messageClass = messageClass_;
         outPutPath = outPutPath_;
         aconn = aconn_;
+        kafkaCDC = kafkaCDC_;
 
         tables = new HashMap<String, TableState>(0);
         Properties props = new Properties();
@@ -229,14 +232,55 @@ public class ConsumerThread<T> extends Thread {
     public boolean commit_tables() {
         if (aconn) {
             synchronized (ConsumerThread.class) {
-                return commit_tables_();
+                boolean commit_table_success=false;
+                try {
+                  commit_table_success= commit_tables_();
+                } catch (SQLException e) {
+                    log.info("commit_table success:"+commit_table_success);
+                    if (e.getErrorCode()==-29002||e.getErrorCode()==29002) {
+                        synchronized (kafkaCDC) {
+                            //just create 1 dbConn
+                            if (kafkaCDC.getDbConn() == dbConn) {
+                                try {
+                                    esgyndb.CloseConnection(dbConn);
+                                } catch (Exception e1) {
+                                }
+                                dbConn = esgyndb.CreateConnection(false);
+                                kafkaCDC.setDbConn(dbConn);
+                            } else {
+                                dbConn = kafkaCDC.getDbConn();
+                            }
+                            //reInitStmt
+                            for (TableState tableState : tables.values()) {
+                                tableState.InitStmt(dbConn, skip);
+                            }
+                        }
+                        log.info("retry commit table!");
+                        commit_table_success = commit_tables();
+                    }
+                }
+                return commit_table_success;
             }
         }else {
-            return commit_tables_();
+            boolean commit_table_success=false;
+            try {
+                commit_table_success=commit_tables_();
+            } catch (SQLException e) {
+                if (e.getErrorCode()==-29002||e.getErrorCode()==29002) {
+                    log.info("multi database connections.reCreateConnection");
+                    try {
+                        esgyndb.CloseConnection(dbConn);
+                    } catch (Exception e1) {
+                    }
+                    dbConn=esgyndb.CreateConnection(false);
+                    commit_tables();
+                }
+            }
+            return commit_table_success;
         }
     }
 
-    public boolean commit_tables_() {
+    public boolean commit_tables_() throws SQLException {
         for (TableState tableState : tables.values()) {
     		if (!tableState.CommitTable(outPutPath,format)) {
                 esgyndb.AddErrInsertNum(tableState.GetErrInsertRows());
