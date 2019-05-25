@@ -29,6 +29,7 @@ import com.esgyn.kafkaCDC.server.kafkaConsumer.KafkaCDCUtils;
 
 public class KafkaCDC implements Runnable {
     private final static String       DEFAULT_LOGCONFPATH   = "conf/log4j.xml";
+    private final static String       kafkaCDCVersion       = "KafkaCDC-1.0.2-release";
     // the unit is second, 60s
     private final long                DEFAULT_STREAM_TO_MS  = 60;
     // the unit is second, 10s
@@ -141,17 +142,44 @@ public class KafkaCDC implements Runnable {
 
     public void run() {
         log.info("keepalive thread start to run");
+        boolean alreadydisconnected=false;
         while (running != 0) {
             try {
                 Thread.sleep(interval);
-                if (keepalive && !esgyndb.KeepAlive()) {
-                    log.error("keepalive thread is disconnected from EsgynDB!");
+                if (alreadydisconnected) {
                     break;
                 }
                 esgyndb.DisplayDatabase();
-                for (ConsumerThread consumer : consumers) {
+                boolean firstAliveConsumer=true;
+                for (int i = 0; i < consumers.size(); i++) {
+                    ConsumerThread consumer=consumers.get(i);
                     if (!consumer.GetState()) {
                         running--;
+                    }else {
+                        if (aconn&&firstAliveConsumer) {
+                            // single conn
+                            if (keepalive && !consumer.KeepAliveEveryConn()) {
+                                log.error("All Thread is disconnected from EsgynDB!");
+                                alreadydisconnected=true;
+                                break;
+                            }
+                            firstAliveConsumer=false;
+                        }else if(!aconn){
+                            //multiple conn
+                            if (keepalive && !consumer.KeepAliveEveryConn()) {
+                                log.error(consumer.getName()+" Thread is disconnected from EsgynDB!"
+                                        + "\n this thread will stop");
+                                try {
+                                    consumer.Close();
+                                    consumer.join();
+                                    consumers.remove(i);
+                                    running--;
+                                    log.info(consumer.getName() + " stoped success.");
+                                } catch (Exception e) {
+                                    log.error("wait " + consumer.getName() + " stoped fail!",e);
+                                }
+                            }
+                        }
                     }
                 }
             } catch (InterruptedException ie) {
@@ -192,7 +220,12 @@ public class KafkaCDC implements Runnable {
          *    --dbpw   <arg> database server password 
          *    --delim <arg> field delimiter, default: ','(comma) 
          *    --bigendian the data format is bigendian, default is little endian 
-         *    --full pull data from beginning
+         *    --full    pull data from beginning or End or specify the
+         *              offset, default: offset submitted last time.
+         *               a. --full start : means pull the all data from the beginning(earliest)
+         *               b. --full end   : means pull the data from the end(latest)
+         *               c. --full 1547  : means pull the data from offset 1547
+         *               d. --full "yyyy-MM-dd HH:mm:ss"  : means pull the data from this date
          *    --interval <arg> the print state time interval 
          *    --key <arg> key deserializer, default is:
          *                org.apache.kafka.common.serialization.StringDeserializer 
@@ -270,7 +303,7 @@ public class KafkaCDC implements Runnable {
                         + "\n\ta. --full start : means pull the all data from the beginning(earliest)"
                         + "\n\tb. --full end   : means pull the data from the end(latest)"
                         + "\n\tc. --full 1547  : means pull the data from offset 1547 "
-                        + "\n\td. --full yyyy-MM-dd HH:mm:ss  : means pull the data from this date").build();
+                        + "\n\td. --full \"yyyy-MM-dd HH:mm:ss\"  : means pull the data from this date").build();
         Option intervalOption = Option.builder().longOpt("interval").required(false).hasArg()
                 .desc("the print state time interval, the unit is second, default: 10s").build();
         Option keepaliveOption = Option.builder().longOpt("keepalive").required(false).hasArg()
@@ -355,7 +388,7 @@ public class KafkaCDC implements Runnable {
         boolean getVersion = cmdLine.hasOption("version") ? true : false;
 
         if (getVersion) {
-            log.info("KafkaCDC current version is KafkaCDC-R1.0.0");
+            log.info("KafkaCDC current version is "+kafkaCDCVersion);
             System.exit(0);
         }
 
@@ -659,6 +692,7 @@ public class KafkaCDC implements Runnable {
         strBuffer.append("\n\tkafkauser   = " + me.kafkauser);
         strBuffer.append("\n\tkafkapasswd = " + me.kafkapw);
         strBuffer.append("\n\tdburl       = " + me.dburl);
+        log.info("\n\t----------------------current kafkaCDC version " + kafkaCDCVersion + "-----------------------");
         log.info(strBuffer.toString());
 
         me.esgyndb = new EsgynDB(me.defschema, me.deftable, me.dburl, me.dbdriver, me.dbuser,

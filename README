@@ -16,7 +16,7 @@ usage: Consumer Server
                         a. --full start : means pull the all data from the beginning(earliest)
                         b. --full end   : means pull the data from the end(latest)
                         c. --full 1547  : means pull the data from offset 1547
-                        d. --full yyyy-MM-dd HH:mm:ss  : means pull the data from this date<br>
+                        d. --full "yyyy-MM-dd HH:mm:ss"  : means pull the data from this date<br>
  -g,--group <arg>       group for this consumer, default: 0
  -h,--help              show help information
     --hbto <arg>        heartbeat.interval.ms, default: 10s

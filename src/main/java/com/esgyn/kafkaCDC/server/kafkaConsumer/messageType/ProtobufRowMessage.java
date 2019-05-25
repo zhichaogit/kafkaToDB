@@ -94,7 +94,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             tableName = names[0];
         }
 
-	if (schemaName==null) 
+        if (schemaName==null) 
           schemaName = esgynDB.GetDefaultSchema();
 
         if (tableName==null) 
@@ -102,7 +102,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
           tableInfo = esgynDB.GetTableInfo(schemaName + "." + tableName);        
           int operationType = messagePro.getOperationType();
 
-	if (tableInfo == null) {
+        if (tableInfo == null) {
             if (log.isDebugEnabled()) {
                 log.error("Table [" + schemaName + "." + tableName
                         + "] is not exist in EsgynDB.");
@@ -222,7 +222,13 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                     log.debug("the data maybe come form mysql(DRDS),source col index:"+index);
                 }
                 ColumnInfo colInfo = tableInfo.GetColumn("\"" + colname.toString() + "\"");
-                colTypeName = colInfo.GetTypeName().trim();
+                if (colInfo==null) {
+                    log.error("columnname from kafka is["+colname+"],"
+                            + "it not exist esgyndb ["+schemaName+"."+tableName+"]\n"
+                            + "the kafka message:"+messagePro);
+                }else {
+                    colTypeName = colInfo.GetTypeName().trim();
+                }
                 index    = colInfo.GetColumnID();
                 newValue = covertValue2(newNull,newValuebs,colTypeName);
                 oldValue = covertValue2(oldNull,oldValuebs,colTypeName);
@@ -279,9 +285,9 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         if (valueNull) {
             value = null;
         }else if(Valuebs.size()==0){
-            if(insertEmptyStr(colTypeName.toUpperCase())){
+            if(colTypeName!=null && insertEmptyStr(colTypeName.toUpperCase())){
               value = "";
-            }else if (insert0(colTypeName.toUpperCase())){
+            }else if (colTypeName!=null && insert0(colTypeName.toUpperCase())){
               value = "0";
             }
         }else{

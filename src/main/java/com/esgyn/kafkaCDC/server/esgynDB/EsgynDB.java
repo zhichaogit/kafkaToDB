@@ -24,7 +24,6 @@ public class EsgynDB {
     String                 defschema   = null;
     String                 deftable    = null;
     long                   commitCount = 500;
-    String                 keepQuery   = "values(1);";
     Map<String, TableInfo> tables      = null;
     private static Logger  log         = Logger.getLogger(EsgynDB.class);
 
@@ -369,35 +368,6 @@ public class EsgynDB {
 
     public TableInfo GetTableInfo(String tableName_) {
         return tables.get(tableName_);
-    }
-
-    public boolean KeepAlive() {
-        ResultSet columnRS = null;
-        Connection dbkeepconn = CreateConnection(true);
-
-        try {
-            log.info("prepare the keepalive stmt, query:" + keepQuery);
-            PreparedStatement keepStmt = dbkeepconn.prepareStatement(keepQuery);
-
-            columnRS = keepStmt.executeQuery();
-            while (columnRS.next()) {
-                columnRS.getString("(EXPR)");
-            }
-        } catch (SQLException e) {
-            log.error("",e);
-            return false;
-        } finally {
-            CloseConnection(dbkeepconn);
-            if (columnRS != null) {
-                try {
-                    columnRS.close();
-                } catch (SQLException e) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
     }
 
     public synchronized void AddInsMsgNum(long insMsgNum_) {
