@@ -128,8 +128,10 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             }
             // "K" or "U"
             if (operationType==UPDATE_DRDS) {
-                String oldValue = bytesToString(column.getOldValue(), mtpara.getEncoding());
-                String newValue = bytesToString(column.getNewValue(), mtpara.getEncoding());
+                String oldValue = bytesToString(column.getOldValue(), mtpara.getEncoding(),
+                        messagePro,column.getIndex(),column.getName());
+                String newValue = bytesToString(column.getNewValue(), mtpara.getEncoding(),
+                        messagePro,column.getIndex(),column.getName());
                 if (!newValue.equals(oldValue)) {
                     operationType=UPDATE_COMP_PK_SQL_VAL;
                 }
@@ -191,9 +193,9 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     }
 
 
-    private ColumnValue get_column(Record message,Column column,TableInfo tableInfo) {
+    private ColumnValue get_column(Record messagePro,Column column,TableInfo tableInfo) {
         String colTypeName = null;
-        int sourceType = message.getSourceType();//1.oracle 2.mysql(DRDS)
+        int sourceType = messagePro.getSourceType();//1.oracle 2.mysql(DRDS)
         offset = 0;
         int index = column.getIndex(); // column index
         String colname = column.getName(); // column name
@@ -214,12 +216,12 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 }
                 ColumnInfo columnInfo = tableInfo.GetColumn(index);
                 colTypeName = columnInfo.GetTypeName().trim();
-                newValue = covertValue1(newNull,newValuebs,colTypeName);
-                oldValue = covertValue1(oldNull,oldValuebs,colTypeName);
+                newValue = covertValue1(newNull,newValuebs,colTypeName,messagePro,index,colname);
+                oldValue = covertValue1(oldNull,oldValuebs,colTypeName,messagePro,index,colname);
                 break;
             case SOURCEDRDS:
                 if (log.isDebugEnabled()) {
-                    log.debug("the data maybe come form mysql(DRDS),source col index:"+index);
+                    log.debug("the data maybe come form mysql(DRDS),source col name:"+colname);
                 }
                 ColumnInfo colInfo = tableInfo.GetColumn("\"" + colname.toString() + "\"");
                 if (colInfo==null) {
@@ -230,8 +232,8 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                     colTypeName = colInfo.GetTypeName().trim();
                 }
                 index    = colInfo.GetColumnID();
-                newValue = covertValue2(newNull,newValuebs,colTypeName);
-                oldValue = covertValue2(oldNull,oldValuebs,colTypeName);
+                newValue = covertValue2(newNull,newValuebs,colTypeName,messagePro,index,colname);
+                oldValue = covertValue2(oldNull,oldValuebs,colTypeName,messagePro,index,colname);
                 break;
 
             default:
@@ -252,7 +254,8 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     }
     
     //make sure the value is null or "" (oracle)
-    private String covertValue1(boolean valueNull,ByteString Valuebs,String colTypeName) {
+    private String covertValue1(boolean valueNull,ByteString Valuebs,String colTypeName,
+            Record messagePro,int index,String colname) {
         String value=null;
         String encode="GBK";
         if (valueNull && Valuebs.size()!=0 ) {
@@ -264,12 +267,12 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
               value = "0";
             }
         }else {
-	    if(!mtpara.getEncoding().equals("UTF8")){
+	        if(!mtpara.getEncoding().equals("UTF8")){
                 encode = mtpara.getEncoding();
                 if(!mtpara.getEncoding().equals("GBK"))
                 log.warn("the data from oracle  default encode is GBK,but you set: " +encode);
             }
-            value = bytesToString(Valuebs, encode);
+            value = bytesToString(Valuebs, encode,messagePro,index,colname);
             if(value.equals("0000-00-00 00:00:00")) {
                 value = "0001-01-01 00:00:00"; 
             }else if (value.equals("0000-00-00")){
@@ -279,7 +282,8 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         return value;
     }
     //make sure the value is "" or not (drds)
-    private String covertValue2(boolean valueNull,ByteString Valuebs,String colTypeName) {
+    private String covertValue2(boolean valueNull,ByteString Valuebs,String colTypeName,
+            Record messagePro,int index,String colname) {
         String value=null;
 	String encode="UTF8";
         if (valueNull) {
@@ -295,7 +299,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 encode = mtpara.getEncoding();
                 log.warn("the data from drds(mysql)  default encode is UTF8,but you set: " +encode);
             }
-            value = bytesToString(Valuebs, encode);
+            value = bytesToString(Valuebs, encode,messagePro ,index,colname);
             if(value.equals("0000-00-00 00:00:00")) {
                 value = "0001-01-01 00:00:00"; 
             }else if (value.equals("0000-00-00")){
@@ -305,14 +309,16 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         return value;
     }
 
-    public static String bytesToString(ByteString src, String charSet) {
+    public String bytesToString(ByteString src, String charSet,Record messagePro,int index,
+            String colname) {
         if (StringUtils.isEmpty(charSet)) {
             charSet = charSet;
         }
-        return bytesToString(src.toByteArray(), charSet);
+        return bytesToString(src.toByteArray(), charSet,messagePro,index,colname);
     }
 
-    public static String bytesToString(byte[] input, String charSet) {
+    public String bytesToString(byte[] input, String charSet,Record messagePro,int index,
+            String colname) {
         if (ArrayUtils.isEmpty(input)) {
             return StringUtils.EMPTY;
         }
@@ -327,7 +333,32 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             decoder = charset.newDecoder();
             charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
         } catch (Exception ex) {
-            log.error("an exception has occured when bytesToString",ex);
+            if (charSet.equals("GBK")) {
+                ByteBuffer buffer2 = ByteBuffer.allocate(input.length);
+                buffer2.put(input);
+                buffer2.flip();
+                Charset charset2 = null;
+                CharsetDecoder decoder2 = null;
+                CharBuffer charBuffer2 = null;
+                try {
+                    charset2 = Charset.forName("UTF8");
+                    decoder2 = charset2.newDecoder();
+                    charBuffer2 = decoder2.decode(buffer2.asReadOnlyBuffer());
+                    log.warn("data from oracle decode by UTF8 is success:"+charBuffer2.toString()+
+                            ",the kafka offset["+mtpara.getOffset()+"],the colindex ["+index+"],"
+                            + "the colname["+colname+"],charset["+"UTF8"+"],the source message:"
+                            +messagePro.toString());
+                    return charBuffer2.toString();
+                }catch (Exception e) {
+                    log.error("data from oracle decode by UTF8 is faild when bytesToString.the kafka"
+                            + " offset["+mtpara.getOffset()+"],the colindex"+index+"],the colname["
+                            +colname+"],charset["+charSet+"],the source message:"
+                            +messagePro.toString(),e);
+                }
+            }
+            log.error("an exception has occured when bytesToString.the kafka offset["
+                    +mtpara.getOffset()+"],the colindex ["+index+"],the colname["+colname
+                    +"],charset["+charSet+"],the source message:"+messagePro.toString(),ex);
         }
         return charBuffer.toString();
     }

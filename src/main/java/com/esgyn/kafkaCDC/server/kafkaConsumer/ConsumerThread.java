@@ -354,7 +354,7 @@ public class ConsumerThread<T> extends Thread {
                     return;
                 }
 
-                tableState = new TableState(tableInfo);
+                tableState = new TableState(tableInfo,format);
             } else {
                 if (log.isTraceEnabled()) {
                     log.debug(" tableInfo if null [" + (tableState.GetTableInfo() == null) + "]");
@@ -396,7 +396,7 @@ public class ConsumerThread<T> extends Thread {
                     return;
                 }
 
-                tableState = new TableState(tableInfo);
+                tableState = new TableState(tableInfo,format);
             }
         }
         boolean isInitStmt=false;

@@ -30,14 +30,14 @@ public class ProtobufRowMessageTest {
     @Test
     public void bytesToString() throws Exception {
         ByteString input = ByteString.copyFrom("unicom 中国 Test", "GBK");
-        String str = protobufRowMessage.bytesToString(input, "GBK");
+        String str = protobufRowMessage.bytesToString(input, "GBK",null,0,null);
         assertTrue(str.equals("unicom 中国 Test"));
     }
     @Test
     public void bytesToString2() throws Exception {
         ByteString input = ByteString.copyFrom("unicom 中国 Test", "GBK");
         try {
-            String str = protobufRowMessage.bytesToString(input, "UTF-8");
+            String str = protobufRowMessage.bytesToString(input, "UTF-8",null,0,null);
         } catch (Exception e) {
             assertTrue(true);
         }
