@@ -236,11 +236,11 @@ public class ConsumerThread<T> extends Thread {
                 try {
                   commit_table_success= commit_tables_();
                 } catch (SQLException e) {
-                    log.info("commit_table success:"+commit_table_success);
-                    if (e.getErrorCode()==-29002||e.getErrorCode()==29002) {
+                    if ((e.getErrorCode()==-29002)||(e.getErrorCode()==-29154)) {
                         synchronized (kafkaCDC) {
                             //just create 1 dbConn
                             if (kafkaCDC.getDbConn() == dbConn) {
+                                log.info("single database connections is disconnect, retry commit table !");
                                 try {
                                     esgyndb.CloseConnection(dbConn);
                                 } catch (Exception e1) {
@@ -255,8 +255,8 @@ public class ConsumerThread<T> extends Thread {
                                 tableState.InitStmt(dbConn, skip);
                             }
                         }
-                        log.info("retry commit table!");
                         commit_table_success = commit_tables();
+                        log.info("single database connections is disconnect, retry commit table success:"+commit_table_success);
                     }
                 }
                 return commit_table_success;
@@ -266,14 +266,20 @@ public class ConsumerThread<T> extends Thread {
             try {
                 commit_table_success=commit_tables_();
             } catch (SQLException e) {
-                if (e.getErrorCode()==-29002||e.getErrorCode()==29002) {
-                    log.info("multi database connections.reCreateConnection");
+                if (e.getErrorCode()==-29002||e.getErrorCode()==-29154) {
+                    log.info("multi database connections is disconnect.retry commit table!");
                     try {
                         esgyndb.CloseConnection(dbConn);
                     } catch (Exception e1) {
                     }
                     dbConn=esgyndb.CreateConnection(false);
-                    commit_tables();
+                    //reInitStmt
+                    for (TableState tableState : tables.values()) {
+                        tableState.InitStmt(dbConn, skip);
+                    }
+
+                    commit_table_success = commit_tables();
+                    log.info("multi database connections is disconnect.retry commit table success:"+commit_table_success);
                 }
             }
             return commit_table_success;
@@ -545,23 +551,25 @@ public class ConsumerThread<T> extends Thread {
     }
     public boolean execKeepAliveStmt() {
         ResultSet columnRS = null;
+        PreparedStatement keepStmt =null;
         try {
             log.info("prepare the keepaliveEveryConn stmt, query:" + keepQuery);
-            PreparedStatement keepStmt = dbConn.prepareStatement(keepQuery);
+            keepStmt = dbConn.prepareStatement(keepQuery);
             columnRS = keepStmt.executeQuery();
             while (columnRS.next()) {
                 columnRS.getString("(EXPR)");
             }
             dbConn.commit();
-        } catch (SQLException e) {
-            log.error("",e);
+        } catch (SQLException se) {
+            log.error("execKeepAliveStmt is faild.",se);
             return false;
         } finally {
-            if (columnRS != null) {
+            if (columnRS != null && keepStmt != null) {
                 try {
+                    keepStmt.close();
                     columnRS.close();
                 } catch (SQLException e) {
-                    log.error("",e);
+                    log.error("keepalivestmt colse faild in method execKeepAliveStmt",e);
                     return false;
                 }
             }
