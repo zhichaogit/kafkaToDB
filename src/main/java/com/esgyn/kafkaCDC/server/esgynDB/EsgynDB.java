@@ -109,8 +109,10 @@ public class EsgynDB {
                 log.info("start to init default schema [" + defschema + "]");
                 init_schema(dbconn, defschema);
 
-                if (tables.size() <= 0)
+                if (tables.size() <= 0) {
                     log.error("init schema [" + defschema + "] fail, cann't find any table!");
+                    System.exit(0);
+                }
             }
         } catch (SQLException sqle) {
             log.error("SQLException has occurred when init_schemas.",sqle);
