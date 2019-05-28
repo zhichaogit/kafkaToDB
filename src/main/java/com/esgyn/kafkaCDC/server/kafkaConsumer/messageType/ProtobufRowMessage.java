@@ -344,10 +344,12 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                     charset2 = Charset.forName("UTF8");
                     decoder2 = charset2.newDecoder();
                     charBuffer2 = decoder2.decode(buffer2.asReadOnlyBuffer());
-                    log.warn("data from oracle decode by UTF8 is success:"+charBuffer2.toString()+
-                            ",the kafka offset["+mtpara.getOffset()+"],the colindex ["+index+"],"
-                            + "the colname["+colname+"],charset["+"UTF8"+"],the source message:"
-                            +messagePro.toString());
+                    if (log.isDebugEnabled()) {
+                        log.debug("data from oracle decode by UTF8 is success:"+charBuffer2.toString()+
+                                ",the kafka offset["+mtpara.getOffset()+"],the colindex ["+index+"],"
+                                + "the colname["+colname+"],charset["+"UTF8"+"],the source message:"
+                                +messagePro.toString());
+                    }
                     return charBuffer2.toString();
                 }catch (Exception e) {
                     log.error("data from oracle decode by UTF8 is faild when bytesToString.the kafka"
