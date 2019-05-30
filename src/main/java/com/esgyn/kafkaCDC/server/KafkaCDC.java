@@ -98,7 +98,6 @@ public class KafkaCDC implements Runnable {
     String  key         = DEFAULT_KEY;
     String  value       = DEFAULT_VALUE;
     String  messageClass= DEFAULT_MESSAGECLASS;
-    Connection dbConn   = null;
 
     private volatile int              running    = 0;
     private EsgynDB                   esgyndb    = null;
@@ -700,16 +699,13 @@ public class KafkaCDC implements Runnable {
                 me.dbpassword, me.interval, me.commitCount, me.format.equals("HongQuan"));
         me.consumers = new ArrayList<ConsumerThread>(0);
 
-        if (me.aconn)
-            me.dbConn = me.esgyndb.CreateConnection(false);
-
         for (int partition : me.partitions) {
             // connect to kafka w/ either zook setting
             ConsumerThread consumer = new ConsumerThread(me.esgyndb, me.full, me.skip, me.bigEndian,
                     me.delimiter, me.format, me.zookeeper, me.broker, me.topic, me.groupID,
                     me.charEncoding, me.key, me.value,me.kafkauser,me.kafkapw, partition,
                     me.streamTO, me.zkTO,me.hbTO,me.seTO,me.reqTO,me.commitCount, me.messageClass,
-                    me.outpath, me.dbConn,me.aconn, me);
+                    me.outpath, me.aconn);
             consumer.setName("ConsumerThread-" + partition);
             me.consumers.add(consumer);
             consumer.start();
@@ -733,7 +729,7 @@ public class KafkaCDC implements Runnable {
 
         if (me.aconn) {
             log.info("close connection");
-            me.esgyndb.CloseConnection(me.dbConn);
+            me.esgyndb.CloseConnection(me.esgyndb.getDbConn());
         }
         log.info("all of sub threads were stoped");
 
@@ -795,13 +791,5 @@ public class KafkaCDC implements Runnable {
             }
         }
         return notExistPartitions;
-    }
-
-    public Connection getDbConn() {
-        return dbConn;
-    }
-
-    public void setDbConn(Connection dbConn) {
-        this.dbConn = dbConn;
     }
 }

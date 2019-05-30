@@ -21,7 +21,6 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.log4j.Logger;
 
-import com.esgyn.kafkaCDC.server.KafkaCDC;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.TableState;
@@ -79,7 +78,6 @@ public class ConsumerThread<T> extends Thread {
     // e.g.:com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.UnicomRowMessage
     private String              messageClass;
     private String              outPutPath;
-    private KafkaCDC            kafkaCDC;
 
     private static Logger       log     = Logger.getLogger(ConsumerThread.class);
 
@@ -88,7 +86,7 @@ public class ConsumerThread<T> extends Thread {
             String groupid_, String encoding_, String key_, String value_,String kafkauser_ ,
             String kafkapasswd_, int partitionID_,long streamTO_, long zkTO_, int hbTO_,int seTO_,
             int reqTO_,long commitCount_, String messageClass_,String outPutPath_,
-            Connection dbConn_, boolean aconn_, KafkaCDC kafkaCDC_) {
+            boolean aconn_) {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
@@ -120,14 +118,10 @@ public class ConsumerThread<T> extends Thread {
         messageClass = messageClass_;
         outPutPath = outPutPath_;
         aconn = aconn_;
-        kafkaCDC = kafkaCDC_;
 
         tables = new HashMap<String, TableState>(0);
         Properties props = new Properties();
 
-        if (aconn) {
-            dbConn=dbConn_;
-        }
         if (zookeeper != null) {
             props.put("zookeeper.connect", zookeeper);
         } else {
@@ -197,8 +191,11 @@ public class ConsumerThread<T> extends Thread {
         }
 
         try {
-            if (!aconn)
-            dbConn = esgyndb.CreateConnection(false);
+            if (aconn) {
+                dbConn=esgyndb.getDbConn();
+            }else {
+                dbConn = esgyndb.CreateConnection(false);
+            }
             log.info("consumer server started.");
             while (running.get()) {
                 if (!ProcessRecord())
@@ -236,19 +233,27 @@ public class ConsumerThread<T> extends Thread {
                 try {
                   commit_table_success= commit_tables_();
                 } catch (SQLException e) {
+                    // Connection does not exist(-29002) || Timeout expired(-29154)
                     if ((e.getErrorCode()==-29002)||(e.getErrorCode()==-29154)) {
-                        synchronized (kafkaCDC) {
+                        synchronized (esgyndb) {
                             //just create 1 dbConn
-                            if (kafkaCDC.getDbConn() == dbConn) {
-                                log.info("single database connections is disconnect, retry commit table !");
+                            if (esgyndb.getDbConn() == dbConn) {
+                                log.info("single dbconnection is disconnect, retry commit table !");
+                                if (log.isDebugEnabled()) {
+                                    log.debug("current Thread dbconn ["+esgyndb.getDbConn()+"] equal"
+                                            + " old dbconn current dbconn["+dbConn+"], create a new dbconn");
+                                }
                                 try {
                                     esgyndb.CloseConnection(dbConn);
                                 } catch (Exception e1) {
                                 }
                                 dbConn = esgyndb.CreateConnection(false);
-                                kafkaCDC.setDbConn(dbConn);
                             } else {
-                                dbConn = kafkaCDC.getDbConn();
+                                if (log.isDebugEnabled()) {
+                                    log.debug("current Thread dbconnection ["+dbConn+"] not equal new dbconn ["+
+                                             esgyndb.getDbConn()+"],set new dbconn to current dbconn");
+                                }
+                                dbConn = esgyndb.getDbConn();
                             }
                             //reInitStmt
                             for (TableState tableState : tables.values()) {
@@ -266,6 +271,7 @@ public class ConsumerThread<T> extends Thread {
             try {
                 commit_table_success=commit_tables_();
             } catch (SQLException e) {
+                // Connection does not exist(-29002) || Timeout expired(-29154)
                 if (e.getErrorCode()==-29002||e.getErrorCode()==-29154) {
                     log.info("multi database connections is disconnect.retry commit table!");
                     try {

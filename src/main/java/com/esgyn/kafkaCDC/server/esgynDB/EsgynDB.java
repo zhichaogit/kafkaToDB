@@ -26,6 +26,7 @@ public class EsgynDB {
     String                 NOTINITT1   = "SB_HISTOGRAMS";
     String                 NOTINITT2   = "SB_HISTOGRAM_INTERVALS";
     String                 NOTINITT3   = "SB_PERSISTENT_SAMPLES";
+    Connection             sharedConn      = null;
     long                   commitCount = 500;
     Map<String, TableInfo> tables      = null;
     private static Logger  log         = Logger.getLogger(EsgynDB.class);
@@ -84,6 +85,9 @@ public class EsgynDB {
         log.info("start to init schemas");
         init_schemas();
 
+        log.info("create a dbconn for shard connection");
+        dbConn = CreateConnection(false);
+
         if (log.isTraceEnabled()) {
             log.trace("exit function");
         }
@@ -91,14 +95,14 @@ public class EsgynDB {
 
     private void init_schemas() {
         ResultSet schemaRS = null;
-        Connection dbconn = CreateConnection(true);
+        Connection dbconn_mate = CreateConnection(true);
 
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
 
         try {
-            DatabaseMetaData dbmd = dbconn.getMetaData();
+            DatabaseMetaData dbmd = dbconn_mate.getMetaData();
             String schemaName = null;
 
             if (defschema == null) {
@@ -106,11 +110,11 @@ public class EsgynDB {
                 while (schemaRS.next()) {
                     schemaName = schemaRS.getString("TABLE_SCHEM");
                     log.info("start to init schema [" + schemaName + "]");
-                    init_schema(dbconn, schemaName);
+                    init_schema(dbconn_mate, schemaName);
                 }
             } else {
                 log.info("start to init default schema [" + defschema + "]");
-                init_schema(dbconn, defschema);
+                init_schema(dbconn_mate, defschema);
 
                 if (tables.size() <= 0) {
                     log.error("init schema [" + defschema + "] fail, cann't find any table!");
@@ -122,7 +126,7 @@ public class EsgynDB {
         } catch (Exception e) {
             log.error("Exception has occurred when init_schemas.",e);
         } finally {
-            CloseConnection(dbconn);
+            CloseConnection(dbconn_mate);
         }
 
         if (log.isTraceEnabled()) {
@@ -322,7 +326,6 @@ public class EsgynDB {
     }
 
     public Connection CreateConnection(boolean autocommit) {
-        Connection dbConn = null;
         if (log.isTraceEnabled()) {
             log.trace("enter function [autocommit: " + autocommit + "]");
         }
@@ -373,6 +376,14 @@ public class EsgynDB {
 
     public String GetDefaultTable() {
         return deftable;
+    }
+
+    public Connection getDbConn() {
+        return dbConn;
+    }
+
+    public void setDbConn(Connection dbConn) {
+        this.dbConn = dbConn;
     }
 
     public TableInfo GetTableInfo(String tableName_) {
