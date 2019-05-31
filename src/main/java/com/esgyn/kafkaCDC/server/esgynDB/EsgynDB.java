@@ -23,6 +23,9 @@ public class EsgynDB {
     String                 dbpassword  = null;
     String                 defschema   = null;
     String                 deftable    = null;
+    String                 NOTINITT1   = "SB_HISTOGRAMS";
+    String                 NOTINITT2   = "SB_HISTOGRAM_INTERVALS";
+    String                 NOTINITT3   = "SB_PERSISTENT_SAMPLES";
     long                   commitCount = 500;
     Map<String, TableInfo> tables      = null;
     private static Logger  log         = Logger.getLogger(EsgynDB.class);
@@ -142,12 +145,16 @@ public class EsgynDB {
                 tableRS = dbmd.getTables("Trafodion", schemaName, "%", null);
                 while (tableRS.next()) {
                     String tableNameStr = tableRS.getString("TABLE_NAME");
-		    init_tables(tableInfo,dbconn,schemaName,tableNameStr);
+                    if (!tableNameStr.equals(NOTINITT1)&&!tableNameStr.equals(NOTINITT2)&&!tableNameStr.equals(NOTINITT3)) {
+                        init_tables(tableInfo,dbconn,schemaName,tableNameStr);
+                    }
                 }
             } else {
 		String[] tables= deftable.split(",");
                 for (String table : tables) {
-                    init_tables(tableInfo,dbconn,defschema,table);
+                    if (!table.equals(NOTINITT1)&&!table.equals(NOTINITT2)&&!table.equals(NOTINITT3)) {
+                        init_tables(tableInfo,dbconn,defschema,table);
+                    }
                 }
                 if (tables.length>1) 
                     deftable=null;
@@ -189,18 +196,18 @@ public class EsgynDB {
         }
 
         try {
-            String getTableColumns = "SELECT o.object_name TABLE_NAME, "
-                    + "c.COLUMN_NAME COLUMN_NAME, c.FS_DATA_TYPE DATA_TYPE, "
-                    + "c.SQL_DATA_TYPE TYPE_NAME, c.COLUMN_SIZE COLUMN_SIZE, "
-                    + "c.NULLABLE NULLABLE, c.CHARACTER_SET CHARACTER_SET, "
-                    + "c.COLUMN_NUMBER ORDINAL_POSITION "
-                    + "FROM \"_MD_\".OBJECTS o, \"_MD_\".COLUMNS c "
-                    + "WHERE o.object_uid=c.object_uid AND c.COLUMN_CLASS != 'S' "
-                    + "AND o.SCHEMA_NAME=? AND o.object_name=? " + "ORDER BY c.COLUMN_NUMBER";
+            String getTableColumns ="SELECT ? TABLE_NAME, c.COLUMN_NAME COLUMN_NAME, "
+                    + "c.FS_DATA_TYPE DATA_TYPE, c.SQL_DATA_TYPE TYPE_NAME, "
+                    + "c.COLUMN_SIZE COLUMN_SIZE, c.NULLABLE NULLABLE, c.CHARACTER_SET CHARACTER_SET, "
+                    + "c.COLUMN_NUMBER ORDINAL_POSITION FROM \"_MD_\".COLUMNS c WHERE "
+                    + "c.object_uid=(select object_uid from \"_MD_\".OBJECTS o where o.CATALOG_NAME= "
+                    + "'TRAFODION'  AND o.SCHEMA_NAME=? AND o.object_name=?) AND "
+                    + "c.COLUMN_CLASS != 'S'  ORDER BY c.COLUMN_NUMBER;" ;
             PreparedStatement psmt = (PreparedStatement) dbconn.prepareStatement(getTableColumns);
 
-            psmt.setString(1, table.GetSchemaName());
-            psmt.setString(2, table.GetTableName());
+            psmt.setString(1, table.GetTableName());
+            psmt.setString(2, table.GetSchemaName());
+            psmt.setString(3, table.GetTableName());
 
             ResultSet columnRS = psmt.executeQuery();
             StringBuffer strBuffer = new StringBuffer();
@@ -261,14 +268,14 @@ public class EsgynDB {
         }
 
         try {
-            String getTableKeys = "SELECT k.COLUMN_NAME COLUMN_NAME, "
-                    + "c.FS_DATA_TYPE DATA_TYPE, c.SQL_DATA_TYPE TYPE_NAME, "
-                    + "c.NULLABLE NULLABLE, c.COLUMN_PRECISION DECIMAL_DIGITS, "
-                    + "c.COLUMN_NUMBER KEY_COLUMN_ID, c.COLUMN_NUMBER ORDINAL_POSITION "
-                    + "FROM \"_MD_\".OBJECTS o, \"_MD_\".COLUMNS c, \"_MD_\".KEYS k "
-                    + "WHERE o.OBJECT_UID=c.OBJECT_UID AND o.OBJECT_UID=k.OBJECT_UID "
-                    + "AND c.COLUMN_NUMBER = k.COLUMN_NUMBER AND c.COLUMN_CLASS != 'S' "
-                    + "AND o.SCHEMA_NAME=? AND o.object_name=? " + "ORDER BY k.KEYSEQ_NUMBER;";
+            String getTableKeys ="SELECT c.FS_DATA_TYPE DATA_TYPE, "
+                    + "c.SQL_DATA_TYPE TYPE_NAME, k.KEYSEQ_NUMBER, c.NULLABLE NULLABLE, "
+                    + "c.COLUMN_PRECISION DECIMAL_DIGITS,  c.COLUMN_NUMBER KEY_COLUMN_ID, "
+                    + "c.COLUMN_NUMBER ORDINAL_POSITION  FROM \"_MD_\".COLUMNS c, \"_MD_\".KEYS k  "
+                    + "WHERE c.OBJECT_UID=(select object_uid from \"_MD_\".OBJECTS o where "
+                    + "o.CATALOG_NAME= 'TRAFODION'  AND o.SCHEMA_NAME=? AND o.object_name=?) "
+                    + "AND c.OBJECT_UID=k.OBJECT_UID  AND c.COLUMN_NUMBER = k.COLUMN_NUMBER AND "
+                    + "c.COLUMN_CLASS != 'S' ORDER BY KEYSEQ_NUMBER;";
             PreparedStatement psmt = (PreparedStatement) dbconn.prepareStatement(getTableKeys);
 
             psmt.setString(1, table.GetSchemaName());
