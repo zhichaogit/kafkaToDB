@@ -192,7 +192,7 @@ public class ConsumerThread<T> extends Thread {
 
         try {
             if (aconn) {
-                dbConn=esgyndb.getDbConn();
+                dbConn=esgyndb.getSharedConn();
             }else {
                 dbConn = esgyndb.CreateConnection(false);
             }
@@ -237,10 +237,10 @@ public class ConsumerThread<T> extends Thread {
                     if ((e.getErrorCode()==-29002)||(e.getErrorCode()==-29154)) {
                         synchronized (esgyndb) {
                             //just create 1 dbConn
-                            if (esgyndb.getDbConn() == dbConn) {
+                            if (esgyndb.getSharedConn() == dbConn) {
                                 log.info("single dbconnection is disconnect, retry commit table !");
                                 if (log.isDebugEnabled()) {
-                                    log.debug("current Thread dbconn ["+esgyndb.getDbConn()+"] equal"
+                                    log.debug("current Thread dbconn ["+esgyndb.getSharedConn()+"] equal"
                                             + " old dbconn current dbconn["+dbConn+"], create a new dbconn");
                                 }
                                 try {
@@ -251,9 +251,9 @@ public class ConsumerThread<T> extends Thread {
                             } else {
                                 if (log.isDebugEnabled()) {
                                     log.debug("current Thread dbconnection ["+dbConn+"] not equal new dbconn ["+
-                                             esgyndb.getDbConn()+"],set new dbconn to current dbconn");
+                                             esgyndb.getSharedConn()+"],set new dbconn to current dbconn");
                                 }
-                                dbConn = esgyndb.getDbConn();
+                                dbConn = esgyndb.getSharedConn();
                             }
                             //reInitStmt
                             for (TableState tableState : tables.values()) {

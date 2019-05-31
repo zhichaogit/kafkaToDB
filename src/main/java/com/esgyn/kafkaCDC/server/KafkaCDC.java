@@ -701,6 +701,10 @@ public class KafkaCDC implements Runnable {
           }
         }
 
+        if (me.aconn) {
+            log.info("create a dbconn for shard connection");
+            me.esgyndb.setSharedConn(me.esgyndb.CreateConnection(false));
+        }
         //start consumer theads
         for (int partition : me.partitions) {
             // connect to kafka w/ either zook setting
@@ -732,7 +736,7 @@ public class KafkaCDC implements Runnable {
 
         if (me.aconn) {
             log.info("close connection");
-            me.esgyndb.CloseConnection(me.esgyndb.getDbConn());
+            me.esgyndb.CloseConnection(me.esgyndb.getSharedConn());
         }
         log.info("all of sub threads were stoped");
 

@@ -110,8 +110,7 @@ public class TableState {
         try {
             insertStmt = dbConn.prepareStatement(insertSql);
         } catch (SQLException se) {
-            // Connection does not exist(-29002) || Timeout expired(-29154)
-            if (!(se.getErrorCode()==-29002) && !(se.getErrorCode()==-29154)) {
+            if (isNotDisConnAndTOExpection(se)) {
                 log.error("errCode["+se.getErrorCode()+"],Prepare insert stmt exception, SQL:[" + insertSql + "]");
                 do {
                     log.error("errCode["+se.getErrorCode()+"],catch SQLException in method init_insert_stmt",se);
@@ -145,8 +144,7 @@ public class TableState {
         try {
             deleteStmt = dbConn.prepareStatement(deleteSql);
         } catch (SQLException e) {
-            // Connection does not exist(-29002) || Timeout expired(-29154)
-            if (!(e.getErrorCode()==-29002) && !(e.getErrorCode()==-29154)) {
+            if (isNotDisConnAndTOExpection(e)) {
                 log.error("Prepare delete stmt exception, SQL [" + deleteSql + "]");
                 do {
                     log.error("catch SQLException in method init_insert_stmt",e);
@@ -571,8 +569,7 @@ public class TableState {
             return false;
         } catch (SQLException se) {
             commited = false;
-            // Connection does not exist(-29002) || Timeout expired(-29154)
-            if (!(se.getErrorCode()==-29002) && !(se.getErrorCode()==-29154)) {
+            if (isNotDisConnAndTOExpection(se)) {
                 log.error("batch update table [" + schemaName + "." + tableName
                         + "] throw SQLException: " + se.getMessage());
                 if (log.isDebugEnabled()) {
@@ -773,6 +770,14 @@ public class TableState {
         }
     }
 
+    //make sure it's not Connection does not exist(-29002) Exception && Timeout expired(-29154) Exception
+    public boolean isNotDisConnAndTOExpection(SQLException se) {
+        if (!(se.getErrorCode()==-29002) && !(se.getErrorCode()==-29154)) {
+           return true;
+        }
+        return false;
+    }
+
     public void ClearCache() {
         if (commited) {
             tableInfo.IncInsertRows(insertRows.size());
@@ -831,8 +836,7 @@ public class TableState {
                 try {
                     insertStmt.setString(i + 1, columnValue.GetCurValue());
                 } catch (SQLException se) {
-                    // Connection does not exist(-29002) || Timeout expired(-29154)
-                    if (!(se.getErrorCode()==-29002) && !(se.getErrorCode()==-29154)) {
+                    if (isNotDisConnAndTOExpection(se)) {
                         log.error("\nThere is a error when set value to insertStmt, the paramInt,["
                                 +(i+1)+","+columnValue.GetCurValue()+"]");
                     }
@@ -882,8 +886,7 @@ public class TableState {
             try {
                 insert_row_data(cols,offset);
             }catch (SQLException se) {
-                // Connection does not exist(-29002) || Timeout expired(-29154)
-                if (!(se.getErrorCode()==-29002) && !(se.getErrorCode()==-29154)) {
+                if (isNotDisConnAndTOExpection(se)) {
                     matchErr(insertRM);
                     errInsert++;
                 }
@@ -908,8 +911,7 @@ public class TableState {
            errInsert++;
            throw iobe;
         }catch (SQLException se) {
-            // Connection does not exist(-29002) || Timeout expired(-29154)
-            if (!(se.getErrorCode()==-29002) && !(se.getErrorCode()==-29154)) {
+            if (isNotDisConnAndTOExpection(se)) {
                 errInsert++;
             }
             throw se;
@@ -1015,8 +1017,7 @@ public class TableState {
                 try {
                     update_row_data(updateRow.GetColumns(),offset);
                 } catch (SQLException se) {
-                    // Connection does not exist(-29002) || Timeout expired(-29154)
-                    if (!(se.getErrorCode()==-29002) && !(se.getErrorCode()==-29154)) {
+                    if (isNotDisConnAndTOExpection(se)) {
                         matchErr(updateRow);
                         errUpdate++;
                     }
@@ -1063,8 +1064,7 @@ public class TableState {
                 try {
                     deleteStmt.setString(i + 1, keyValue.GetOldValue());
                 } catch (SQLException se) {
-                    // Connection does not exist(-29002) || Timeout expired(-29154)
-                    if (!(se.getErrorCode()==-29002) && !(se.getErrorCode()==-29154)) {
+                    if (isNotDisConnAndTOExpection(se)) {
                         log.error("\nThere is a error when set value to deleteStmt,the errorCode["
                                 +se.getErrorCode()+"],the paramInt,["+(i+1)+","+keyValue.GetOldValue()+"]");
                     }
@@ -1110,8 +1110,7 @@ public class TableState {
             try {
                 delete_row_data(deleteRow.GetColumns(),offset);
             }catch (SQLException se) {
-                // Connection does not exist(-29002) || Timeout expired(-29154)
-                if (!(se.getErrorCode()==-29002) && !(se.getErrorCode()==-29154)) {
+                if (isNotDisConnAndTOExpection(se)) {
                     matchErr(deleteRow);
                     errDelete++;
                 }
@@ -1135,8 +1134,7 @@ public class TableState {
              errDelete++;
            throw iobe;
         }catch (SQLException se) {
-            // Connection does not exist(-29002) || Timeout expired(-29154)
-            if (!(se.getErrorCode()==-29002) && !(se.getErrorCode()==-29154)) {
+            if (isNotDisConnAndTOExpection(se)) {
                 errDelete++;
             }
             throw se;
