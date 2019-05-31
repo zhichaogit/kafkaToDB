@@ -86,7 +86,7 @@ public class ConsumerThread<T> extends Thread {
             String groupid_, String encoding_, String key_, String value_,String kafkauser_ ,
             String kafkapasswd_, int partitionID_,long streamTO_, long zkTO_, int hbTO_,int seTO_,
             int reqTO_,long commitCount_, String messageClass_,String outPutPath_,
-            Connection dbConn_, boolean aconn_) {
+            boolean aconn_) {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
@@ -122,9 +122,6 @@ public class ConsumerThread<T> extends Thread {
         tables = new HashMap<String, TableState>(0);
         Properties props = new Properties();
 
-        if (aconn) {
-            dbConn=dbConn_;
-        }
         if (zookeeper != null) {
             props.put("zookeeper.connect", zookeeper);
         } else {
@@ -194,8 +191,11 @@ public class ConsumerThread<T> extends Thread {
         }
 
         try {
-            if (!aconn)
-            dbConn = esgyndb.CreateConnection(false);
+            if (aconn) {
+                dbConn=esgyndb.getSharedConn();
+            }else {
+                dbConn = esgyndb.CreateConnection(false);
+            }
             log.info("consumer server started.");
             while (running.get()) {
                 if (!ProcessRecord())
@@ -229,14 +229,70 @@ public class ConsumerThread<T> extends Thread {
     public boolean commit_tables() {
         if (aconn) {
             synchronized (ConsumerThread.class) {
-                return commit_tables_();
+                boolean commit_table_success=false;
+                try {
+                  commit_table_success= commit_tables_();
+                } catch (SQLException e) {
+                    // Connection does not exist(-29002) || Timeout expired(-29154)
+                    if ((e.getErrorCode()==-29002)||(e.getErrorCode()==-29154)) {
+                        synchronized (esgyndb) {
+                            //just create 1 dbConn
+                            if (esgyndb.getSharedConn() == dbConn) {
+                                log.info("single dbconnection is disconnect, retry commit table !");
+                                if (log.isDebugEnabled()) {
+                                    log.debug("current Thread dbconn ["+esgyndb.getSharedConn()+"] equal"
+                                            + " old dbconn current dbconn["+dbConn+"], create a new dbconn");
+                                }
+                                try {
+                                    esgyndb.CloseConnection(dbConn);
+                                } catch (Exception e1) {
+                                }
+                                dbConn = esgyndb.CreateConnection(false);
+                            } else {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("current Thread dbconnection ["+dbConn+"] not equal new dbconn ["+
+                                             esgyndb.getSharedConn()+"],set new dbconn to current dbconn");
+                                }
+                                dbConn = esgyndb.getSharedConn();
+                            }
+                            //reInitStmt
+                            for (TableState tableState : tables.values()) {
+                                tableState.InitStmt(dbConn, skip);
+                            }
+                        }
+                        commit_table_success = commit_tables();
+                        log.info("single database connections is disconnect, retry commit table success:"+commit_table_success);
+                    }
+                }
+                return commit_table_success;
             }
         }else {
-            return commit_tables_();
+            boolean commit_table_success=false;
+            try {
+                commit_table_success=commit_tables_();
+            } catch (SQLException e) {
+                // Connection does not exist(-29002) || Timeout expired(-29154)
+                if (e.getErrorCode()==-29002||e.getErrorCode()==-29154) {
+                    log.info("multi database connections is disconnect.retry commit table!");
+                    try {
+                        esgyndb.CloseConnection(dbConn);
+                    } catch (Exception e1) {
+                    }
+                    dbConn=esgyndb.CreateConnection(false);
+                    //reInitStmt
+                    for (TableState tableState : tables.values()) {
+                        tableState.InitStmt(dbConn, skip);
+                    }
+
+                    commit_table_success = commit_tables();
+                    log.info("multi database connections is disconnect.retry commit table success:"+commit_table_success);
+                }
+            }
+            return commit_table_success;
         }
     }
 
-    public boolean commit_tables_() {
+    public boolean commit_tables_() throws SQLException {
         for (TableState tableState : tables.values()) {
     		if (!tableState.CommitTable(outPutPath,format)) {
                 esgyndb.AddErrInsertNum(tableState.GetErrInsertRows());
@@ -501,23 +557,25 @@ public class ConsumerThread<T> extends Thread {
     }
     public boolean execKeepAliveStmt() {
         ResultSet columnRS = null;
+        PreparedStatement keepStmt =null;
         try {
             log.info("prepare the keepaliveEveryConn stmt, query:" + keepQuery);
-            PreparedStatement keepStmt = dbConn.prepareStatement(keepQuery);
+            keepStmt = dbConn.prepareStatement(keepQuery);
             columnRS = keepStmt.executeQuery();
             while (columnRS.next()) {
                 columnRS.getString("(EXPR)");
             }
             dbConn.commit();
-        } catch (SQLException e) {
-            log.error("",e);
+        } catch (SQLException se) {
+            log.error("execKeepAliveStmt is faild.",se);
             return false;
         } finally {
-            if (columnRS != null) {
+            if (columnRS != null && keepStmt != null) {
                 try {
+                    keepStmt.close();
                     columnRS.close();
                 } catch (SQLException e) {
-                    log.error("",e);
+                    log.error("keepalivestmt colse faild in method execKeepAliveStmt",e);
                     return false;
                 }
             }

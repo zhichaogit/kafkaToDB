@@ -64,6 +64,7 @@ public class KafkaCDC implements Runnable {
     String format       = null;
     String groupID      = null;
     int[]  partitions   = null;
+    String partString   = null;
     int[]  existParts   = null;
     String topic        = null;
     String zookeeper    = null;
@@ -410,8 +411,7 @@ public class KafkaCDC implements Runnable {
                 cmdLine.hasOption("encode") ? cmdLine.getOptionValue("encode") : DEFAULT_ENCODING;
         format = cmdLine.hasOption("format") ? cmdLine.getOptionValue("format") : "";
         groupID = cmdLine.hasOption("group") ? cmdLine.getOptionValue("group") : "group_0";
-        String partString =
-                cmdLine.hasOption("partition") ? cmdLine.getOptionValue("partition") : "16";
+        partString = cmdLine.hasOption("partition") ? cmdLine.getOptionValue("partition") : "16";
         String[] parts = partString.split(",");
         if (!partString.equals("-1")) {
             ArrayList<Integer> tempParts = new ArrayList<Integer>(0);
@@ -536,7 +536,7 @@ public class KafkaCDC implements Runnable {
             }
         }
         dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/catelog=Trafodion;"
-                + "applicationName=KafkaCDC;connectionTimeout=600";
+                + "applicationName=KafkaCDC;connectionTimeout=0";
         if (tenantUser != null)
             dburl += ";tenantName=" + tenantUser;
 
@@ -629,21 +629,6 @@ public class KafkaCDC implements Runnable {
                     + "They must exist or not exist at the same time ");
             System.exit(0);
         }
-        existParts=getPartitionArray(broker,topic,kafkauser,kafkapw);
-        if (partString.equals("-1")) {
-            partitions=existParts;
-            if (partitions == null) {
-                log.error("the topic [" + topic + "] maybe not exist in the broker [" +broker+"]");
-                System.exit(0);
-            }
-        }else {
-           List notExistPartitions = getNotExistParts(partitions, existParts);
-           if (notExistPartitions.size() !=0) {
-            log.error("there is partitons :"+Arrays.toString(existParts)+"in the topic:["+topic+"]"
-                    + ",but the partitions you specify :"+notExistPartitions + "is not exist in this topic");
-            System.exit(0);
-          }
-        }
     }
 
     public static void main(String[] args) {
@@ -699,17 +684,35 @@ public class KafkaCDC implements Runnable {
                 me.dbpassword, me.interval, me.commitCount, me.format.equals("HongQuan"));
         me.consumers = new ArrayList<ConsumerThread>(0);
 
-        Connection dbConn   = null;
-        if (me.aconn)
-        dbConn = me.esgyndb.CreateConnection(false);
+        //get kafka info
+        me.existParts=me.getPartitionArray(me.broker,me.topic,me.kafkauser,me.kafkapw);
+        if (me.partString.equals("-1")) {
+            me.partitions=me.existParts;
+            if (me.partitions == null) {
+                log.error("the topic [" + me.topic + "] maybe not exist in the broker [" +me.broker+"]");
+                System.exit(0);
+            }
+        }else {
+           List notExistPartitions = me.getNotExistParts(me.partitions, me.existParts);
+           if (notExistPartitions.size() !=0) {
+            log.error("there is partitons :"+Arrays.toString(me.existParts)+"in the topic:["+me.topic+"]"
+                    + ",but the partitions you specify :"+notExistPartitions + "is not exist in this topic");
+            System.exit(0);
+          }
+        }
 
+        if (me.aconn) {
+            log.info("create a dbconn for shard connection");
+            me.esgyndb.setSharedConn(me.esgyndb.CreateConnection(false));
+        }
+        //start consumer theads
         for (int partition : me.partitions) {
             // connect to kafka w/ either zook setting
             ConsumerThread consumer = new ConsumerThread(me.esgyndb, me.full, me.skip, me.bigEndian,
                     me.delimiter, me.format, me.zookeeper, me.broker, me.topic, me.groupID,
                     me.charEncoding, me.key, me.value,me.kafkauser,me.kafkapw, partition,
                     me.streamTO, me.zkTO,me.hbTO,me.seTO,me.reqTO,me.commitCount, me.messageClass,
-                    me.outpath,dbConn,me.aconn);
+                    me.outpath, me.aconn);
             consumer.setName("ConsumerThread-" + partition);
             me.consumers.add(consumer);
             consumer.start();
@@ -733,7 +736,7 @@ public class KafkaCDC implements Runnable {
 
         if (me.aconn) {
             log.info("close connection");
-            me.esgyndb.CloseConnection(dbConn);
+            me.esgyndb.CloseConnection(me.esgyndb.getSharedConn());
         }
         log.info("all of sub threads were stoped");
 
@@ -742,7 +745,7 @@ public class KafkaCDC implements Runnable {
     }
 
     // get the partition int[]
-    public static int[] getPartitionArray(String brokerstr, String a_topic,String kafkauser,
+    public int[] getPartitionArray(String brokerstr, String a_topic,String kafkauser,
             String kafkapasswd) {
         int[] partitioncount=null;
 
@@ -782,7 +785,7 @@ public class KafkaCDC implements Runnable {
           return false;
         }
      }
-    public static List getNotExistParts(int[] partsArr,int[] existPartsArr) {
+    public List getNotExistParts(int[] partsArr,int[] existPartsArr) {
         List existPartitions = new ArrayList<Integer>();
         List notExistPartitions = new ArrayList<Integer>();
 

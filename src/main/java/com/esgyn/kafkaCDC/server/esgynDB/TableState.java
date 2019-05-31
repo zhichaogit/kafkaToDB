@@ -81,15 +81,9 @@ public class TableState {
         if (columns.get(0).GetColumnID() == 0)
             havePK = true;
 
-        if (dbConn == null) {
-            dbConn = dbConn_;
-            init_insert_stmt(skip);
-            init_delete_stmt();
-        } else if (dbConn != dbConn_) {
-            log.error("table: " + schemaName + "." + "\"" + tableName + "\""
-                    + " is reinited, dbConn: " + dbConn + ", the new dbConn: " + dbConn_);
-            return false;
-        }
+          dbConn = dbConn_;
+          init_insert_stmt(skip);
+          init_delete_stmt();
 
         return true;
     }
@@ -115,12 +109,14 @@ public class TableState {
         log.debug("insert prepare statement [" + insertSql + "]");
         try {
             insertStmt = dbConn.prepareStatement(insertSql);
-        } catch (SQLException e) {
-            log.error("Prepare insert stmt exception, SQL:[" + insertSql + "]");
-            do {
-                log.error("",e);
-                e = e.getNextException();
-            } while (e != null);
+        } catch (SQLException se) {
+            if (isNotDisConnAndTOExpection(se)) {
+                log.error("errCode["+se.getErrorCode()+"],Prepare insert stmt exception, SQL:[" + insertSql + "]");
+                do {
+                    log.error("errCode["+se.getErrorCode()+"],catch SQLException in method init_insert_stmt",se);
+                    se = se.getNextException();
+                } while (se != null);
+            }
         }
     }
 
@@ -148,11 +144,13 @@ public class TableState {
         try {
             deleteStmt = dbConn.prepareStatement(deleteSql);
         } catch (SQLException e) {
-            log.error("Prepare delete stmt exception, SQL [" + deleteSql + "]");
-            do {
-                log.error("",e);
-                e = e.getNextException();
-            } while (e != null);
+            if (isNotDisConnAndTOExpection(e)) {
+                log.error("Prepare delete stmt exception, SQL [" + deleteSql + "]");
+                do {
+                    log.error("catch SQLException in method init_insert_stmt",e);
+                    e = e.getNextException();
+                } while (e != null);
+            }
         }
     }
 
@@ -529,7 +527,7 @@ public class TableState {
         return 1;
     }
 
-    public boolean CommitTable(String outPutPath,String format_ ) {
+    public boolean CommitTable(String outPutPath,String format_ ) throws SQLException {
         if (log.isDebugEnabled()) {
             log.info("commit table [" + schemaName + "." + tableName + ", insert: "
                     + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
@@ -542,20 +540,23 @@ public class TableState {
             delete_data();
         } catch (BatchUpdateException bue) {
             commited = false;
-            log.error("batch update table [" + schemaName + "." + tableName
-                    + "] throw BatchUpdateException: " + bue.getMessage());
-            SQLException se = bue;
-
-            if (log.isDebugEnabled()) {
-                do {
-                    log.error("",se);
+            if (!(bue.getErrorCode()==0)&&!(bue.getMessage().equals("Connection does not exist"))
+                    &&!(bue.getMessage().equals("Timeout expired"))) {
+                log.error("batch update table [" + schemaName + "." + tableName
+                        + "] throw BatchUpdateException,errorCode["+bue.getErrorCode()+"]," + bue.getMessage());
+                SQLException se = bue;
+ 
+                if (log.isDebugEnabled()) {
+                    do {
+                        log.error("catch BatchUpdateException in method CommitTable ",se);
+                        se = se.getNextException();
+                    } while (se != null);
+                } else {
+                    log.error("catch BatchUpdateException in method CommitTable ",se);
                     se = se.getNextException();
-                } while (se != null);
-            } else {
-                se.printStackTrace();
-                se = se.getNextException();
-                if (se != null) {
-                    se.printStackTrace();
+                    if (se != null) {
+                        log.error("catch BatchUpdateException in method CommitTable ",se);
+                    }
                 }
             }
 
@@ -568,18 +569,20 @@ public class TableState {
             return false;
         } catch (SQLException se) {
             commited = false;
-            log.error("batch update table [" + schemaName + "." + tableName
-                    + "] throw SQLException: " + se.getMessage());
-            if (log.isDebugEnabled()) {
-                do {
-                    log.error("",se);
+            if (isNotDisConnAndTOExpection(se)) {
+                log.error("batch update table [" + schemaName + "." + tableName
+                        + "] throw SQLException: " + se.getMessage());
+                if (log.isDebugEnabled()) {
+                    do {
+                        log.error("catch SQLException in method CommitTable",se);
+                        se = se.getNextException();
+                    } while (se != null);
+                } else {
+                    log.error("catch SQLException in method CommitTable",se);
                     se = se.getNextException();
-                } while (se != null);
-            } else {
-                log.error("",se);
-                se = se.getNextException();
-                if (se != null) {
-                    log.error("",se);
+                    if (se != null) {
+                        log.error("catch SQLException in method CommitTable",se);
+                    }
                 }
             }
 
@@ -591,12 +594,15 @@ public class TableState {
 
             return false;
         } finally {
+            int disconnErrorCode=0;
             try {
                 if (commited) {
                     try {
                       dbConn.commit();
                     }catch(SQLException se){
                       int errorCode = se.getErrorCode();
+                      // retry commit table 3 times when commit table conflict
+                      // CommitConflictException
                       if (retry<3 && (errorCode==8616 || errorCode==-8616)) {
                         retry++;
                         log.warn("commit table conflict, retry["+retry+"] time");
@@ -609,11 +615,28 @@ public class TableState {
                     dbConn.rollback();
                     werrToFile(outPutPath);
                 }
-            } catch (SQLException se) {
-                log.error("batch update table [" + schemaName + "." + tableName
-                        + "],errorcode["+se.getErrorCode()+"],rollback throw SQLException: " ,se);
+            } catch (SQLException disconnse) {
+                disconnErrorCode = disconnse.getErrorCode();
+                // retry to connection database 3 times when disconnection.
+                // Connection does not exist(-29002) || Timeout expired(-29154)
+                if (retry<3 && (disconnErrorCode==-29002 || disconnErrorCode==-29154)) {
+                    retry++;
+                    commited=true;
+                    log.warn("commit table Connection does not exist or Timeout expired when operate"
+                            + "table["+schemaName+"."+tableName+"], retry create connect ["+retry+"] time");
+                    throw disconnse;
+                }
+                // Connection does not exist(-29002) || Timeout expired(-29154)
+                if ((disconnErrorCode==-29002) || (disconnErrorCode==-29154)) {
+                    log.error("batch update table [" + schemaName + "." + tableName
+                            + "],errorcode["+disconnse.getErrorCode()+"], rollback throw SQLException after reConnect database 3 times,"
+                            + "make sure database server is alive pls." ,disconnse);
+                }else {
+                    log.error("batch update table [" + schemaName + "." + tableName
+                            + "],errorcode["+disconnse.getErrorCode()+"], rollback throw SQLException: " ,disconnse);
+                }
             }finally{
-	        msgs.clear();
+                msgs.clear();
 	    }
         }
 
@@ -747,6 +770,14 @@ public class TableState {
         }
     }
 
+    //make sure it's not Connection does not exist(-29002) Exception && Timeout expired(-29154) Exception
+    public boolean isNotDisConnAndTOExpection(SQLException se) {
+        if (!(se.getErrorCode()==-29002) && !(se.getErrorCode()==-29154)) {
+           return true;
+        }
+        return false;
+    }
+
     public void ClearCache() {
         if (commited) {
             tableInfo.IncInsertRows(insertRows.size());
@@ -804,7 +835,13 @@ public class TableState {
                 }
                 try {
                     insertStmt.setString(i + 1, columnValue.GetCurValue());
-                } catch (Exception e) {
+                } catch (SQLException se) {
+                    if (isNotDisConnAndTOExpection(se)) {
+                        log.error("\nThere is a error when set value to insertStmt, the paramInt,["
+                                +(i+1)+","+columnValue.GetCurValue()+"]");
+                    }
+                    throw se;
+                }catch (Exception e) {
                     log.error("\nThere is a error when set value to insertStmt, the paramInt,["
                             +(i+1)+","+columnValue.GetCurValue()+"]");
                     throw e;
@@ -848,6 +885,12 @@ public class TableState {
             }
             try {
                 insert_row_data(cols,offset);
+            }catch (SQLException se) {
+                if (isNotDisConnAndTOExpection(se)) {
+                    matchErr(insertRM);
+                    errInsert++;
+                }
+                throw se;
             } catch (Exception e) {
                 matchErr(insertRM);
                 errInsert++;
@@ -868,7 +911,9 @@ public class TableState {
            errInsert++;
            throw iobe;
         }catch (SQLException se) {
-            errInsert++;
+            if (isNotDisConnAndTOExpection(se)) {
+                errInsert++;
+            }
             throw se;
         }finally {
             errRows.clear();
@@ -972,8 +1017,10 @@ public class TableState {
                 try {
                     update_row_data(updateRow.GetColumns(),offset);
                 } catch (SQLException se) {
-                    matchErr(updateRow);
-                    errUpdate++;
+                    if (isNotDisConnAndTOExpection(se)) {
+                        matchErr(updateRow);
+                        errUpdate++;
+                    }
                     throw se;
                 }
                 offset++;
@@ -985,7 +1032,7 @@ public class TableState {
         }
     }
 
-    private long delete_row_data(Map<Integer, ColumnValue> row,int offset) throws Exception {
+    private long delete_row_data(Map<Integer, ColumnValue> row,int offset) throws SQLException {
         long result = 1;
         StringBuffer strBuffer = null;
 
@@ -1016,10 +1063,12 @@ public class TableState {
                 }
                 try {
                     deleteStmt.setString(i + 1, keyValue.GetOldValue());
-                } catch (Exception e) {
-                    log.error("\nThere is a error when set value to deleteStmt, the paramInt,["
-                            +(i+1)+","+keyValue.GetOldValue()+"]");
-                    throw e;
+                } catch (SQLException se) {
+                    if (isNotDisConnAndTOExpection(se)) {
+                        log.error("\nThere is a error when set value to deleteStmt,the errorCode["
+                                +se.getErrorCode()+"],the paramInt,["+(i+1)+","+keyValue.GetOldValue()+"]");
+                    }
+                    throw se;
                 }
             }
         }
@@ -1059,7 +1108,12 @@ public class TableState {
             }
             errRows.put(offset, deleteRow);
             try {
-            delete_row_data(deleteRow.GetColumns(),offset);
+                delete_row_data(deleteRow.GetColumns(),offset);
+            }catch (SQLException se) {
+                if (isNotDisConnAndTOExpection(se)) {
+                    matchErr(deleteRow);
+                    errDelete++;
+                }
             } catch (Exception e) {
                 matchErr(deleteRow);
                 errDelete++;
@@ -1077,10 +1131,12 @@ public class TableState {
             errDelete+=deleteCounts.length;
             throw bue;
         }catch (IndexOutOfBoundsException iobe) {
-            errDelete++;
+             errDelete++;
            throw iobe;
         }catch (SQLException se) {
-            errDelete++;
+            if (isNotDisConnAndTOExpection(se)) {
+                errDelete++;
+            }
             throw se;
         }finally {
             errRows.clear();
