@@ -453,21 +453,22 @@ public class ConsumerThread<T> extends Thread {
                 }
 
                 tableState = new TableState(tableInfo,format);
+
+		boolean isInitStmt=false;
+		if (aconn) {
+		    synchronized (ConsumerThread.class) {
+			isInitStmt= tableState.InitStmt(dbConn,skip);
+		    }
+		}else {
+		    isInitStmt= tableState.InitStmt(dbConn,skip);
+		}
+		if (!isInitStmt) {
+		    if (log.isDebugEnabled()) {
+			log.warn("init the table [" + tableName + "] fail!");
+		    }
+		    return;
+		}
             }
-        }
-        boolean isInitStmt=false;
-        if (aconn) {
-            synchronized (ConsumerThread.class) {
-              isInitStmt= tableState.InitStmt(dbConn,skip);
-            }
-        }else {
-            isInitStmt= tableState.InitStmt(dbConn,skip);
-        }
-        if (!isInitStmt) {
-            if (log.isDebugEnabled()) {
-                log.warn("init the table [" + tableName + "] fail!");
-            }
-            return;
         }
 	RowMessage<T> urmClone = null;
 	try {
