@@ -9,8 +9,9 @@ public class ColumnInfo {
     String typeName   = null;
     String columnName = null;
 
-    public ColumnInfo(int columnID_, int columnOff_, int columnSize_, String columnSet_,
-            String columnType_, String typeName_, String columnName_) {
+    public ColumnInfo(int columnID_, int columnOff_, int columnSize_, 
+		      String columnSet_, String columnType_, String typeName_,
+		      String columnName_) {
         columnID = columnID_;
         columnOff = columnOff_;
         columnSize = columnSize_;
@@ -20,17 +21,11 @@ public class ColumnInfo {
         columnName = "\"" + columnName_ + "\"";
     }
 
-    public String GetColumnName() {
-        return columnName;
-    }
-
-    public String GetTypeName() {
-        return typeName;
-    }
-
-    public int GetColumnType() {
-        return columnType;
-    }
+    public String GetColumnName() { return columnName;}
+    public String GetTypeName() { return typeName; }
+    public int GetColumnType() { return columnType;}
+    public int GetColumnID() { return columnID; }
+    public int GetColumnOff() { return columnOff; }
 
     public int GetColumnSize() {
         if (columnSet.indexOf("UCS2") >= 0) {
@@ -40,13 +35,5 @@ public class ColumnInfo {
         } else {
             return columnSize;
         }
-    }
-
-    public int GetColumnID() {
-        return columnID;
-    }
-
-    public int GetColumnOff() {
-        return columnOff;
     }
 }

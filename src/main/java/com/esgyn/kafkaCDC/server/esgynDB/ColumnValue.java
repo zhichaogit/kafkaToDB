@@ -37,35 +37,12 @@ public class ColumnValue {
         oldCondStr = value.GetOldCondStr();
     }
 
-    public int GetColumnID() {
-        return columnID;
-    }
-
-    public boolean CurValueIsNull() {
-        return curValue == null;
-    }
-
-    public boolean OldValueIsNull() {
-        return oldValue == null;
-    }
-
-    public String GetCurValue() {
-        return curValue;
-    }
-
-    public String GetOldValue() {
-        return oldValue;
-    }
-
-    public String GetCurValueStr() {
-        return curValueStr;
-    }
-
-    public String GetOldValueStr() {
-        return oldValueStr;
-    }
-
-    public String GetOldCondStr() {
-        return oldCondStr;
-    }
+    public int GetColumnID() { return columnID; }
+    public boolean CurValueIsNull() { return curValue == null; }
+    public boolean OldValueIsNull() { return oldValue == null; }
+    public String GetCurValue() { return curValue; }
+    public String GetOldValue() { return oldValue; }
+    public String GetCurValueStr() { return curValueStr; }
+    public String GetOldValueStr() { return oldValueStr; }
+    public String GetOldCondStr() { return oldCondStr; }
 }
