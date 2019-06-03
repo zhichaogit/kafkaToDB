@@ -140,22 +140,23 @@ public class EsgynDB {
 
         try {
             if (deftable == null) {
-                ResultSet tableRS = null;
-                DatabaseMetaData dbmd = dbconn.getMetaData();
+                String getTables ="SELECT OBJECT_NAME TABLE_NAME FROM "
+                        + "TRAFODION.\"_MD_\".OBJECTS ob WHERE ob.CATALOG_NAME='TRAFODION' "
+                        + "AND ob.SCHEMA_NAME = ? AND OBJECT_TYPE='BT' "
+                        + "AND OBJECT_NAME NOT in('"
+                        + NOTINITT1 + "','" + NOTINITT2 +"','" + NOTINITT3 + "');";
+                PreparedStatement psmt = (PreparedStatement) dbconn.prepareStatement(getTables);
 
-                tableRS = dbmd.getTables("Trafodion", schemaName, "%", null);
+                psmt.setString(1, schemaName);
+                ResultSet tableRS = psmt.executeQuery();
                 while (tableRS.next()) {
                     String tableNameStr = tableRS.getString("TABLE_NAME");
-                    if (!tableNameStr.equals(NOTINITT1)&&!tableNameStr.equals(NOTINITT2)&&!tableNameStr.equals(NOTINITT3)) {
-                        init_tables(tableInfo,dbconn,schemaName,tableNameStr);
-                    }
+                    init_tables(tableInfo,dbconn,schemaName,tableNameStr);
                 }
             } else {
-		String[] tables= deftable.split(",");
+                String[] tables= deftable.split(",");
                 for (String table : tables) {
-                    if (!table.equals(NOTINITT1)&&!table.equals(NOTINITT2)&&!table.equals(NOTINITT3)) {
-                        init_tables(tableInfo,dbconn,defschema,table);
-                    }
+                    init_tables(tableInfo,dbconn,defschema,table);
                 }
                 if (tables.length>1) 
                     deftable=null;
