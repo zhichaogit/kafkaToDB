@@ -270,18 +270,22 @@ public class EsgynDB {
         }
 
         try {
-            String getTableKeys ="SELECT c.FS_DATA_TYPE DATA_TYPE, "
-                    + "c.SQL_DATA_TYPE TYPE_NAME, k.KEYSEQ_NUMBER, c.NULLABLE NULLABLE, "
-                    + "c.COLUMN_PRECISION DECIMAL_DIGITS,  c.COLUMN_NUMBER KEY_COLUMN_ID, "
-                    + "c.COLUMN_NUMBER ORDINAL_POSITION  FROM \"_MD_\".COLUMNS c, \"_MD_\".KEYS k  "
-                    + "WHERE c.OBJECT_UID=(select object_uid from \"_MD_\".OBJECTS o where "
-                    + "o.CATALOG_NAME= 'TRAFODION'  AND o.SCHEMA_NAME=? AND o.object_name=?) "
-                    + "AND c.OBJECT_UID=k.OBJECT_UID  AND c.COLUMN_NUMBER = k.COLUMN_NUMBER AND "
-                    + "c.COLUMN_CLASS != 'S' ORDER BY KEYSEQ_NUMBER;";
+            String getTableKeys ="SELECT c.object_uid,c.FS_DATA_TYPE DATA_TYPE, c.SQL_DATA_TYPE "
+                    + "TYPE_NAME, k.KEYSEQ_NUMBER, c.NULLABLE NULLABLE, c.COLUMN_PRECISION "
+                    + "DECIMAL_DIGITS,  c.COLUMN_NUMBER KEY_COLUMN_ID, c.COLUMN_NUMBER "
+                    + "ORDINAL_POSITION  FROM (select c.*  from \"_MD_\".COLUMNS c  WHERE "
+                    + "c.OBJECT_UID=(select object_uid from \"_MD_\".OBJECTS o where "
+                    + "o.CATALOG_NAME= 'TRAFODION'  AND o.SCHEMA_NAME=? AND o.object_name=?)) c," 
+                    + "(select * from  \"_MD_\".KEYS k where k.OBJECT_UID=(select object_uid from "
+                    + "\"_MD_\".OBJECTS o where o.CATALOG_NAME= 'TRAFODION'  AND o.SCHEMA_NAME=? AND "
+                    + "o.object_name=?)) k where  c.OBJECT_UID=k.OBJECT_UID  AND c.COLUMN_NUMBER = "
+                    + "k.COLUMN_NUMBER AND c.COLUMN_CLASS != 'S' ORDER BY k.KEYSEQ_NUMBER; ";
             PreparedStatement psmt = (PreparedStatement) dbconn.prepareStatement(getTableKeys);
 
             psmt.setString(1, table.GetSchemaName());
             psmt.setString(2, table.GetTableName());
+            psmt.setString(3, table.GetSchemaName());
+            psmt.setString(4, table.GetTableName());
             ResultSet keysRS = psmt.executeQuery();
             StringBuffer strBuffer = null;
             if (log.isDebugEnabled()) {
