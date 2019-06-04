@@ -73,4 +73,30 @@ public class KafkaCDCUtils {
         }
         return null;
     }
+    /**
+     * if num type
+     * @param colTypeName
+     * @return
+     */
+    public boolean isNumType(String colTypeName) {
+        colTypeName=colTypeName.trim().toUpperCase();
+        switch (colTypeName) {
+            case "SIGNED SMALLINT":
+            case "SIGNED INTEGER":
+            case "SIGNED BIGINT":
+            case "SIGNED LARGEINT":
+            case "SIGNED NUMERIC":
+            case "UNSIGNED NUMERIC":
+            case "SIGNED DECIMAL":
+            case "UNSIGNED DECIMAL":
+            case "DOUBLE":
+            case "UNSIGNED SMALLINT":
+            case "SIGNED TINYINT":
+            case "UNSIGNED TINYINT":
+            case "UNSIGNED INTEGER":
+                return true;
+            default:
+                return false;
+        }
+    }
 }

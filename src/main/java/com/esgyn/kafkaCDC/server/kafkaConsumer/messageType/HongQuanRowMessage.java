@@ -5,13 +5,11 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import java.io.UnsupportedEncodingException;
-import java.sql.Connection;
 import java.util.HashMap;
 
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
-import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.TableState;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 
@@ -25,7 +23,6 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
     private int[]                   fieldTypes  = null;
     private boolean                 allFixTypes = true;
     private boolean                 bigEndian   = true;
-    private TableInfo               tableInfo_  = null;
 
 
     public HongQuanRowMessage() {}
@@ -44,7 +41,7 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
         bigEndian = mtpara.getBigEndian();
         esgyndb = mtpara.getEsgynDB();
         tables = mtpara.getTables();
-        tableInfo_ = mtpara.getTableState().GetTableInfo();
+        tableInfo = mtpara.getTableState().GetTableInfo();
 
         if (log.isDebugEnabled()) {
             StringBuffer strBuffer = new StringBuffer();
@@ -62,10 +59,10 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
             log.debug(strBuffer);
         }
 
-        fieldSizes = new int[(int) tableInfo_.GetColumnCount()];
-        fieldTypes = new int[(int) tableInfo_.GetColumnCount()];
-        for (int i = 0; i < tableInfo_.GetColumnCount(); i++) {
-            ColumnInfo column = tableInfo_.GetColumn(i);
+        fieldSizes = new int[(int) tableInfo.GetColumnCount()];
+        fieldTypes = new int[(int) tableInfo.GetColumnCount()];
+        for (int i = 0; i < tableInfo.GetColumnCount(); i++) {
+            ColumnInfo column = tableInfo.GetColumn(i);
             fieldSizes[i] = column.GetColumnSize();
             fieldTypes[i] = column.GetColumnType();
             switch (fieldTypes[i]) {
@@ -130,14 +127,16 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
                 case 133: // UNSIGNED INTEGER
                 case 134: // SIGNED LARGEINT
                 case 138: // UNSIGNED LARGEINT
-                    columnValue = new ColumnValue(i, get_column(data, offset, fieldSizes[i]), null);
+                    columnValue = new ColumnValue(i, get_column(data, offset, fieldSizes[i]), null,
+                            tableInfo.GetColumn(i).GetTypeName());
                     break;
 
                 case 64: // VARCHAR
                 case 2: // NCHAR
                 case 0: // CHAR
                     columnValue =
-                            new ColumnValue(i, bytes2HexString(data, offset, fieldSizes[i]), null);
+                            new ColumnValue(i, bytes2HexString(data, offset, fieldSizes[i]), null,
+                                    tableInfo.GetColumn(i).GetTypeName());
                     break;
 
                 default:

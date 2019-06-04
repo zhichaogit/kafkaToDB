@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
+import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Record;
 
 public class RowMessage<T> implements Cloneable{
@@ -22,6 +23,7 @@ public class RowMessage<T> implements Cloneable{
     public String                    delimiter    = "\\,";
     public String                    operatorType = "I";
     public int                       thread       = -1;
+    public TableInfo                 tableInfo    = null;
 
     public Map<Integer, ColumnValue> columns      = null;
 
@@ -37,6 +39,7 @@ public class RowMessage<T> implements Cloneable{
         String delimiter_ = mtpara.getDelimiter();
         schemaName = esgynDB_.GetDefaultSchema();
         tableName = esgynDB_.GetDefaultTable();
+        tableInfo = esgynDB_.GetTableInfo(schemaName+"."+tableName);
         if (log.isTraceEnabled()) {
             log.trace("enter function [schema: " + schemaName + ", table: " + tableName
                     + ", delimiter: \"" + delimiter_ + "\", thread id: " + mtpara.getThread()
@@ -86,7 +89,7 @@ public class RowMessage<T> implements Cloneable{
             if (log.isDebugEnabled()) {
                 strBuffer.append("\n\tColumn: " + formats[i]);
             }
-            ColumnValue columnValue = new ColumnValue(i, formats[i], null);
+            ColumnValue columnValue = new ColumnValue(i, formats[i], null,tableInfo.GetColumn(i).GetTypeName());
             columns.put(i, columnValue);
         }
         if (log.isDebugEnabled()) {
