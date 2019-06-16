@@ -411,6 +411,13 @@ public class ConsumerThread<T> extends Thread {
                 }
 
                 tableState = new TableState(tableInfo,format);
+
+                if (!isInitStmt(tableState)) {
+                    if (log.isDebugEnabled()) {
+                        log.warn("init the table [" + tableName + "] fail!");
+                    }
+                    return;
+                }
             } else {
                 if (log.isTraceEnabled()) {
                     log.debug(" tableInfo if null [" + (tableState.GetTableInfo() == null) + "]");
@@ -454,20 +461,12 @@ public class ConsumerThread<T> extends Thread {
 
                 tableState = new TableState(tableInfo,format);
 
-		boolean isInitStmt=false;
-		if (aconn) {
-		    synchronized (ConsumerThread.class) {
-			isInitStmt= tableState.InitStmt(dbConn,skip);
-		    }
-		}else {
-		    isInitStmt= tableState.InitStmt(dbConn,skip);
-		}
-		if (!isInitStmt) {
-		    if (log.isDebugEnabled()) {
-			log.warn("init the table [" + tableName + "] fail!");
-		    }
-		    return;
-		}
+                if (!isInitStmt(tableState)) {
+                    if (log.isDebugEnabled()) {
+                        log.warn("init the table [" + tableName + "] fail!");
+                    }
+                    return;
+                }
             }
         }
 	RowMessage<T> urmClone = null;
@@ -580,6 +579,19 @@ public class ConsumerThread<T> extends Thread {
                     return false;
                 }
             }
+        }
+        return true;
+    }
+
+    public boolean isInitStmt(TableState tableState) {
+        if (aconn) {
+            synchronized (ConsumerThread.class) {
+            if (!tableState.InitStmt(dbConn,skip))
+                return false;
+            }
+        }else {
+            if (!tableState.InitStmt(dbConn,skip))
+                return false;
         }
         return true;
     }

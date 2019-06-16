@@ -140,22 +140,23 @@ public class EsgynDB {
 
         try {
             if (deftable == null) {
-                ResultSet tableRS = null;
-                DatabaseMetaData dbmd = dbconn.getMetaData();
+                String getTables ="SELECT OBJECT_NAME TABLE_NAME FROM "
+                        + "TRAFODION.\"_MD_\".OBJECTS ob WHERE ob.CATALOG_NAME='TRAFODION' "
+                        + "AND ob.SCHEMA_NAME = ? AND OBJECT_TYPE='BT' "
+                        + "AND OBJECT_NAME NOT in('"
+                        + NOTINITT1 + "','" + NOTINITT2 +"','" + NOTINITT3 + "');";
+                PreparedStatement psmt = (PreparedStatement) dbconn.prepareStatement(getTables);
 
-                tableRS = dbmd.getTables("Trafodion", schemaName, "%", null);
+                psmt.setString(1, schemaName);
+                ResultSet tableRS = psmt.executeQuery();
                 while (tableRS.next()) {
                     String tableNameStr = tableRS.getString("TABLE_NAME");
-                    if (!tableNameStr.equals(NOTINITT1)&&!tableNameStr.equals(NOTINITT2)&&!tableNameStr.equals(NOTINITT3)) {
-                        init_tables(tableInfo,dbconn,schemaName,tableNameStr);
-                    }
+                    init_tables(tableInfo,dbconn,schemaName,tableNameStr);
                 }
             } else {
-		String[] tables= deftable.split(",");
+                String[] tables= deftable.split(",");
                 for (String table : tables) {
-                    if (!table.equals(NOTINITT1)&&!table.equals(NOTINITT2)&&!table.equals(NOTINITT3)) {
-                        init_tables(tableInfo,dbconn,defschema,table);
-                    }
+                    init_tables(tableInfo,dbconn,defschema,table);
                 }
                 if (tables.length>1) 
                     deftable=null;
@@ -269,18 +270,22 @@ public class EsgynDB {
         }
 
         try {
-            String getTableKeys ="SELECT c.FS_DATA_TYPE DATA_TYPE, "
-                    + "c.SQL_DATA_TYPE TYPE_NAME, k.KEYSEQ_NUMBER, c.NULLABLE NULLABLE, "
-                    + "c.COLUMN_PRECISION DECIMAL_DIGITS,  c.COLUMN_NUMBER KEY_COLUMN_ID, "
-                    + "c.COLUMN_NUMBER ORDINAL_POSITION  FROM \"_MD_\".COLUMNS c, \"_MD_\".KEYS k  "
-                    + "WHERE c.OBJECT_UID=(select object_uid from \"_MD_\".OBJECTS o where "
-                    + "o.CATALOG_NAME= 'TRAFODION'  AND o.SCHEMA_NAME=? AND o.object_name=?) "
-                    + "AND c.OBJECT_UID=k.OBJECT_UID  AND c.COLUMN_NUMBER = k.COLUMN_NUMBER AND "
-                    + "c.COLUMN_CLASS != 'S' ORDER BY KEYSEQ_NUMBER;";
+            String getTableKeys ="SELECT c.object_uid,c.FS_DATA_TYPE DATA_TYPE, c.SQL_DATA_TYPE "
+                    + "TYPE_NAME, k.KEYSEQ_NUMBER, c.NULLABLE NULLABLE, c.COLUMN_PRECISION "
+                    + "DECIMAL_DIGITS,  c.COLUMN_NUMBER KEY_COLUMN_ID, c.COLUMN_NUMBER "
+                    + "ORDINAL_POSITION  FROM (select c.*  from \"_MD_\".COLUMNS c  WHERE "
+                    + "c.OBJECT_UID=(select object_uid from \"_MD_\".OBJECTS o where "
+                    + "o.CATALOG_NAME= 'TRAFODION'  AND o.SCHEMA_NAME=? AND o.object_name=?)) c," 
+                    + "(select * from  \"_MD_\".KEYS k where k.OBJECT_UID=(select object_uid from "
+                    + "\"_MD_\".OBJECTS o where o.CATALOG_NAME= 'TRAFODION'  AND o.SCHEMA_NAME=? AND "
+                    + "o.object_name=?)) k where  c.OBJECT_UID=k.OBJECT_UID  AND c.COLUMN_NUMBER = "
+                    + "k.COLUMN_NUMBER AND c.COLUMN_CLASS != 'S' ORDER BY k.KEYSEQ_NUMBER; ";
             PreparedStatement psmt = (PreparedStatement) dbconn.prepareStatement(getTableKeys);
 
             psmt.setString(1, table.GetSchemaName());
             psmt.setString(2, table.GetTableName());
+            psmt.setString(3, table.GetSchemaName());
+            psmt.setString(4, table.GetTableName());
             ResultSet keysRS = psmt.executeQuery();
             StringBuffer strBuffer = null;
             if (log.isDebugEnabled()) {
