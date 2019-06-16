@@ -55,6 +55,7 @@ public class ConsumerThread<T> extends Thread {
     long                        commitCount;
     long                        cacheNum;
     long                        kafkaPollNum;
+    long                        latestTime;
 
     String                      encoding;
     String                      key;
@@ -300,6 +301,8 @@ public class ConsumerThread<T> extends Thread {
                 esgyndb.AddErrDeleteNum(tableState.GetErrDeleteRows());
                 esgyndb.AddKafkaPollNum(kafkaPollNum);
                 kafkaPollNum = 0;
+                esgyndb.setLatestTime(latestTime);
+                latestTime = 0;
                 tableState.ClearCache();
                 if (!skip) 
                 return false;
@@ -323,6 +326,8 @@ public class ConsumerThread<T> extends Thread {
             cacheNum = 0;
             esgyndb.AddKafkaPollNum(kafkaPollNum);
             kafkaPollNum = 0;
+            esgyndb.setLatestTime(latestTime);
+            latestTime = 0;
             tableState.ClearCache();
         }
         if (tables.size()==0) {
@@ -380,6 +385,7 @@ public class ConsumerThread<T> extends Thread {
         long partition = record.partition();
         long offset = record.offset();
         String topic = record.topic();
+        latestTime = record.timestamp();
         long num = 0;
 
         if (partition != partitionID) {
