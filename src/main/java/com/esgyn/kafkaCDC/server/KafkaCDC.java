@@ -657,7 +657,6 @@ public class KafkaCDC implements Runnable {
         strBuffer.append("\n\tgroup       = " + me.groupID);
         strBuffer.append("\n\tinterval    = " + (me.interval / 1000) + "s");
         strBuffer.append("\n\tmode        = " + me.full);
-        strBuffer.append("\n\tpartitions  = " + Arrays.toString(me.partitions));
         strBuffer.append("\n\tschema      = " + me.defschema);
         strBuffer.append("\n\tskip        = " + me.skip);
         strBuffer.append("\n\ttable       = " + me.deftable);
@@ -700,6 +699,7 @@ public class KafkaCDC implements Runnable {
             System.exit(0);
           }
         }
+        log.info("\n\tpartitions  = " + Arrays.toString(me.partitions));
 
         if (me.aconn) {
             log.info("create a dbconn for shard connection");

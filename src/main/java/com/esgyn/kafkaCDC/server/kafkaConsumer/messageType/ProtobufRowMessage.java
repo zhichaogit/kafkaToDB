@@ -130,16 +130,27 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             }
             // "K" or "U"
             if (operationType==UPDATE_DRDS) {
-                String oldValue = bytesToString(column.getOldValue(), mtpara.getEncoding(),
-                        messagePro,column.getIndex(),column.getName());
-                String newValue = bytesToString(column.getNewValue(), mtpara.getEncoding(),
-                        messagePro,column.getIndex(),column.getName());
+                String oldValue = null;
+                String newValue = null;
+                try {
+                    oldValue = bytesToString(column.getOldValue(), mtpara.getEncoding(),
+                            messagePro,column.getIndex(),column.getName());
+                    newValue = bytesToString(column.getNewValue(), mtpara.getEncoding(),
+                            messagePro,column.getIndex(),column.getName());
+                } catch (Exception e) {
+                    return false;
+                }
                 if (!newValue.equals(oldValue)) {
                     operationType=UPDATE_COMP_PK_SQL_VAL;
                 }
             }
 
-            ColumnValue columnvalue = get_column(messagePro,column,tableInfo);
+            ColumnValue columnvalue = null;
+            try {
+                columnvalue = get_column(messagePro,column,tableInfo);
+            } catch (Exception e) {
+                return false;
+            }
 
             columns.put(columnvalue.GetColumnID(), columnvalue);
         }
@@ -149,7 +160,12 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             if (log.isDebugEnabled()) {
                 strBuffer.append("\tColumn: " + column);
             }
-            ColumnValue columnvalue = get_column(messagePro,column,tableInfo);
+            ColumnValue columnvalue= null;
+            try {
+                columnvalue = get_column(messagePro,column,tableInfo);
+            } catch (Exception e) {
+                return false;
+            }
 
             columns.put(columnvalue.GetColumnID(), columnvalue);
         }
@@ -195,7 +211,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     }
 
 
-    private ColumnValue get_column(Record messagePro,Column column,TableInfo tableInfo) {
+    private ColumnValue get_column(Record messagePro,Column column,TableInfo tableInfo) throws Exception {
         String colTypeName = null;
         int sourceType = messagePro.getSourceType();//1.oracle 2.mysql(DRDS)
         offset = 0;
@@ -256,7 +272,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     
     //make sure the value is null or "" (oracle)
     private String covertValue1(boolean valueNull,ByteString Valuebs,String colTypeName,
-            Record messagePro,int index,String colname) {
+            Record messagePro,int index,String colname) throws Exception {
         String value=null;
         String encode="GBK";
         if (valueNull && Valuebs.size()!=0 ) {
@@ -284,7 +300,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     }
     //make sure the value is "" or not (drds)
     private String covertValue2(boolean valueNull,ByteString Valuebs,String colTypeName,
-            Record messagePro,int index,String colname) {
+            Record messagePro,int index,String colname) throws Exception {
         String value=null;
 	String encode="UTF8";
         if (valueNull) {
@@ -311,7 +327,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     }
 
     public String bytesToString(ByteString src, String charSet,Record messagePro,int index,
-            String colname) {
+            String colname) throws Exception {
         if (StringUtils.isEmpty(charSet)) {
             charSet = charSet;
         }
@@ -319,7 +335,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     }
 
     public String bytesToString(byte[] input, String charSet,Record messagePro,int index,
-            String colname) {
+            String colname) throws Exception {
         if (ArrayUtils.isEmpty(input)) {
             return StringUtils.EMPTY;
         }
@@ -334,34 +350,19 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             decoder = charset.newDecoder();
             charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
         } catch (Exception ex) {
-            if (charSet.equals("GBK")) {
-                ByteBuffer buffer2 = ByteBuffer.allocate(input.length);
-                buffer2.put(input);
-                buffer2.flip();
-                Charset charset2 = null;
-                CharsetDecoder decoder2 = null;
-                CharBuffer charBuffer2 = null;
-                try {
-                    charset2 = Charset.forName("UTF8");
-                    decoder2 = charset2.newDecoder();
-                    charBuffer2 = decoder2.decode(buffer2.asReadOnlyBuffer());
-                    if (log.isDebugEnabled()) {
-                        log.debug("data from oracle decode by UTF8 is success:"+charBuffer2.toString()+
-                                ",the kafka offset["+mtpara.getOffset()+"],the colindex ["+index+"],"
-                                + "the colname["+colname+"],charset["+"UTF8"+"],the source message:"
-                                +messagePro.toString());
-                    }
-                    return charBuffer2.toString();
-                }catch (Exception e) {
-                    log.error("data from oracle decode by UTF8 is faild when bytesToString.the kafka"
-                            + " offset["+mtpara.getOffset()+"],the colindex"+index+"],the colname["
-                            +colname+"],charset["+charSet+"],the source message:"
-                            +messagePro.toString(),e);
-                }
+            // print errmessage when oracle data is utf8,else catch the error 
+            if (ex.getMessage().trim().equals("Input length = 1")) {
+                log.warn("the data encode from oracle is UTF8,the data maybe error.kafka offset["
+                        +mtpara.getOffset()+"],the colindex ["+index+"],the colname["+colname
+                        +"],charset["+charSet+"],the source message:"+messagePro.toString()
+                        +"the errMessage:"+ex.getMessage(),ex);
+                throw ex;
+            }else {
+                log.error("an exception has occured when bytesToString.the kafka offset["
+                        +mtpara.getOffset()+"],the colindex ["+index+"],the colname["+colname
+                        +"],charset["+charSet+"],the source message:"+messagePro.toString()
+                        +"the errMessage:["+ex.getMessage()+"]",ex);
             }
-            log.error("an exception has occured when bytesToString.the kafka offset["
-                    +mtpara.getOffset()+"],the colindex ["+index+"],the colname["+colname
-                    +"],charset["+charSet+"],the source message:"+messagePro.toString(),ex);
         }
         return charBuffer.toString();
     }
