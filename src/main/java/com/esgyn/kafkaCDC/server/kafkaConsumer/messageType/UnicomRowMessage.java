@@ -5,7 +5,9 @@ import java.util.HashMap;
 import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
+import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
+import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
 
 public class UnicomRowMessage extends RowMessage<String> {
     private static Logger log               = Logger.getLogger(UnicomRowMessage.class);
@@ -25,6 +27,7 @@ public class UnicomRowMessage extends RowMessage<String> {
     String                catlogName        = null;
     String                timestamp         = null;
     String                emptystr          = "";
+    EsgynDB               esgynDB           = null;
 
     public UnicomRowMessage() {}
 
@@ -37,6 +40,7 @@ public class UnicomRowMessage extends RowMessage<String> {
         super.init(mtpara_);
         message =
                 new String(((String) mtpara.getMessage()).getBytes(mtpara.getEncoding()), "UTF-8");
+        esgynDB = mtpara.getEsgynDB();
         return true;
     }
 
@@ -74,6 +78,7 @@ public class UnicomRowMessage extends RowMessage<String> {
         operatorType = formats[2];
         timestamp = formats[3];
 
+        tableInfo = esgynDB.GetTableInfo(schemaName+"."+tableName);
         StringBuffer strBuffer = null;
         if (log.isDebugEnabled()) {
             strBuffer = new StringBuffer();
@@ -93,7 +98,7 @@ public class UnicomRowMessage extends RowMessage<String> {
                 strBuffer.append("\n\tColumn: " + formats[i]);
             }
             offset = 0;
-            ColumnValue column = get_column(formats[i].getBytes());
+            ColumnValue column = get_column(formats[i].getBytes(),tableInfo);
             columns.put(column.GetColumnID(), column);
         }
         if (log.isDebugEnabled()) {
@@ -166,7 +171,7 @@ public class UnicomRowMessage extends RowMessage<String> {
         return value;
     }
 
-    private ColumnValue get_column(byte[] coldata) {
+    private ColumnValue get_column(byte[] coldata,TableInfo tableInfo) {
         // analyze column id
         int offsetStart = offset;
         int length = get_value_length(coldata);
@@ -180,6 +185,6 @@ public class UnicomRowMessage extends RowMessage<String> {
         if (log.isDebugEnabled()) {
             log.debug("cur value [" + currValue + "] old value [" + oldValue + "]");
         }
-        return new ColumnValue(cid, currValue, oldValue);
+        return new ColumnValue(cid, currValue, oldValue,tableInfo.GetColumn(cid).GetTypeName());
     }
 }

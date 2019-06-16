@@ -8,7 +8,6 @@ import java.util.Iterator;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
-import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,7 +46,6 @@ public class JsonRowMessage extends RowMessage<String> {
     @Override
     public Boolean AnalyzeMessage() {
         ObjectMapper mapper = new ObjectMapper();
-        TableInfo tableInfo = null;
 
         try {
             JsonNode node = mapper.readTree(message);
@@ -146,7 +144,7 @@ public class JsonRowMessage extends RowMessage<String> {
                     return false;
                 }
                 int colId = colInfo.GetColumnID();
-                ColumnValue columnValue = new ColumnValue(colId, colNewData, null);
+                ColumnValue columnValue = new ColumnValue(colId, colNewData, null,colInfo.GetTypeName());
                 columns.put(colId, columnValue);
 
                 if (log.isDebugEnabled()) {
@@ -171,13 +169,13 @@ public class JsonRowMessage extends RowMessage<String> {
                 ColumnValue columnValue = (ColumnValue) columns.get(colId);
                 if (columnValue != null) {
                     // when message have "data" info
-                    columnValue = new ColumnValue(colId, columnValue.GetCurValue(), colNewData);
+                    columnValue = new ColumnValue(colId, columnValue.GetCurValue(), colNewData,colInfo.GetTypeName());
                 } else {
                     // if message is delete Operate and there isn't "data" info
                     if (dataJsonNode == null) {
-                        columnValue = new ColumnValue(colId, null, colNewData);
+                        columnValue = new ColumnValue(colId, null, colNewData,colInfo.GetTypeName());
                     } else {
-                        columnValue = new ColumnValue(colId, colNewData, null);
+                        columnValue = new ColumnValue(colId, colNewData, null,colInfo.GetTypeName());
                     }
                 }
 

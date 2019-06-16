@@ -50,7 +50,6 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
     @Override
     public Boolean AnalyzeMessage() {
         ObjectMapper mapper = new ObjectMapper();
-        TableInfo tableInfo = null;
 
         StringBuffer strBuffer = null;
         if (log.isDebugEnabled()) {
@@ -222,7 +221,7 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
         int colId = colInfo.GetColumnID();
 
 
-        ColumnValue columnValue = new ColumnValue(colId, colNewData, colOldData);
+        ColumnValue columnValue = new ColumnValue(colId, colNewData, colOldData,colInfo.GetTypeName());
 
         columns.put(colId, columnValue);
 
@@ -262,7 +261,7 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
         }
         if (isOdd(i)) {
             int colId = colInfo.GetColumnID();
-            ColumnValue columnValue = new ColumnValue(colId, colNewData, colOldData);
+            ColumnValue columnValue = new ColumnValue(colId, colNewData, colOldData,colInfo.GetTypeName());
 
             if (ifKeyCol && operatorTypeSource.equals("update")
                     && !columnValue.GetCurValue().equals(columnValue.GetOldValue())) {

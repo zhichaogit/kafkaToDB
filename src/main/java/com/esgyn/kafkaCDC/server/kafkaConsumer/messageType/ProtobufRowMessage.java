@@ -10,6 +10,7 @@ import java.util.HashMap;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
+import com.esgyn.kafkaCDC.server.kafkaConsumer.KafkaCDCUtils;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Column;
@@ -48,6 +49,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     private final int     SQL_DDL_VAL              = 160;
     private final int     SOURCEORACLE             = 1;
     private final int     SOURCEDRDS               = 2;
+    private KafkaCDCUtils kafkaCDCUtils            = null;
     public ProtobufRowMessage() {}
 
     public ProtobufRowMessage(MessageTypePara<byte[]> mtpara) throws UnsupportedEncodingException {
@@ -65,6 +67,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             return false;
         }
         esgynDB = mtpara.getEsgynDB();
+        kafkaCDCUtils = new KafkaCDCUtils();
         return true;
     }
 
@@ -74,7 +77,6 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             log.trace("enter function");
         }
         
-        TableInfo tableInfo = null;
         // transaction information
         String tableNamePro = messagePro.getTableName();
         int keyColNum = messagePro.getKeyColumnList().size(); // keycol size
@@ -242,8 +244,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 
                 break;
         }
-
-    	ColumnValue columnvalue = new ColumnValue(index, newValue, oldValue);
+        ColumnValue columnvalue = new ColumnValue(index, newValue, oldValue,colTypeName);
 
         if (log.isDebugEnabled()) {
             log.debug("colindex [" + index + "] ,colname [" + colname + "]"
@@ -263,7 +264,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }else if(valueNull && Valuebs.size()==0){
 	    if(insertEmptyStr(colTypeName.toUpperCase())){
               value = "";
-            }else if (insert0(colTypeName.toUpperCase())){
+            }else if (kafkaCDCUtils.isNumType(colTypeName)){
               value = "0";
             }
         }else {
@@ -291,7 +292,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }else if(Valuebs.size()==0){
             if(colTypeName!=null && insertEmptyStr(colTypeName.toUpperCase())){
               value = "";
-            }else if (colTypeName!=null && insert0(colTypeName.toUpperCase())){
+            }else if (colTypeName!=null && kafkaCDCUtils.isNumType(colTypeName)){
               value = "0";
             }
         }else{
@@ -378,23 +379,4 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }
         
     }
-    // if num type
-    private static boolean insert0(String colTypeName) {
-        switch (colTypeName) {
-            case "SIGNED SMALLINT":
-            case "SIGNED INTEGER":
-            case "SIGNED NUMERIC":
-            case "UNSIGNED NUMERIC":
-            case "SIGNED DECIMAL":
-            case "UNSIGNED DECIMAL":
-            case "DOUBLE":
-            case "UNSIGNED SMALLINT":
-            case "SIGNED TINYINT":
-            case "UNSIGNED TINYINT":
-                return true;
-            default:
-                return false;
-        }
-    }
-
 }

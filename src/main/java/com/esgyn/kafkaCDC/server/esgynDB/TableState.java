@@ -370,7 +370,8 @@ public class TableState {
                             cacheValue = rowValues.get(value.GetColumnID());
                             if (cacheValue != null) {
                                 value = new ColumnValue(cacheValue.GetColumnID(),
-                                        cacheValue.GetCurValue(), value.GetOldValue());
+                                        cacheValue.GetCurValue(), value.GetOldValue(),
+                                        tableInfo.GetColumn(cacheValue.GetColumnID()).GetTypeName());
                             }
 
                             rowValues.put(value.GetColumnID(), value);
@@ -459,7 +460,8 @@ public class TableState {
                             cacheValue = updateRow.get(value.GetColumnID());
                             if (cacheValue != null) {
                                 value = new ColumnValue(value.GetColumnID(), value.GetCurValue(),
-                                        cacheValue.GetOldValue());
+                                        cacheValue.GetOldValue(),
+                                        tableInfo.GetColumn(cacheValue.GetColumnID()).GetTypeName());
                                 updateRow.put(value.GetColumnID(), value);
                             } else {
                                 updateRow.put(value.GetColumnID(), new ColumnValue(value));
@@ -936,7 +938,7 @@ public class TableState {
         }
 
         ColumnInfo columnInfo = null;
-        String updateSql = "UPDATE  \"" + schemaName + "\"." + "\"" + tableName + "\"" + " SET ";
+        String updateSql = "UPDATE \"" + schemaName + "\"." + "\"" + tableName + "\"" + " SET ";
         ColumnInfo keyInfo = null;
         ColumnValue keyValue = null;
         String whereSql = null;
@@ -979,7 +981,8 @@ public class TableState {
         try {
             st.executeUpdate(updateSql);
         } catch (SQLException se) {
-            log.error("\nthere is a error when execute the update sql,the execute sql:["+updateSql+"]");
+            log.error("\nthere is a error when execute the update sql,the execute sql:["+updateSql+"]"
+                    + ",the coltype is ["+columnInfo.GetTypeName()+"]");
             throw se;
         }
         st.close();
