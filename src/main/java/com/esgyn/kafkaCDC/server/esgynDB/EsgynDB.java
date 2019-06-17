@@ -33,6 +33,7 @@ public class EsgynDB {
 
     private long           totalMsgNum = 0;
     private long           kafkaMsgNum = 0;
+    private long           latestTime = 0;
 
     private long           messageNum  = 0;
     private long           insMsgNum   = 0;
@@ -444,6 +445,12 @@ public class EsgynDB {
         kafkaMsgNum += kafkaMsgNum_;
     }
 
+    public synchronized void setLatestTime(long latestTime_) {
+        if (latestTime_ > latestTime) {
+            latestTime = latestTime_;
+        }
+    }
+
     public void DisplayDatabase() {
         Long end = new Date().getTime();
         Date endTime = new Date();
@@ -457,7 +464,7 @@ public class EsgynDB {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
         StringBuffer strBuffer = new StringBuffer();
-        strBuffer.append("kafkaPoll states:\n  kafkaPollNum ["+kafkaMsgNum+"]\n");
+        strBuffer.append("kafkaPoll states:\n  kafkaPollNum ["+kafkaMsgNum+"] latestDataTime ["+sdf.format(latestTime)+"]\n");
         strBuffer.append("Consumer messages [ " + totalMsgNum
                 + " processed: " + messageNum + " increased: " + incMessage
                 + "], speed(n/s) [max: " + maxSpeed + ", avg: " + avgSpeed + ", cur: " + curSpeed
