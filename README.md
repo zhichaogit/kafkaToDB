@@ -72,6 +72,7 @@ usage: Consumer Server
 * -t,--topic <arg>       REQUIRED. topic of subscription
 *    --table <arg>       table name, default: null,you should write like this [tablename]  if tablename is lowerCase
 *    --tenant <arg>      tanent user name, default: null
+*    --tablespeed <arg>  print the tables run speed info,not need arg,default:false
 * -v,--version           print the version of KafkaCDC
 *    --value <arg>       value deserializer, default is:<br>
                          org.apache.kafka.common.serialization.StringDeserializer

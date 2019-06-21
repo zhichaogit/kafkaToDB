@@ -3,6 +3,7 @@ package com.esgyn.kafkaCDC.server.esgynDB;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Date;
 import org.apache.log4j.Logger;
 
 public class TableInfo {
@@ -28,9 +29,24 @@ public class TableInfo {
     ArrayList<ColumnInfo>    columns       = null;
     Map<Integer, ColumnInfo> columnMap     = null;
     Map<String, ColumnInfo>  columnNameMap = null;
+
+    private long           interval        = 0;
+    private boolean        tablespeed      = false;
+    private long           begin;
+    private Date           startTime;
+    private long           oldTableMsgNum  = 0;
+    private long           oldIMsgNum      = 0;
+    private long           oldUMsgNum      = 0;
+    private long           oldKMsgNum      = 0;
+    private long           oldDMsgNum      = 0;
+    private long           maxTableSpeed   = 0;
+    private long           maxISpeed       = 0;
+    private long           maxUSpeed       = 0;
+    private long           maxKSpeed       = 0;
+    private long           maxDSpeed       = 0;
     private static Logger    log = Logger.getLogger(TableInfo.class);
 
-    public TableInfo(String schemaName_, String tableName_, boolean multiable_) {
+    public TableInfo(String schemaName_, String tableName_, boolean multiable_,long interval_,boolean tablespeed_) {
         tableName  = tableName_;
         multiable  = multiable_;
         schemaName = schemaName_;
@@ -39,6 +55,11 @@ public class TableInfo {
         columnMap  = new HashMap<Integer, ColumnInfo>(0);
         keyColumns = new ArrayList<ColumnInfo>(0);
         columnNameMap = new HashMap<String, ColumnInfo>(0);
+
+        interval   = interval_;
+        tablespeed = tablespeed_;
+        begin      = new Date().getTime();
+        startTime  = new Date();
     }
 
     public void AddColumn(ColumnInfo column) {
@@ -72,19 +93,74 @@ public class TableInfo {
     public synchronized void IncInsMsgNum(long rows) { insMsgNum += rows; }
     public synchronized void IncUpdMsgNum(long rows) { updMsgNum += rows; }
     public synchronized void IncKeyMsgNum(long rows) { keyMsgNum += rows; }
-
     public synchronized void IncDelMsgNum(long rows) { delMsgNum += rows; }
+
     public synchronized void IncErrInsNum(long rows) { errInsNum += rows; }
     public synchronized void IncErrUpdNum(long rows) { errUpdNum += rows; }
-    public synchronized void IncErrDelNum(long rows) { errDelNum += rows;}
+    public synchronized void IncErrDelNum(long rows) { errDelNum += rows; }
 
     public void DisplayStat(StringBuffer strBuffer) {
+
         String tableString = 
-	    String.format("  %s\tMsgs [ %d, %d, %d, %d] DMLs [ %d, %d, %d]"
+	    String.format("  %-35s Msgs [%12d,%12d,%12d,%12d] DMLs [%12d,%12d,%12d]"
 			  + " Fails [ %d, %d, %d]\n",
 			  schemaName + "." + tableName, insMsgNum, updMsgNum, 
 			  keyMsgNum, delMsgNum, insertNum, updateNum, deleteNum,
 			  errInsNum, errUpdNum, errDelNum);
         strBuffer.append(tableString);
+
+        if (tablespeed) {
+            Long end = new Date().getTime();
+            Float useTime = ((float) (end - begin)) / 1000;
+            //tables run Speed
+            long tableMsgNum = insMsgNum + updMsgNum + keyMsgNum + delMsgNum;
+            long avgTableSpeed = (long) (tableMsgNum / useTime);
+            long incTableMessage = (tableMsgNum - oldTableMsgNum);
+            long curTableSpeed = (long) (incTableMessage / (interval / 1000));
+            if (curTableSpeed > maxTableSpeed)
+                maxTableSpeed = curTableSpeed;
+            //insert speed
+            long avgISpeed = (long) (insMsgNum / useTime);
+            long incIMessage = (insMsgNum - oldIMsgNum);
+            long curISpeed = (long) (incIMessage / (interval / 1000));
+            if (curISpeed > maxISpeed)
+                maxISpeed = curISpeed;
+            //update speed
+            long avgUSpeed = (long) (updMsgNum / useTime);
+            long incUMessage = (updMsgNum - oldUMsgNum);
+            long curUSpeed = (long) (incUMessage / (interval / 1000));
+            if (curUSpeed > maxUSpeed)
+                maxUSpeed = curUSpeed;
+            //updatekey speed
+            long avgKSpeed = (long) (keyMsgNum / useTime);
+            long incKMessage = (keyMsgNum - oldKMsgNum);
+            long curKSpeed = (long) (incKMessage / (interval / 1000));
+            if (curKSpeed > maxKSpeed)
+                maxKSpeed = curKSpeed;
+            //Delete speed
+            long avgDSpeed = (long) (delMsgNum / useTime);
+            long incDMessage = (delMsgNum - oldDMsgNum);
+            long curDSpeed = (long) (incDMessage / (interval / 1000));
+            if (curDSpeed > maxDSpeed)
+                maxDSpeed = curDSpeed;
+            String tableSpeedStr =
+                    String.format("                                      "
+                            + "tableSpeed(n/s) [max: %d, avg: %d, cur: %d] "
+                            + "IS(n/s) [ %d, %d, %d] "
+                            + "US(n/s) [ %d, %d, %d] "
+                            + "KS(n/s) [ %d, %d, %d] "
+                            + "DS(n/s) [ %d, %d, %d]\n",
+                            maxTableSpeed,avgTableSpeed,curTableSpeed,
+                            maxISpeed,avgISpeed,curISpeed,
+                            maxUSpeed,avgUSpeed,curUSpeed,
+                            maxKSpeed,avgKSpeed,curKSpeed,
+                            maxDSpeed,avgDSpeed,curDSpeed);
+            strBuffer.append(tableSpeedStr);
+            oldTableMsgNum = tableMsgNum;
+            oldIMsgNum     = insMsgNum;
+            oldUMsgNum     = updMsgNum;
+            oldKMsgNum     = keyMsgNum;
+            oldDMsgNum     = delMsgNum;
+        }
     }
 }

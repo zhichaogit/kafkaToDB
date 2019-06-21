@@ -55,13 +55,14 @@ public class EsgynDB {
     private long           interval    = 0;
 
     private boolean        multiable   = false;
+    private boolean        tablespeed  = false;
 
     private long           begin;
     private Date           startTime;
 
     public EsgynDB(String defschema_, String deftable_, String dburl_, String dbdriver_,
             String dbuser_, String dbpassword_, long interval_, long commitCount_,
-            boolean multiable_) {
+            boolean multiable_,boolean tablespeed_) {
         if (log.isTraceEnabled()) {
             log.trace("enter function [table: " + defschema_ + "." + deftable_ + ", db url: "
                     + dburl_ + ", db driver:" + dbdriver_ + ", db user: " + dbuser_
@@ -77,6 +78,7 @@ public class EsgynDB {
         interval = interval_;
         commitCount = commitCount_;
         multiable = multiable_;
+        tablespeed = tablespeed_;
 
         begin = new Date().getTime();
         startTime = new Date();
@@ -180,7 +182,7 @@ public class EsgynDB {
             log.trace("enter function");
         }
         String tableName = schema + "." + table;
-        tableInfo = new TableInfo(schema, table, multiable);
+        tableInfo = new TableInfo(schema, table, multiable,interval,tablespeed);
 
         log.info("start to init table [" + tableName + "]");
         if (init_culumns(dbconn, tableInfo) <= 0) {

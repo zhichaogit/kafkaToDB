@@ -84,6 +84,7 @@ public class KafkaCDC implements Runnable {
     String  dbport      = DEFAULT_PORT;
     String  defschema   = null;
     String  deftable    = null;
+    boolean tablespeed  = false;
     String  dburl       = null;
     String  dbdriver    = "org.trafodion.jdbc.t4.T4Driver";
     String  delimiter   = null;
@@ -233,6 +234,7 @@ public class KafkaCDC implements Runnable {
          *    --sto <arg> stream T/O (default is 60000ms) 
          *    --skip skip the data error 
          *    --table  <arg> table name, default: null 
+         *    --tablespeed <arg>  print the tables run speed info,not need arg,default:false
          *    --tenant <arg> database tenant user 
          *    --value <arg> value deserializer, default is:
          *                org.apache.kafka.common.serialization.StringDeserializer 
@@ -320,6 +322,9 @@ public class KafkaCDC implements Runnable {
                 "table name, default: null,you should write like this [tablename]  if tablename is lowerCase"
 		+ "you should write like this tablename1,tablename2  if tablename is multi-table")
                 .build();
+        Option tablespeedOption = Option.builder().longOpt("tablespeed").required(false)
+                .desc("print the tables run speed info,not need arg,default:false")
+                .build();
         Option tenantOption = Option.builder().longOpt("tenant").required(false).hasArg()
                 .desc("tanent user name, default: null").build();
         Option valueOption = Option.builder().longOpt("value").required(false).hasArg().desc(
@@ -369,6 +374,7 @@ public class KafkaCDC implements Runnable {
         exeOptions.addOption(skipOption);
         exeOptions.addOption(stoOption);
         exeOptions.addOption(tableOption);
+        exeOptions.addOption(tablespeedOption);
         exeOptions.addOption(tenantOption);
         exeOptions.addOption(valueOption);
         exeOptions.addOption(zktoOption);
@@ -500,6 +506,7 @@ public class KafkaCDC implements Runnable {
                 : DEFAULT_STREAM_TO_MS;
         tenantUser = cmdLine.hasOption("tenant") ? cmdLine.getOptionValue("tenant") : null;
         deftable = cmdLine.hasOption("table") ? cmdLine.getOptionValue("table") : null;
+        tablespeed = cmdLine.hasOption("tablespeed") ? true : false;
         value    = cmdLine.hasOption("value") ? cmdLine.getOptionValue("value") : DEFAULT_VALUE;
         zkTO     = cmdLine.hasOption("zkto") ? Long.parseLong(cmdLine.getOptionValue("zkto"))
                 : DEFAULT_ZOOK_TO_MS;
@@ -657,10 +664,12 @@ public class KafkaCDC implements Runnable {
         strBuffer.append("\n\tgroup       = " + me.groupID);
         strBuffer.append("\n\tinterval    = " + (me.interval / 1000) + "s");
         strBuffer.append("\n\tmode        = " + me.full);
+        strBuffer.append("\n\tpartitions  = " + me.partString);
         strBuffer.append("\n\tschema      = " + me.defschema);
         strBuffer.append("\n\tskip        = " + me.skip);
         strBuffer.append("\n\ttable       = " + me.deftable);
         strBuffer.append("\n\ttopic       = " + me.topic);
+        strBuffer.append("\n\ttablespeed  = " + me.tablespeed);
         strBuffer.append("\n\tzookeeper   = " + me.zookeeper);
         strBuffer.append("\n\tkeepalive   = " + me.keepalive);
         strBuffer.append("\n\tkey         = " + me.key);
@@ -680,7 +689,7 @@ public class KafkaCDC implements Runnable {
         log.info(strBuffer.toString());
 
         me.esgyndb = new EsgynDB(me.defschema, me.deftable, me.dburl, me.dbdriver, me.dbuser,
-                me.dbpassword, me.interval, me.commitCount, me.format.equals("HongQuan"));
+                me.dbpassword, me.interval, me.commitCount, me.format.equals("HongQuan"),me.tablespeed);
         me.consumers = new ArrayList<ConsumerThread>(0);
 
         //get kafka info
@@ -699,7 +708,7 @@ public class KafkaCDC implements Runnable {
             System.exit(0);
           }
         }
-        log.info("\n\tpartitions  = " + Arrays.toString(me.partitions));
+        log.info("\n\trelPartitions  = " + Arrays.toString(me.partitions));
 
         if (me.aconn) {
             log.info("create a dbconn for shard connection");
