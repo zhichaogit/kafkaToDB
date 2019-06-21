@@ -45,6 +45,7 @@ public class TableState {
 
     private PreparedStatement              insertStmt  = null;
     private PreparedStatement              deleteStmt  = null;
+    private PreparedStatement              updateStmt  = null;
     private List<RowMessage>               msgs        = null;
     Map<String, RowMessage> insertRows  = null;
     Map<String, RowMessage> updateRows  = null;
@@ -84,6 +85,8 @@ public class TableState {
           dbConn = dbConn_;
           init_insert_stmt(skip);
           init_delete_stmt();
+          if (format.equals("Protobuf"))
+          init_update_stmt();
 
         return true;
     }
@@ -129,6 +132,35 @@ public class TableState {
             whereSql += " AND " + keyInfo.GetColumnName() + " = ?";
         }
         return whereSql;
+    }
+
+    public void init_update_stmt() {
+        ColumnInfo column = columns.get(0);
+
+        String updateSql = "update \"" + schemaName + "\"." + "\"" + tableName + "\"" + " SET "+
+               column.GetColumnName() + "= ?";
+
+        for (int i = 1; i < columns.size(); i++) {
+            column = columns.get(i);
+            updateSql += ", " + column.GetColumnName() + " = ? ";
+        }
+        updateSql += where_condition() + ";";
+
+        if (log.isDebugEnabled()) {
+            log.debug("update prepare statement [" + updateSql + "]");
+        }
+
+        try {
+            updateStmt = dbConn.prepareStatement(updateSql);
+        } catch (SQLException e) {
+            if (isNotDisConnAndTOExpection(e)) {
+                log.error("Prepare update stmt exception, SQL [" + updateSql + "]");
+                do {
+                    log.error("catch SQLException in method init_update_stmt",e);
+                    e = e.getNextException();
+                } while (e != null);
+            }
+        }
     }
 
     public void init_delete_stmt() {
@@ -927,7 +959,7 @@ public class TableState {
     }
 
     private long update_row_data(Map<Integer, ColumnValue> row,int offset) throws SQLException  {
-        long result = 0;
+        long result = 1;
         StringBuffer strBuffer = null;
 
         if (log.isTraceEnabled()) {
@@ -942,7 +974,82 @@ public class TableState {
         ColumnInfo keyInfo = null;
         ColumnValue keyValue = null;
         String whereSql = null;
+        //batch update if format is protobuf
+        if (format.equals("Protobuf")) {
+            //set col values
+            for (int i = 0; i < columns.size(); i++) {
+                columnInfo = columns.get(i);
+                ColumnValue columnValue = row.get(columnInfo.GetColumnOff());
+                if (columnValue == null || columnValue.CurValueIsNull()) {
+                    if (log.isDebugEnabled()) {
+                        strBuffer.append("\tcolumn: " + i + " [null]\n");
+                    }
+                  updateStmt.setNull(i + 1, columnInfo.GetColumnType());
+                } else {
+                    if (log.isDebugEnabled()) {
+                        strBuffer.append("\tcolumn: " + i + ", value [" + columnValue.GetCurValue()
+                                         + "]\n");
+                    }
+                    try {
+                        updateStmt.setString(i + 1, columnValue.GetCurValue());
+                    } catch (SQLException se) {
+                        if (isNotDisConnAndTOExpection(se)) {
+                            log.error("\nThere is a error when set value to updateStmt, the paramInt,["
+                                    +(i+1)+","+columnValue.GetCurValue()+"]");
+                        }
+                        throw se;
+                    }catch (Exception e) {
+                        log.error("\nThere is a error when set value to updateStmt, the paramInt,["
+                                +(i+1)+","+columnValue.GetCurValue()+"]");
+                        throw e;
+                    }
+                }
+            }
+            //set key values
+            for (int i = 0; i < keyColumns.size(); i++) {
+                keyInfo = keyColumns.get(i);
+                keyValue = row.get(keyInfo.GetColumnOff());
 
+                if (keyValue == null || keyValue.OldValueIsNull()) {
+                    if (havePK) {
+                        String key = get_key_value(null, row, false);
+                        log.error("the primary key value is null [table:" + schemaName + "." + tableName
+                                + ", column:" + keyInfo.GetColumnName() + "]");
+                        result = 0;
+                        break;
+                    }
+                    updateStmt.setNull(columns.size()+ (i + 1), keyInfo.GetColumnType());
+                } else {
+                    if (log.isDebugEnabled()) {
+                        strBuffer.append("\tkey id:" + i + ", column id:" + keyInfo.GetColumnOff()
+                                + ", key [" + keyValue.GetOldValue() + "]");
+                    }
+                    try {
+                        updateStmt.setString(columns.size()+ (i + 1), keyValue.GetOldValue());
+                    } catch (SQLException se) {
+                        if (isNotDisConnAndTOExpection(se)) {
+                            log.error("\nThere is a error when set value to updateStmt,the errorCode["
+                                    +se.getErrorCode()+"],the paramInt,["+(i+1)+","+keyValue.GetOldValue()+"]");
+                        }
+                        throw se;
+                    }
+                }
+            }
+
+            if (result == 1) {
+                updateStmt.addBatch();
+            }
+            if (log.isDebugEnabled()) {
+                log.debug(strBuffer.toString());
+            }
+            if (log.isTraceEnabled()) {
+                log.trace("exit function,offset:[" + offset + "], insert row: [" + result + "]");
+            }
+
+            return result;
+        }
+
+       //one by one update if  format is not protobuf
         for (int i = 0; i < keyColumns.size(); i++) {
             keyInfo = keyColumns.get(i);
             keyValue = row.get(keyInfo.GetColumnOff());
@@ -1030,6 +1137,26 @@ public class TableState {
             }
         }
 
+        if (format.equals("Protobuf")) {
+            try {
+                updateStmt.executeBatch();
+            } catch (BatchUpdateException bue) {
+                // print the error data
+                int[] updateCounts = bue.getUpdateCounts();
+                printBatchErrMess(updateCounts,errRows);
+                throw bue;
+            } catch (IndexOutOfBoundsException iobe) {
+                errUpdate++;
+               throw iobe;
+            }catch (SQLException se) {
+                if (isNotDisConnAndTOExpection(se)) {
+                    errUpdate++;
+                }
+                throw se;
+            }finally {
+                errRows.clear();
+            }
+        }
         if (log.isTraceEnabled()) {
             log.trace("exit function");
         }

@@ -47,7 +47,7 @@ public class UnicomRowMessage extends RowMessage<String> {
     @Override
     public Boolean AnalyzeMessage() {
         if (log.isTraceEnabled()) {
-            log.trace("exit function");
+            log.trace("enter function");
         }
 
         String[] formats = message.split("");
@@ -79,6 +79,14 @@ public class UnicomRowMessage extends RowMessage<String> {
         timestamp = formats[3];
 
         tableInfo = esgynDB.GetTableInfo(schemaName+"."+tableName);
+        if (tableInfo == null) {
+            if (log.isDebugEnabled()) {
+                log.error("Table [" + schemaName + "." + tableName
+                        + "] is not exist in EsgynDB.");
+            }
+
+                return false;
+        }
         StringBuffer strBuffer = null;
         if (log.isDebugEnabled()) {
             strBuffer = new StringBuffer();
@@ -183,7 +191,7 @@ public class UnicomRowMessage extends RowMessage<String> {
         String oldValue = get_column_value(coldata);
 
         if (log.isDebugEnabled()) {
-            log.debug("cur value [" + currValue + "] old value [" + oldValue + "]");
+            log.debug("cur value [" + currValue + "] old value [" + oldValue + "] cid ["+cid+"]");
         }
         return new ColumnValue(cid, currValue, oldValue,tableInfo.GetColumn(cid).GetTypeName());
     }
