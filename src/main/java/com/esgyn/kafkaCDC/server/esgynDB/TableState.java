@@ -525,6 +525,119 @@ public class TableState {
         return 1;
     }
 
+    public long UpdateRowWithKeySplit(RowMessage rowMessage) {
+        if (log.isTraceEnabled()) {
+            log.trace("enter function");
+        }
+
+        Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
+        String message = rowMessage.GetMessage();
+        String oldkey = get_key_value(message, rowValues, false);
+        String newkey = get_key_value(message, rowValues, true);
+
+        if (log.isDebugEnabled()) {
+            log.debug("updkey row key [old key: " + oldkey + ", new key: " + newkey + "], "
+                    + "message [" + message + "]");
+        }
+
+        if (oldkey == null || newkey == null)
+            return 0;
+
+        RowMessage insertRM = insertRows.get(oldkey);
+        if (insertRM !=null) {
+            Map<Integer, ColumnValue> insertRow = insertRM.GetColumns();
+            if (insertRow != null) {
+                /*
+                 * exist in insert map, must be not exist in update and delete update the 
+                 * insert row in memory
+                 */
+                for (ColumnValue value : rowValues.values()) {
+                    insertRow.put(value.GetColumnID(), new ColumnValue(value));
+                }
+
+                if (log.isDebugEnabled()) {
+                    log.debug("updkey row key [" + oldkey + "] exist in insert cache");
+                }
+
+                // remove old key
+                insertRows.remove(oldkey);
+
+                // insert the new key
+                insertRM.columns = insertRow;
+                insertRows.put(newkey, insertRM);
+
+                // delete the old key on disk
+                if (!oldkey.equals(newkey))
+                deleteRows.put(oldkey, rowMessage);
+            }
+        } else {
+            RowMessage deleteRM = deleteRows.get(oldkey);
+            if (deleteRM != null) {
+            Map<Integer, ColumnValue> deleterow = deleteRM.GetColumns();
+                if (deleterow != null) {
+                    if (log.isDebugEnabled()) {
+                        log.error("update row key is exist in delete cache [" + oldkey
+                                + "], the message [" + message + "]");
+                    }
+                    return 0;
+                }
+            } else {
+                RowMessage updateRM = updateRows.get(oldkey);
+
+                Map<Integer, ColumnValue> updateRow = null;
+                if (updateRM != null) {
+                    updateRow = updateRM.GetColumns();
+                    if (log.isDebugEnabled()) {
+                        log.debug(
+                            "updkey row [key: " + oldkey + "] in update cache [" + updateRow + "]");
+                    }
+                    if (updateRow != null) {
+                        ColumnValue cacheValue;
+
+                        for (ColumnValue value : rowValues.values()) {
+                            cacheValue = updateRow.get(value.GetColumnID());
+                            if (cacheValue != null) {
+                                value = new ColumnValue(value.GetColumnID(), value.GetCurValue(),
+                                        cacheValue.GetOldValue(),
+                                        tableInfo.GetColumn(cacheValue.GetColumnID()).GetTypeName());
+                                updateRow.put(value.GetColumnID(), value);
+                            } else {
+                                updateRow.put(value.GetColumnID(), new ColumnValue(value));
+                            }
+                        }
+                        // delete the old update message
+                        updateRows.remove(oldkey);
+                    }
+                } else {
+                    updateRow = new HashMap<Integer, ColumnValue>(0);
+                    for (ColumnValue value : rowValues.values()) {
+                        updateRow.put(value.GetColumnID(), new ColumnValue(value));
+                    }
+                    updateRM = rowMessage;
+                    updateRM.columns = updateRow;
+                }
+
+                // add new insert message
+                updateRows.put(newkey, updateRM);
+
+                // delete the data on the disk
+                if (!oldkey.equals(newkey)){
+                    rowMessage.columns = rowValues;
+                    deleteRows.put(oldkey, rowMessage);
+                }
+            }
+        }
+
+        cacheUpdkey++;
+        if (log.isTraceEnabled()) {
+            log.trace("exit function cache updkey [rows: " + cacheUpdkey + ", insert: "
+                    + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
+                    + deleteRows.size() + "]");
+        }
+
+        return 1;
+    }
+
     public long DeleteRow(RowMessage rowMessage) {
         if (log.isTraceEnabled()) {
             log.trace("exit function");
@@ -594,6 +707,15 @@ public class TableState {
                 }
             }
 
+            if (log.isDebugEnabled()) {
+                SQLException se = bue;
+                log.error("catch BatchUpdateException in method CommitTable,errorCode["+bue.getErrorCode()+"]",se);
+                se = se.getNextException();
+                if (se != null) {
+                    log.error("catch BatchUpdateException in method CommitTable ",se);
+                }
+            }
+
             return false;
         } catch (IndexOutOfBoundsException iobe) {
             commited = false;
@@ -617,6 +739,14 @@ public class TableState {
                     if (se != null) {
                         log.error("catch SQLException in method CommitTable",se);
                     }
+                }
+            }
+
+            if (log.isDebugEnabled()) {
+                log.error("catch SQLException in method CommitTable,errorCode["+se.getErrorCode()+"]",se);
+                se = se.getNextException();
+                if (se != null) {
+                    log.error("catch BatchUpdateException in method CommitTable ",se);
                 }
             }
 
@@ -1403,7 +1533,11 @@ public class TableState {
                 UpdateRow(urm);
                 break;
             case "K":
-                UpdateRowWithKey(urm);
+                if (format.equals("Protobuf")) {
+                    UpdateRowWithKeySplit(urm);
+                }else {
+                    UpdateRowWithKey(urm);
+                }
                 break;
             case "D":
                 DeleteRow(urm);
