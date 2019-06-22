@@ -444,7 +444,7 @@ public class ConsumerThread<T> extends Thread {
             log.debug("operatorType[" + urm.GetOperatorType() + "]\n" + "cacheNum [" + cacheNum
                     + "]\n" + "commitCount [" + commitCount + "]");
         }
-        if (urm.GetOperatorType().equals("K")) {
+        if (urm.GetOperatorType().equals("K")&&(!format.equals("Protobuf"))) {
             commit_tables();
             if (log.isDebugEnabled()) {
                 log.debug(" before the table [" + tableName + "] message has commit"
@@ -497,7 +497,7 @@ public class ConsumerThread<T> extends Thread {
             log.debug("operatorType[" + urm.GetOperatorType() + "]\n" + "cacheNum [" + cacheNum
                     + "]\n" + "commitCount [" + commitCount + "]");
         }
-        if (urm.GetOperatorType().equals("K")) {
+        if (urm.GetOperatorType().equals("K")&&(!format.equals("Protobuf"))) {
             commit_tables();
             if (log.isDebugEnabled()) {
                 log.debug(" before the table [" + tableName + "] message has commit"
