@@ -708,11 +708,10 @@ public class TableState {
 
             if (bue.getErrorCode()==0 || log.isDebugEnabled()) {
                 SQLException se = bue;
-                log.error("catch BatchUpdateException in method CommitTable,errorCode["+bue.getErrorCode()+"]",se);
-                se = se.getNextException();
-                if (se != null) {
+                do {
                     log.error("catch BatchUpdateException in method CommitTable ",se);
-                }
+                    se = se.getNextException();
+                } while (se != null);
             }
 
             return false;
