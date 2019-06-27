@@ -46,6 +46,9 @@ public class TableState {
     private PreparedStatement              insertStmt  = null;
     private PreparedStatement              deleteStmt  = null;
     private PreparedStatement              updateStmt  = null;
+    private final String                   I_OPERATE   = "insert_operate";
+    private final String                   U_OPERATE   = "update_operate";
+    private final String                   D_OPERATE   = "delete_operate";
     private List<RowMessage>               msgs        = null;
     Map<String, RowMessage> insertRows  = null;
     Map<String, RowMessage> updateRows  = null;
@@ -833,7 +836,7 @@ public class TableState {
         flushAndClose_bufferOutput(bufferOutput);
     }
 
-     public void printBatchErrMess(int[] insertCounts, Map<Integer, RowMessage> errRows) {
+     public void printBatchErrMess(int[] insertCounts, Map<Integer, RowMessage> errRows,String operate_type) {
         if (log.isDebugEnabled()) {
             log.trace("enter function");
         }
@@ -862,7 +865,7 @@ public class TableState {
                         case "Json":
                         case "Unicom":
                         case "UnicomJson":
-                            log.error("Error on request #" + i +": Execute failed,\n"
+                            log.error("Error on request #" + i +": Execute failed when operate the ["+operate_type+"]\n"
                                     + "throw BatchUpdateException when deal whith the kafka message ."
                                     + "offset:["+mtpara.getOffset()+"],"
                                     + "table:["+rowMessage.schemaName+"."+rowMessage.tableName+"],"
@@ -870,7 +873,7 @@ public class TableState {
                                     + "source message:["+mtpara.getMessage() +"]");
                             break;
                         case "HongQuan":
-                            log.error("Error on request #" + i +": Execute failed,\n"
+                            log.error("Error on request #" + i +": Execute failed when operate the ["+operate_type+"]\n"
                                     + "throw BatchUpdateException when deal whith the kafka message ."
                                     + "table:["+rowMessage.schemaName+"."+rowMessage.tableName+"],"
                                     + "offset:["+mtpara.getOffset()+"],"
@@ -879,7 +882,7 @@ public class TableState {
                                     + "parsed message:["+new String((rowMessage.data))+"]");
                             break;
                         default:
-                            log.error("Error on request #" + i +": Execute failed,\n"
+                            log.error("Error on request #" + i +": Execute failed when operate the ["+operate_type+"]\n"
                                     + "throw BatchUpdateException when deal whith the kafka message ."
                                     + "table:["+rowMessage.schemaName+"."+rowMessage.tableName+"],"
                                     + "offset:["+mtpara.getOffset()+"],"
@@ -889,7 +892,21 @@ public class TableState {
                      }
                     }
                  }
-                 errInsert ++;
+                 // add the errMess count
+                 switch (operate_type) {
+                    case I_OPERATE:
+                        errInsert ++;
+                        break;
+                    case U_OPERATE:
+                        errUpdate ++;
+                        break;
+                    case D_OPERATE:
+                        errDelete ++;
+                        break;
+                    default:
+                        log.error("not match any operate_type when add the errMess count");
+                        break;
+                }
              }
          }
         if (log.isDebugEnabled()) {
@@ -1085,7 +1102,7 @@ public class TableState {
             } while (se != null);
             // print the error data 
             int[] insertCounts = bue.getUpdateCounts();
-            printBatchErrMess(insertCounts,errRows);
+            printBatchErrMess(insertCounts,errRows,I_OPERATE);
             throw bue;
         } catch (IndexOutOfBoundsException iobe) {
            errInsert++;
@@ -1297,7 +1314,7 @@ public class TableState {
                 } while (se != null);
                 // print the error data
                 int[] updateCounts = bue.getUpdateCounts();
-                printBatchErrMess(updateCounts,errRows);
+                printBatchErrMess(updateCounts,errRows,U_OPERATE);
                 throw bue;
             } catch (IndexOutOfBoundsException iobe) {
                 errUpdate++;
@@ -1419,8 +1436,7 @@ public class TableState {
             } while (se != null);
             // print the error data 
             int[] deleteCounts = bue.getUpdateCounts();
-            printBatchErrMess(deleteCounts,errRows);
-            errDelete+=deleteCounts.length;
+            printBatchErrMess(deleteCounts,errRows,D_OPERATE);
             throw bue;
         }catch (IndexOutOfBoundsException iobe) {
              errDelete++;
