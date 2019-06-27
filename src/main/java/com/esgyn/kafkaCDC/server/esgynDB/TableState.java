@@ -705,9 +705,19 @@ public class TableState {
                     }
                 }
             }
-
+            //throw the Exception about Statement must be recompiled to allow privileges to be re-evaluated
             if (bue.getErrorCode()==0 || log.isDebugEnabled()) {
                 SQLException se = bue;
+                //throw the error if the ErrorCode is 8734
+                do {
+                    //ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated
+                    if (se!=null && se.getErrorCode()==-8734) {
+                        throw se;
+                    }
+                    se = se.getNextException();
+                } while (se != null);
+                //else print the error info
+                se = bue;
                 do {
                     log.error("catch BatchUpdateException in method CommitTable ",se);
                     se = se.getNextException();
@@ -1065,6 +1075,14 @@ public class TableState {
         try {
             insertStmt.executeBatch();
         } catch (BatchUpdateException bue) {
+            //throw the ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated
+            SQLException se = bue;
+            do {
+                if (se !=null && se.getErrorCode()==-8734) {
+                    throw bue;
+                }
+                se = se.getNextException();
+            } while (se != null);
             // print the error data 
             int[] insertCounts = bue.getUpdateCounts();
             printBatchErrMess(insertCounts,errRows);
@@ -1269,6 +1287,14 @@ public class TableState {
             try {
                 updateStmt.executeBatch();
             } catch (BatchUpdateException bue) {
+              //throw the ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated
+                SQLException se = bue;
+                do {
+                    if (se !=null && se.getErrorCode()==-8734) {
+                        throw bue;
+                    }
+                    se = se.getNextException();
+                } while (se != null);
                 // print the error data
                 int[] updateCounts = bue.getUpdateCounts();
                 printBatchErrMess(updateCounts,errRows);
@@ -1383,6 +1409,14 @@ public class TableState {
         try {
             int[] batchResult = deleteStmt.executeBatch();
         } catch (BatchUpdateException bue) {
+          //throw the ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated
+            SQLException se = bue;
+            do {
+                if (se !=null && se.getErrorCode()==-8734) {
+                    throw bue;
+                }
+                se = se.getNextException();
+            } while (se != null);
             // print the error data 
             int[] deleteCounts = bue.getUpdateCounts();
             printBatchErrMess(deleteCounts,errRows);
