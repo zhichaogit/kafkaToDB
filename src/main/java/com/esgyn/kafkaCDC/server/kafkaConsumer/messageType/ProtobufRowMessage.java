@@ -350,19 +350,38 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             decoder = charset.newDecoder();
             charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
         } catch (Exception ex) {
-            // print errmessage when oracle data is utf8,else catch the error 
-            if (ex.getMessage().trim().equals("Input length = 1")) {
-                log.warn("the data encode from oracle is UTF8,the data maybe error.kafka offset["
-                        +mtpara.getOffset()+"],the colindex ["+index+"],the colname["+colname
-                        +"],charset["+charSet+"],the source message:"+messagePro.toString()
-                        +"the errMessage:"+ex.getMessage(),ex);
-                throw ex;
-            }else {
-                log.error("an exception has occured when bytesToString.the kafka offset["
-                        +mtpara.getOffset()+"],the colindex ["+index+"],the colname["+colname
-                        +"],charset["+charSet+"],the source message:"+messagePro.toString()
-                        +"the errMessage:["+ex.getMessage()+"]",ex);
+            // print err message when oracle data is utf8,else catch the error 
+            if (charSet.equals("GBK")) {
+                ByteBuffer buffer_Utf8 = ByteBuffer.allocate(input.length);
+                buffer_Utf8.put(input);
+                buffer_Utf8.flip();
+                Charset charset_Utf8 = null;
+                CharsetDecoder decoder_Utf8 = null;
+                CharBuffer charBuffer_Utf8 = null;
+                try {
+                    charset_Utf8 = Charset.forName("UTF8");
+                    decoder_Utf8 = charset_Utf8.newDecoder();
+                    charBuffer_Utf8 = decoder_Utf8.decode(buffer_Utf8.asReadOnlyBuffer());
+                    if (log.isDebugEnabled()) {
+                        log.debug("data from oracle decode by UTF8 is success:"+charBuffer_Utf8.toString()+
+                                ",the kafka offset["+mtpara.getOffset()+"],the colindex ["+index+"],"
+                                + "the colname["+colname+"],charset["+"UTF8"+"],the source message:"
+                                +messagePro.toString());
+                    }
+                    return charBuffer_Utf8.toString();
+                }catch (Exception e) {
+                    log.error("data from oracle decode by UTF8 is faild when bytesToString.the kafka"
+                            + " offset["+mtpara.getOffset()+"],the colindex"+index+"],the colname["
+                            +colname+"],charset["+charSet+"],the source message:"
+                            +messagePro.toString(),e);
+                    throw e;
+                }
             }
+            log.error("an exception has occured when bytesToString.the kafka offset["
+                    +mtpara.getOffset()+"],the colindex ["+index+"],the colname["+colname
+                    +mtpara.getOffset()+"],the colindex ["+index+"],the colname["+colname
+                    +"],charset["+charSet+"],the source message:"+messagePro.toString(),ex);
+            throw ex;
         }
         return charBuffer.toString();
     }
