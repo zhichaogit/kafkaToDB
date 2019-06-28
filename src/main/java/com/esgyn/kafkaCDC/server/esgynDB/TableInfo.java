@@ -102,7 +102,7 @@ public class TableInfo {
     public void DisplayStat(StringBuffer strBuffer) {
 
         String tableString = 
-	    String.format("  %-35s Msgs [%12d,%12d,%12d,%12d] DMLs [%12d,%12d,%12d]"
+	    String.format("  %-60s Msgs [%12d,%12d,%12d,%12d] DMLs [%12d,%12d,%12d]"
 			  + " Fails [ %d, %d, %d]\n",
 			  schemaName + "." + tableName, insMsgNum, updMsgNum, 
 			  keyMsgNum, delMsgNum, insertNum, updateNum, deleteNum,

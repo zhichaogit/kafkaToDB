@@ -572,7 +572,8 @@ public class TableState {
             }
         } else {
             RowMessage deleteRM = deleteRows.get(oldkey);
-            if (deleteRM != null) {
+            RowMessage updateRM = updateRows.get(oldkey);
+            if (deleteRM != null && updateRM==null) {
             Map<Integer, ColumnValue> deleterow = deleteRM.GetColumns();
                 if (deleterow != null) {
                     if (log.isDebugEnabled()) {
@@ -582,8 +583,6 @@ public class TableState {
                     return 0;
                 }
             } else {
-                RowMessage updateRM = updateRows.get(oldkey);
-
                 Map<Integer, ColumnValue> updateRow = null;
                 if (updateRM != null) {
                     updateRow = updateRM.GetColumns();
@@ -707,13 +706,12 @@ public class TableState {
                 }
             }
 
-            if (log.isDebugEnabled()) {
+            if (bue.getErrorCode()==0 || log.isDebugEnabled()) {
                 SQLException se = bue;
-                log.error("catch BatchUpdateException in method CommitTable,errorCode["+bue.getErrorCode()+"]",se);
-                se = se.getNextException();
-                if (se != null) {
+                do {
                     log.error("catch BatchUpdateException in method CommitTable ",se);
-                }
+                    se = se.getNextException();
+                } while (se != null);
             }
 
             return false;
