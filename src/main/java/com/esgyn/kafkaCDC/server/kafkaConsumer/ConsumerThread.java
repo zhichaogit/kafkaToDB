@@ -234,12 +234,12 @@ public class ConsumerThread<T> extends Thread {
                 try {
                   commit_table_success= commit_tables_();
                 } catch (SQLException e) {
-                    // Connection does not exist(-29002) || Timeout expired(-29154)
-                    if ((e.getErrorCode()==-29002)||(e.getErrorCode()==-29154)) {
+                    // Connection does not exist(-29002) || Timeout expired(-29154)||Statement must be recompiled to allow privileges to be re-evaluated(-8734)
+                    if ((e.getErrorCode()==-29002)||(e.getErrorCode()==-29154)||(e.getErrorCode()==-8734)) {
                         synchronized (esgyndb) {
                             //just create 1 dbConn
                             if (esgyndb.getSharedConn() == dbConn) {
-                                log.info("single dbconnection is disconnect, retry commit table !");
+                                log.info("single dbconnection is disconnect or Statement must be recompiled , retry commit table !");
                                 if (log.isDebugEnabled()) {
                                     log.debug("current Thread dbconn ["+esgyndb.getSharedConn()+"] equal"
                                             + " old dbconn current dbconn["+dbConn+"], create a new dbconn");
@@ -262,7 +262,7 @@ public class ConsumerThread<T> extends Thread {
                             }
                         }
                         commit_table_success = commit_tables();
-                        log.info("single database connections is disconnect, retry commit table success:"+commit_table_success);
+                        log.info("single database connections is disconnect or Statement must be recompiled, retry commit table success:"+commit_table_success);
                     }
                 }
                 return commit_table_success;
@@ -272,9 +272,9 @@ public class ConsumerThread<T> extends Thread {
             try {
                 commit_table_success=commit_tables_();
             } catch (SQLException e) {
-                // Connection does not exist(-29002) || Timeout expired(-29154)
-                if (e.getErrorCode()==-29002||e.getErrorCode()==-29154) {
-                    log.info("multi database connections is disconnect.retry commit table!");
+                // Connection does not exist(-29002) || Timeout expired(-29154)||Statement must be recompiled to allow privileges to be re-evaluated(-8734)
+                if (e.getErrorCode()==-29002||e.getErrorCode()==-29154||(e.getErrorCode()==-8734)) {
+                    log.info("multi database connections is disconnect or Statement must be recompiled.retry commit table!");
                     try {
                         esgyndb.CloseConnection(dbConn);
                     } catch (Exception e1) {
@@ -286,7 +286,7 @@ public class ConsumerThread<T> extends Thread {
                     }
 
                     commit_table_success = commit_tables();
-                    log.info("multi database connections is disconnect.retry commit table success:"+commit_table_success);
+                    log.info("multi database connections is disconnect or Statement must be recompiled.retry commit table success:"+commit_table_success);
                 }
             }
             return commit_table_success;
