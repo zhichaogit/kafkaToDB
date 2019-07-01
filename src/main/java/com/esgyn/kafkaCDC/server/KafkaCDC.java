@@ -61,6 +61,7 @@ public class KafkaCDC implements Runnable {
     long   commitCount  = DEFAULT_COMMIT_COUNT;
     boolean aconn       = false;
     String broker       = DEFAULT_BROKER;
+    boolean batchUpdate = false;
     String format       = null;
     String groupID      = null;
     int[]  partitions   = null;
@@ -203,6 +204,7 @@ public class KafkaCDC implements Runnable {
          *    --aconn <arg>  specify one connection for esgyndb,not need arg.
          *                  default: multiple connections
          * -b --broker <arg> broker location (node0:9092[,node1:9092]) 
+         *    --batchUpdate batchUpdate means update operate will batch execute,default: one by one excute
          * -c --commit <arg> num message per Kakfa synch/pull (num recs, default is 5000) 
          * -d --dbip <arg> database server ip 
          * -e --encode <arg> character encoding of data, default: utf8 
@@ -251,6 +253,9 @@ public class KafkaCDC implements Runnable {
                         + " default: multiple connections").build();
         Option brokerOption = Option.builder("b").longOpt("broker").required(false).hasArg().desc(
                 "bootstrap.servers setting, ex: <node>:9092, default: " + "\"localhost:9092\"")
+                .build();
+        Option batchUpdateOption = Option.builder().longOpt("batchUpdate").required(false).desc(
+                "batchUpdate means update operate will batch execute,default: one by one excute ")
                 .build();
         Option commitOption = Option.builder("c").longOpt("commit").required(false).hasArg()
                 .desc("num message per Kakfa synch/pull, default: 5000").build();
@@ -345,6 +350,7 @@ public class KafkaCDC implements Runnable {
 
         exeOptions.addOption(aconnOption);
         exeOptions.addOption(brokerOption);
+        exeOptions.addOption(batchUpdateOption);
         exeOptions.addOption(commitOption);
         exeOptions.addOption(dbipOption);
         exeOptions.addOption(encodeOption);
@@ -410,6 +416,7 @@ public class KafkaCDC implements Runnable {
         // for the required options, move the value
         aconn = cmdLine.hasOption("aconn") ? true : false;
         broker = cmdLine.hasOption("broker") ? cmdLine.getOptionValue("broker") : DEFAULT_BROKER;
+        batchUpdate = cmdLine.hasOption("batchUpdate") ? true : false;
         commitCount = cmdLine.hasOption("commit") ? Long.parseLong(cmdLine.getOptionValue("commit"))
                 : DEFAULT_COMMIT_COUNT;
         dbip = cmdLine.hasOption("dbip") ? cmdLine.getOptionValue("dbip") : DEFAULT_IPADDR;
@@ -657,6 +664,7 @@ public class KafkaCDC implements Runnable {
         strBuffer.append("\n\tbigendian   = " + me.bigEndian);
         strBuffer.append("\n\toneConnect  = " + me.aconn);
         strBuffer.append("\n\tbroker      = " + me.broker);
+        strBuffer.append("\n\tbatchUpdate = " + me.batchUpdate);
         strBuffer.append("\n\tcommitCount = " + me.commitCount);
         strBuffer.append("\n\tdelimiter   = \"" + me.delimiter + "\"");
         strBuffer.append("\n\tformat      = " + me.format);
@@ -721,7 +729,7 @@ public class KafkaCDC implements Runnable {
                     me.delimiter, me.format, me.zookeeper, me.broker, me.topic, me.groupID,
                     me.charEncoding, me.key, me.value,me.kafkauser,me.kafkapw, partition,
                     me.streamTO, me.zkTO,me.hbTO,me.seTO,me.reqTO,me.commitCount, me.messageClass,
-                    me.outpath, me.aconn);
+                    me.outpath, me.aconn, me.batchUpdate);
             consumer.setName("ConsumerThread-" + partition);
             me.consumers.add(consumer);
             consumer.start();
