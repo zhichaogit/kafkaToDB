@@ -303,6 +303,8 @@ public class ConsumerThread<T> extends Thread {
                 kafkaPollNum = 0;
                 esgyndb.setLatestTime(latestTime);
                 latestTime = 0;
+                esgyndb.AddTransTotal(tableState.GetTransTotal());
+                esgyndb.AddTransFails(tableState.GetTransFails());
                 tableState.ClearCache();
                 if (!skip) 
                 return false;
@@ -328,6 +330,8 @@ public class ConsumerThread<T> extends Thread {
             kafkaPollNum = 0;
             esgyndb.setLatestTime(latestTime);
             latestTime = 0;
+            esgyndb.AddTransTotal(tableState.GetTransTotal());
+            esgyndb.AddTransFails(tableState.GetTransFails());
             tableState.ClearCache();
         }
         if (tables.size()==0) {

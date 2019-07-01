@@ -33,7 +33,9 @@ public class EsgynDB {
 
     private long           totalMsgNum = 0;
     private long           kafkaMsgNum = 0;
-    private long           latestTime = 0;
+    private long           latestTime  = 0;
+    private long           transTotal  = 0;
+    private long           transFails  = 0;
 
     private long           messageNum  = 0;
     private long           insMsgNum   = 0;
@@ -452,6 +454,12 @@ public class EsgynDB {
             latestTime = latestTime_;
         }
     }
+    public synchronized void AddTransTotal(long transTotal_) {
+        transTotal+=transTotal_;
+    }
+    public synchronized void AddTransFails(long transFails_) {
+        transFails += transFails_;
+    }
 
     public void DisplayDatabase() {
         Long end = new Date().getTime();
@@ -466,7 +474,9 @@ public class EsgynDB {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
         StringBuffer strBuffer = new StringBuffer();
-        strBuffer.append("kafkaPoll states:\n  kafkaPollNum ["+kafkaMsgNum+"] latestDataTime ["+sdf.format(latestTime)+"]\n");
+        strBuffer.append("kafkaPoll states:\n  kafkaPollNum ["+kafkaMsgNum+"] latestDataTime ["+sdf.format(latestTime)+"] "
+                + "TransactionNum [Total: " + transTotal + ", Success: " + (transTotal-transFails)
+                + ", Fails: " + transFails + " ]\n");
         strBuffer.append("Consumer messages [ " + totalMsgNum
                 + " processed: " + messageNum + " increased: " + incMessage
                 + "], speed(n/s) [max: " + maxSpeed + ", avg: " + avgSpeed + ", cur: " + curSpeed
