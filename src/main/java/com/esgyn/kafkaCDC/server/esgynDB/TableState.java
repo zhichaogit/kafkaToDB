@@ -35,6 +35,8 @@ public class TableState {
     private long                           errInsert   = 0;
     private long                           errUpdate   = 0;
     private long                           errDelete   = 0;
+    private long                           transFails  = 0;
+    private long                           transTotal  = 0;
 
     private boolean                        commited    = true;
     private boolean                        havePK      = false;
@@ -772,9 +774,11 @@ public class TableState {
             int disconnErrorCode=0;
             try {
                 if (commited) {
+                    transTotal++;
                     try {
                       dbConn.commit();
                     }catch(SQLException se){
+                      transFails++;
                       int errorCode = se.getErrorCode();
                       // retry commit table 3 times when commit table conflict
                       // CommitConflictException
@@ -787,6 +791,8 @@ public class TableState {
                       throw se;
                     }
                 } else {
+                    transTotal++;
+                    transFails++;
                     dbConn.rollback();
                     werrToFile(outPutPath);
                 }
@@ -995,6 +1001,9 @@ public class TableState {
         errInsert = 0;
         errUpdate = 0;
         errDelete = 0;
+
+        transTotal = 0;
+        transFails = 0;
     }
 
     private long insert_row_data(Map<Integer, ColumnValue> row,int offset) throws Exception {
@@ -1565,6 +1574,14 @@ public class TableState {
 
     public long GetErrDeleteRows() {
         return errDelete;
+    }
+
+    public long GetTransTotal() {
+        return transTotal;
+    }
+
+    public long GetTransFails() {
+        return transFails;
     }
 
     public long InsertMessageToTable(RowMessage urm) {
