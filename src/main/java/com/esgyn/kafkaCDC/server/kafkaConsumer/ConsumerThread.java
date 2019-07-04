@@ -76,6 +76,7 @@ public class ConsumerThread<T> extends Thread {
     String                      keepQuery= "values(1);";
     boolean                     aconn   = false;
     RowMessage<T>               urm     = null;
+    boolean                     batchUpdate = false;
     // e.g.:com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.UnicomRowMessage
     private String              messageClass;
     private String              outPutPath;
@@ -87,7 +88,7 @@ public class ConsumerThread<T> extends Thread {
             String groupid_, String encoding_, String key_, String value_,String kafkauser_ ,
             String kafkapasswd_, int partitionID_,long streamTO_, long zkTO_, int hbTO_,int seTO_,
             int reqTO_,long commitCount_, String messageClass_,String outPutPath_,
-            boolean aconn_) {
+            boolean aconn_,boolean batchUpdate_) {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
@@ -119,6 +120,7 @@ public class ConsumerThread<T> extends Thread {
         messageClass = messageClass_;
         outPutPath = outPutPath_;
         aconn = aconn_;
+        batchUpdate = batchUpdate_;
 
         tables = new HashMap<String, TableState>(0);
         Properties props = new Properties();
@@ -420,7 +422,7 @@ public class ConsumerThread<T> extends Thread {
                     return;
                 }
 
-                tableState = new TableState(tableInfo,format);
+                tableState = new TableState(tableInfo,format,batchUpdate);
 
                 if (!isInitStmt(tableState)) {
                     if (log.isDebugEnabled()) {
@@ -448,7 +450,7 @@ public class ConsumerThread<T> extends Thread {
             log.debug("operatorType[" + urm.GetOperatorType() + "]\n" + "cacheNum [" + cacheNum
                     + "]\n" + "commitCount [" + commitCount + "]");
         }
-        if (urm.GetOperatorType().equals("K")&&(!format.equals("Protobuf"))) {
+        if (urm.GetOperatorType().equals("K")&&(!batchUpdate)) {
             commit_tables();
             if (log.isDebugEnabled()) {
                 log.debug(" before the table [" + tableName + "] message has commit"
@@ -469,7 +471,7 @@ public class ConsumerThread<T> extends Thread {
                     return;
                 }
 
-                tableState = new TableState(tableInfo,format);
+                tableState = new TableState(tableInfo,format,batchUpdate);
 
                 if (!isInitStmt(tableState)) {
                     if (log.isDebugEnabled()) {
@@ -501,7 +503,7 @@ public class ConsumerThread<T> extends Thread {
             log.debug("operatorType[" + urm.GetOperatorType() + "]\n" + "cacheNum [" + cacheNum
                     + "]\n" + "commitCount [" + commitCount + "]");
         }
-        if (urm.GetOperatorType().equals("K")&&(!format.equals("Protobuf"))) {
+        if (urm.GetOperatorType().equals("K")&&(!batchUpdate)) {
             commit_tables();
             if (log.isDebugEnabled()) {
                 log.debug(" before the table [" + tableName + "] message has commit"

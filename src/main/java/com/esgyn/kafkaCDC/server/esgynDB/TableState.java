@@ -41,6 +41,7 @@ public class TableState {
     private boolean                        commited    = true;
     private boolean                        havePK      = false;
     private boolean                        multiable   = false;
+    private boolean                        batchUpdate = false;
 
     private Connection                     dbConn      = null;
     private TableInfo                      tableInfo   = null;
@@ -62,7 +63,7 @@ public class TableState {
 
     private static Logger                  log         = Logger.getLogger(TableState.class);
 
-    public TableState(TableInfo tableInfo_,String format_) {
+    public TableState(TableInfo tableInfo_,String format_,boolean batchUpdate_) {
         tableInfo = tableInfo_;
         schemaName = tableInfo.GetSchemaName();
         tableName = tableInfo.GetTableName();
@@ -72,6 +73,7 @@ public class TableState {
         columns = tableInfo.GetColumns();
         columnMap = tableInfo.GetColumnMap();
         format = format_;
+        batchUpdate = batchUpdate_;
 
         if (multiable) {
             insertRows = new IdentityHashMap<String, RowMessage>(0);
@@ -90,7 +92,7 @@ public class TableState {
           dbConn = dbConn_;
           init_insert_stmt(skip);
           init_delete_stmt();
-          if (format.equals("Protobuf"))
+          if (batchUpdate)
           init_update_stmt();
 
         return true;
@@ -1146,8 +1148,8 @@ public class TableState {
         ColumnInfo keyInfo = null;
         ColumnValue keyValue = null;
         String whereSql = null;
-        //batch update if format is protobuf
-        if (format.equals("Protobuf")) {
+        //batch update if batchUpdate is true
+        if (batchUpdate) {
             //set col values
             for (int i = 0; i < columns.size(); i++) {
                 columnInfo = columns.get(i);
@@ -1309,7 +1311,7 @@ public class TableState {
             }
         }
 
-        if (format.equals("Protobuf")) {
+        if (batchUpdate) {
             try {
                 updateStmt.executeBatch();
             } catch (BatchUpdateException bue) {
@@ -1598,7 +1600,7 @@ public class TableState {
                 UpdateRow(urm);
                 break;
             case "K":
-                if (format.equals("Protobuf")) {
+                if (batchUpdate) {
                     UpdateRowWithKeySplit(urm);
                 }else {
                     UpdateRowWithKey(urm);
