@@ -718,7 +718,8 @@ public class TableState {
                 //throw the error if the ErrorCode is 8734
                 do {
                     //ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated
-                    if (se!=null && se.getErrorCode()==-8734) {
+                    //ERROR[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
+                    if (se!=null && (se.getErrorCode()==-8734 || se.getErrorCode()==-8738)) {
                         throw se;
                     }
                     se = se.getNextException();
@@ -1104,9 +1105,10 @@ public class TableState {
             insertStmt.executeBatch();
         } catch (BatchUpdateException bue) {
             //throw the ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated
+            //throw the ERROR[8738] Statement must be recompiled due to redefinition of the object(s) accessed
             SQLException se = bue;
             do {
-                if (se !=null && se.getErrorCode()==-8734) {
+                if (se !=null && (se.getErrorCode()==-8734 ||se.getErrorCode()==-8738)) {
                     throw bue;
                 }
                 se = se.getNextException();
@@ -1316,9 +1318,10 @@ public class TableState {
                 updateStmt.executeBatch();
             } catch (BatchUpdateException bue) {
               //throw the ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated
+              //throw the ERROR[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
                 SQLException se = bue;
                 do {
-                    if (se !=null && se.getErrorCode()==-8734) {
+                    if (se !=null && (se.getErrorCode()==-8734 || se.getErrorCode()==-8738)) {
                         throw bue;
                     }
                     se = se.getNextException();
@@ -1438,9 +1441,10 @@ public class TableState {
             int[] batchResult = deleteStmt.executeBatch();
         } catch (BatchUpdateException bue) {
           //throw the ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated
+          //throw the ERROR[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
             SQLException se = bue;
             do {
-                if (se !=null && se.getErrorCode()==-8734) {
+                if (se !=null && (se.getErrorCode()==-8734 || se.getErrorCode()==-8738)) {
                     throw bue;
                 }
                 se = se.getNextException();
