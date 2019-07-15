@@ -236,8 +236,9 @@ public class ConsumerThread<T> extends Thread {
                 try {
                   commit_table_success= commit_tables_();
                 } catch (SQLException e) {
-                    // Connection does not exist(-29002) || Timeout expired(-29154)||Statement must be recompiled to allow privileges to be re-evaluated(-8734)
-                    if ((e.getErrorCode()==-29002)||(e.getErrorCode()==-29154)||(e.getErrorCode()==-8734)) {
+                    // Connection does not exist(-29002) || Timeout expired(-29154)||
+                    //Statement must be recompiled to allow privileges to be re-evaluated(-8734)||ERROR[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
+                    if ((e.getErrorCode()==-29002)||(e.getErrorCode()==-29154)||(e.getErrorCode()==-8734)||(e.getErrorCode()==-8738)) {
                         synchronized (esgyndb) {
                             //just create 1 dbConn
                             if (esgyndb.getSharedConn() == dbConn) {
@@ -274,8 +275,9 @@ public class ConsumerThread<T> extends Thread {
             try {
                 commit_table_success=commit_tables_();
             } catch (SQLException e) {
-                // Connection does not exist(-29002) || Timeout expired(-29154)||Statement must be recompiled to allow privileges to be re-evaluated(-8734)
-                if (e.getErrorCode()==-29002||e.getErrorCode()==-29154||(e.getErrorCode()==-8734)) {
+                // Connection does not exist(-29002) || Timeout expired(-29154)||
+                //Statement must be recompiled to allow privileges to be re-evaluated(-8734)||ERROR[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
+                if (e.getErrorCode()==-29002||e.getErrorCode()==-29154||(e.getErrorCode()==-8734)||(e.getErrorCode()==-8738)) {
                     log.info("multi database connections is disconnect or Statement must be recompiled.retry commit table!");
                     try {
                         esgyndb.CloseConnection(dbConn);
