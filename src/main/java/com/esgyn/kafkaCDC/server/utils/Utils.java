@@ -1,14 +1,14 @@
-package com.esgyn.kafkaCDC.server.kafkaConsumer;
+package com.esgyn.kafkaCDC.server.utils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class KafkaCDCUtils {
+public class Utils {
     ArrayList<String> dateFormats = null;
 
-    public KafkaCDCUtils() {
+    public Utils() {
         dateFormats = new ArrayList<>();
         dateFormats.add("yyyy-MM-dd HH:mm:ss");
         dateFormats.add("yyyy-MM-dd");
@@ -50,6 +50,7 @@ public class KafkaCDCUtils {
                     return true;
                 }
             } catch (Exception e) {
+		e.printStackTrace();
             }
         }
         return false;
@@ -69,6 +70,7 @@ public class KafkaCDCUtils {
                     return dateFormat;
                 }
             } catch (Exception e) {
+		e.printStackTrace();
             }
         }
         return null;

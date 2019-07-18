@@ -16,18 +16,19 @@ import java.util.Date;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 
+import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
+
+import lombok.Getter;
+import lombok.Setter;
+
 public class EsgynDB {
-    String                 dburl       = null;
-    String                 dbdriver    = null;
-    String                 dbuser      = null;
-    String                 dbpassword  = null;
-    String                 defschema   = null;
-    String                 deftable    = null;
+    EsgynDBParams          DBParams    = null;
+
     String                 NOTINITT1   = "SB_HISTOGRAMS";
     String                 NOTINITT2   = "SB_HISTOGRAM_INTERVALS";
     String                 NOTINITT3   = "SB_PERSISTENT_SAMPLES";
+
     Connection             sharedConn  = null;
-    long                   commitCount = 500;
     Map<String, TableInfo> tables      = null;
     private static Logger  log         = Logger.getLogger(EsgynDB.class);
 
@@ -54,33 +55,20 @@ public class EsgynDB {
     private long           errDeleteNum   = 0;
 
     private long           maxSpeed    = 0;
-    private long           interval    = 0;
-
-    private boolean        multiable   = false;
-    private boolean        tablespeed  = false;
 
     private long           begin;
     private Date           startTime;
 
-    public EsgynDB(String defschema_, String deftable_, String dburl_, String dbdriver_,
-            String dbuser_, String dbpassword_, long interval_, long commitCount_,
-            boolean multiable_,boolean tablespeed_) {
+    public EsgynDB(EsgynDBParams DBParams_) {
         if (log.isTraceEnabled()) {
-            log.trace("enter function [table: " + defschema_ + "." + deftable_ + ", db url: "
-                    + dburl_ + ", db driver:" + dbdriver_ + ", db user: " + dbuser_
-                    + ", commit count:" + commitCount_ + "]");
+            log.trace("enter function [table: " 
+		      + DBParams_.getDefSchema() + "." + DBParams_.getDefTable() 
+		      + ", db url: " + DBParams_.getDBUrl()
+		      + ", db driver:" + DBParams_.getDBDriver() 
+		      + ", db user: " + DBParams_.getDBUser() + "]");
         }
 
-        dburl = dburl_;
-        dbdriver = dbdriver_;
-        dbuser = dbuser_;
-        dbpassword = dbpassword_;
-        defschema = defschema_;
-        deftable = deftable_;
-        interval = interval_;
-        commitCount = commitCount_;
-        multiable = multiable_;
-        tablespeed = tablespeed_;
+	DBParams = DBParams_;
 
         begin = new Date().getTime();
         startTime = new Date();
@@ -107,7 +95,7 @@ public class EsgynDB {
             DatabaseMetaData dbmd = dbconn_Meta.getMetaData();
             String schemaName = null;
 
-            if (defschema == null) {
+            if (DBParams.getDefSchema() == null) {
                 schemaRS = dbmd.getSchemas();
                 while (schemaRS.next()) {
                     schemaName = schemaRS.getString("TABLE_SCHEM");
@@ -115,11 +103,11 @@ public class EsgynDB {
                     init_schema(dbconn_Meta, schemaName);
                 }
             } else {
-                log.info("start to init default schema [" + defschema + "]");
-                init_schema(dbconn_Meta, defschema);
+                log.info("start to init default schema [" + DBParams.getDefSchema() + "]");
+                init_schema(dbconn_Meta, DBParams.getDefSchema());
 
                 if (tables.size() <= 0) {
-                    log.error("init schema [" + defschema + "] fail, cann't find any table!");
+                    log.error("init schema [" + DBParams.getDefSchema() + "] fail, cann't find any table!");
                     System.exit(0);
                 }
             }
@@ -144,7 +132,7 @@ public class EsgynDB {
         }
 
         try {
-            if (deftable == null) {
+            if (DBParams.getDefTable() == null) {
                 String getTables ="SELECT OBJECT_NAME TABLE_NAME FROM "
                         + "TRAFODION.\"_MD_\".OBJECTS ob WHERE ob.CATALOG_NAME='TRAFODION' "
                         + "AND ob.SCHEMA_NAME = ? AND OBJECT_TYPE='BT' "
@@ -159,12 +147,12 @@ public class EsgynDB {
                     init_tables(tableInfo,dbconn,schemaName,tableNameStr);
                 }
             } else {
-                String[] tables= deftable.split(",");
+                String[] tables= DBParams.getDefTable().split(",");
                 for (String table : tables) {
-                    init_tables(tableInfo,dbconn,defschema,table);
+                    init_tables(tableInfo,dbconn,DBParams.getDefSchema(),table);
                 }
-                if (tables.length>1) 
-                    deftable=null;
+                if (tables.length > 1) 
+                    DBParams.setDefTable(null);
             }
         } catch (SQLException sqle) {
             log.error("SQLException has occurred when init_schema.",sqle);
@@ -184,7 +172,7 @@ public class EsgynDB {
             log.trace("enter function");
         }
         String tableName = schema + "." + table;
-        tableInfo = new TableInfo(schema, table, multiable,interval,tablespeed);
+        tableInfo = new TableInfo(schema, table);
 
         log.info("start to init table [" + tableName + "]");
         if (init_culumns(dbconn, tableInfo) <= 0) {
@@ -232,7 +220,7 @@ public class EsgynDB {
 
                 colId = Integer.parseInt(columnRS.getString("ORDINAL_POSITION"));
                 ColumnInfo column =
-                        new ColumnInfo(colId, colOff, colSize, colSet, colType, typeName, colName);
+		    new ColumnInfo(colId, colOff, colSize, colSet, colType, typeName, colName);
 
                 strBuffer.append("\t" + colName + " [id: " + colId + ", off: " + colOff + ", Type: "
                         + typeName.trim() + ", Type ID: " + colType + ", Size: "
@@ -328,10 +316,6 @@ public class EsgynDB {
         return table.GetKeyCount();
     }
 
-    public long GetBatchSize() {
-        return commitCount;
-    }
-
     public Connection CreateConnection(boolean autocommit) {
         Connection dbConn = null;
         if (log.isTraceEnabled()) {
@@ -339,8 +323,9 @@ public class EsgynDB {
         }
 
         try {
-            Class.forName(dbdriver);
-            dbConn = DriverManager.getConnection(dburl, dbuser, dbpassword);
+            Class.forName(DBParams.getDBDriver());
+            dbConn = DriverManager.getConnection(DBParams.getDBUrl(), DBParams.getDBUser(), 
+						 DBParams.getDBPassword());
             dbConn.setAutoCommit(autocommit);
         } catch (SQLException se) {
             log.error("SQLException has occurred when CreateConnection:",se);
@@ -379,11 +364,11 @@ public class EsgynDB {
     }
 
     public String GetDefaultSchema() {
-        return defschema;
+        return DBParams.getDefSchema();
     }
 
     public String GetDefaultTable() {
-        return deftable;
+        return DBParams.getDefTable();
     }
 
     public Connection getSharedConn() {
@@ -461,7 +446,7 @@ public class EsgynDB {
         transFails += transFails_;
     }
 
-    public void DisplayDatabase() {
+    public void DisplayDatabase(long interval, boolean tablespeed) {
         Long end = new Date().getTime();
         Date endTime = new Date();
         Float useTime = ((float) (end - begin)) / 1000;
@@ -486,7 +471,7 @@ public class EsgynDB {
                 + ", delete: " + deleteNum + "] Fails [insert: " + errInsertNum + ", update: " + errUpdateNum
                 + ", delete: " + errDeleteNum + "]\n");
         for (TableInfo tableInfo : tables.values()) {
-            tableInfo.DisplayStat(strBuffer);
+            tableInfo.DisplayStat(strBuffer, interval, tablespeed);
         }
         log.info(strBuffer.toString());
 

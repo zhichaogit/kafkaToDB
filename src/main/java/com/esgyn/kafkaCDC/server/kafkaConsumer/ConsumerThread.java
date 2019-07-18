@@ -27,6 +27,9 @@ import com.esgyn.kafkaCDC.server.esgynDB.TableState;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 
+import com.esgyn.kafkaCDC.server.utils.Utils;
+import com.esgyn.kafkaCDC.server.utils.KafkaParams;
+
 import java.io.UnsupportedEncodingException;
 import kafka.consumer.ConsumerTimeoutException;
 
@@ -41,119 +44,96 @@ import kafka.consumer.ConsumerTimeoutException;
  */
 public class ConsumerThread<T> extends Thread {
     EsgynDB                     esgyndb;
+    KafkaParams                 kafkaParams;
     // execution settings
-    String                      zookeeper;
-    String                      broker;
-    String                      topic;
-    String                      groupid;
-    long                        streamTO;
-    long                        zkTO;
-    int                         hbTO;
-    int                         seTO;
-    int                         reqTO;
-    int                         partitionID;
-    long                        commitCount;
+    private boolean             skip;
+    private boolean             bigEndian;
+    private String              delimiter;
+    private String              format;
+    private String              encoding;
+    private int                 partitionID;
+    private String              messageClass;
+    private String              outPutPath;
+    private boolean             aconn   = false;
+    private boolean             batchUpdate = false;
+
     long                        cacheNum;
     long                        kafkaPollNum;
     long                        latestTime;
-
-    String                      encoding;
-    String                      key;
-    String                      value;
-    String                      kafkauser;
-    String                      kafkapasswd;
-
-    String                      full;
-    boolean                     skip;
-    boolean                     bigEndian;
-    String                      delimiter;
-    String                      format;
 
     Map<String, TableState>     tables  = null;
     KafkaConsumer<?, ?>         kafkaconsumer;
     private final AtomicBoolean running = new AtomicBoolean(true);
     Connection                  dbConn  = null;
     String                      keepQuery= "values(1);";
-    boolean                     aconn   = false;
     RowMessage<T>               urm     = null;
-    boolean                     batchUpdate = false;
     // e.g.:com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.UnicomRowMessage
-    private String              messageClass;
-    private String              outPutPath;
 
     private static Logger       log     = Logger.getLogger(ConsumerThread.class);
 
-    public ConsumerThread(EsgynDB esgyndb_, String full_, boolean skip_, boolean bigEndian_,
-            String delimiter_, String format_, String zookeeper_, String broker_, String topic_,
-            String groupid_, String encoding_, String key_, String value_,String kafkauser_ ,
-            String kafkapasswd_, int partitionID_,long streamTO_, long zkTO_, int hbTO_,int seTO_,
-            int reqTO_,long commitCount_, String messageClass_,String outPutPath_,
-            boolean aconn_,boolean batchUpdate_) {
+    public ConsumerThread(EsgynDB esgyndb_, KafkaParams kafkaParams_,
+			  boolean skip_, boolean bigEndian_,
+			  String delimiter_, String format_, 
+			  String encoding_, int partitionID_,
+			  String messageClass_,String outPutPath_,
+			  boolean aconn_,boolean batchUpdate_) {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
-        esgyndb   = esgyndb_;
-        zookeeper = zookeeper_;
-        broker = broker_;
-        topic = topic_;
-        groupid = groupid_;
-        encoding = encoding_;
-        partitionID = partitionID_;
-        streamTO = streamTO_;
-        zkTO = zkTO_;
-        hbTO = hbTO_;
-        seTO = seTO_;
-        reqTO = reqTO_;
-        commitCount = commitCount_;
-        cacheNum = 0;
-        kafkaPollNum = 0;
+        esgyndb     = esgyndb_;
+	kafkaParams = kafkaParams_;
+
+        skip = skip_;
         bigEndian = bigEndian_;
 
-        format = format_;
         delimiter = delimiter_;
-        key = key_;
-        value = value_;
-        kafkauser = kafkauser_;
-        kafkapasswd = kafkapasswd_;
-        full = full_;
-        skip = skip_;
+        format = format_;
+
+        encoding = encoding_;
+        partitionID = partitionID_;
+
         messageClass = messageClass_;
         outPutPath = outPutPath_;
+
         aconn = aconn_;
         batchUpdate = batchUpdate_;
+
+        cacheNum = 0;
+        kafkaPollNum = 0;
 
         tables = new HashMap<String, TableState>(0);
         Properties props = new Properties();
 
-        if (zookeeper != null) {
-            props.put("zookeeper.connect", zookeeper);
+        if (kafkaParams.getZookeeper() != null) {
+            props.put("zookeeper.connect", kafkaParams.getZookeeper());
         } else {
-            props.put("bootstrap.servers", broker);
+            props.put("bootstrap.servers", kafkaParams.getBroker());
         }
-        props.put("group.id", groupid);
+        props.put("group.id", kafkaParams.getGroup());
         props.put("enable.auto.commit", "false");
         props.put("max.partition.fetch.bytes", 10485760);
-        props.put("heartbeat.interval.ms", hbTO);
-        props.put("session.timeout.ms", seTO);
-        props.put("request.timeout.ms", reqTO);
-        props.put("key.deserializer", key);
-        props.put("value.deserializer", value);
-        props.put("max.poll.records", (int) commitCount);
+        props.put("heartbeat.interval.ms", kafkaParams.getHbTO());
+        props.put("session.timeout.ms", kafkaParams.getSeTO());
+        props.put("request.timeout.ms", kafkaParams.getReqTO());
+        props.put("key.deserializer", kafkaParams.getKey());
+        props.put("value.deserializer", kafkaParams.getValue());
+        props.put("max.poll.records", (int) kafkaParams.getCommitCount());
         
-        if (kafkauser !="") {
+        if (kafkaParams.getKafkaUser() !="") {
         props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
         props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
-        props.put("sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username=" + kafkauser + " password="+kafkapasswd+";");
+        props.put("sasl.jaas.config", 
+		  "org.apache.kafka.common.security.plain.PlainLoginModule required username=" 
+		  + kafkaParams.getKafkaUser() + " password=" + kafkaParams.getKafkaPW() +";");
         }
-      
-
-
+ 
         kafkaconsumer = new KafkaConsumer(props);
-        KafkaCDCUtils utils = new KafkaCDCUtils();
+        Utils utils = new Utils();
 
-        TopicPartition partition = new TopicPartition(topic, partitionID);
+        TopicPartition partition = new TopicPartition(kafkaParams.getTopic(), partitionID);
         kafkaconsumer.assign(Arrays.asList(partition));
 
+	String full = kafkaParams.getFull();
         switch (full) {
             case "START":
                 kafkaconsumer.seekToBeginning(Arrays.asList(partition));
@@ -221,7 +201,6 @@ public class ConsumerThread<T> extends Thread {
                 log.info("close connection");
                 esgyndb.CloseConnection(dbConn);
             }
-            esgyndb.DisplayDatabase();
             kafkaconsumer.close();
             running.set(false);
         }
@@ -347,7 +326,7 @@ public class ConsumerThread<T> extends Thread {
 
     public boolean ProcessRecord() {
         // note that we don't commitSync to kafka - tho we should
-        ConsumerRecords<?, ?> records = kafkaconsumer.poll(streamTO);
+        ConsumerRecords<?, ?> records = kafkaconsumer.poll(kafkaParams.getStreamTO());
         if (log.isDebugEnabled()) {
             log.debug("poll messages: " + records.count());
         }
@@ -424,7 +403,7 @@ public class ConsumerThread<T> extends Thread {
                     return;
                 }
 
-                tableState = new TableState(tableInfo,format,batchUpdate);
+                tableState = new TableState(tableInfo,format, batchUpdate);
 
                 if (!isInitStmt(tableState)) {
                     if (log.isDebugEnabled()) {
@@ -450,7 +429,7 @@ public class ConsumerThread<T> extends Thread {
 
         if (log.isDebugEnabled()) {
             log.debug("operatorType[" + urm.GetOperatorType() + "]\n" + "cacheNum [" + cacheNum
-                    + "]\n" + "commitCount [" + commitCount + "]");
+		      + "]\n" + "commitCount [" + kafkaParams.getCommitCount() + "]");
         }
         if (urm.GetOperatorType().equals("K")&&(!batchUpdate)) {
             commit_tables();
@@ -473,7 +452,7 @@ public class ConsumerThread<T> extends Thread {
                     return;
                 }
 
-                tableState = new TableState(tableInfo,format,batchUpdate);
+                tableState = new TableState(tableInfo,format, batchUpdate);
 
                 if (!isInitStmt(tableState)) {
                     if (log.isDebugEnabled()) {
@@ -503,7 +482,7 @@ public class ConsumerThread<T> extends Thread {
 
         if (log.isDebugEnabled()) {
             log.debug("operatorType[" + urm.GetOperatorType() + "]\n" + "cacheNum [" + cacheNum
-                    + "]\n" + "commitCount [" + commitCount + "]");
+		      + "]\n" + "commitCount [" + kafkaParams.getCommitCount() + "]");
         }
         if (urm.GetOperatorType().equals("K")&&(!batchUpdate)) {
             commit_tables();
@@ -518,14 +497,14 @@ public class ConsumerThread<T> extends Thread {
         }
     }
 
-    public void seekToTime(KafkaConsumer<?, ?> kafkaconsumer,TopicPartition partition,KafkaCDCUtils utils) {
+    public void seekToTime(KafkaConsumer<?, ?> kafkaconsumer,TopicPartition partition,Utils utils) {
         long offset=0;
         long beginOffset=0;
         boolean offsetGreaterThanEnd=false;
 
         //get offset by startTime
-        String dateFormat = utils.whichDateFormat(full);
-        long startDateStamp = utils.dateToStamp(full, dateFormat);
+        String dateFormat = utils.whichDateFormat(kafkaParams.getFull());
+        long startDateStamp = utils.dateToStamp(kafkaParams.getFull(), dateFormat);
 
         Map<TopicPartition, Long> startMap = new HashMap<>();
         startMap.put(partition, startDateStamp);

@@ -1,6 +1,6 @@
 package com.esgyn.kafkaCDC.server.esgynDB;
 
-import com.esgyn.kafkaCDC.server.kafkaConsumer.KafkaCDCUtils;
+import com.esgyn.kafkaCDC.server.utils.Utils;
 
 public class ColumnValue {
     int    columnID     = 0;
@@ -12,12 +12,12 @@ public class ColumnValue {
     String oldCondStr   = " is null";
 
     public ColumnValue(int columnID_, String curValue_, String oldValue_,String colTypeName_) {
-        KafkaCDCUtils kafkaCDCUtils = new KafkaCDCUtils();
+        Utils utils = new Utils();
         columnID = columnID_;
 
         if (curValue_ != null) {
             curValue = curValue_.replace("\"", "").replace("\'", "");
-            if (kafkaCDCUtils.isNumType(colTypeName_)) {
+            if (utils.isNumType(colTypeName_)) {
                 curValueStr = curValue;
             }else {
                 curValueStr = "\'" + curValue + "\'";
@@ -28,7 +28,7 @@ public class ColumnValue {
 
         if (oldValue_ != null) {
             oldValue = oldValue_.replace("\"", "").replace("\'", "");
-            if (kafkaCDCUtils.isNumType(colTypeName_)) {
+            if (utils.isNumType(colTypeName_)) {
                 oldValueStr = oldValue;
             }else {
                 oldValueStr = "\'" + oldValue + "\'";

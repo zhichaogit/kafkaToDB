@@ -40,7 +40,6 @@ public class TableState {
 
     private boolean                        commited    = true;
     private boolean                        havePK      = false;
-    private boolean                        multiable   = false;
     private boolean                        batchUpdate = false;
 
     private Connection                     dbConn      = null;
@@ -63,11 +62,10 @@ public class TableState {
 
     private static Logger                  log         = Logger.getLogger(TableState.class);
 
-    public TableState(TableInfo tableInfo_,String format_,boolean batchUpdate_) {
+    public TableState(TableInfo tableInfo_, String format_, boolean batchUpdate_) {
         tableInfo = tableInfo_;
         schemaName = tableInfo.GetSchemaName();
         tableName = tableInfo.GetTableName();
-        multiable = tableInfo.IsMultiable();
 
         keyColumns = tableInfo.GetKeyColumns();
         columns = tableInfo.GetColumns();
@@ -75,7 +73,7 @@ public class TableState {
         format = format_;
         batchUpdate = batchUpdate_;
 
-        if (multiable) {
+        if (tableInfo.isRepeatable()) {
             insertRows = new IdentityHashMap<String, RowMessage>(0);
         } else {
             insertRows = new HashMap<String, RowMessage>(0);

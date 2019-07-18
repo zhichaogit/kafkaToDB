@@ -46,9 +46,8 @@ public class TableInfo {
     private long           maxDSpeed       = 0;
     private static Logger    log = Logger.getLogger(TableInfo.class);
 
-    public TableInfo(String schemaName_, String tableName_, boolean multiable_,long interval_,boolean tablespeed_) {
+    public TableInfo(String schemaName_, String tableName_) {
         tableName  = tableName_;
-        multiable  = multiable_;
         schemaName = schemaName_;
 
         columns    = new ArrayList<ColumnInfo>(0);
@@ -56,8 +55,6 @@ public class TableInfo {
         keyColumns = new ArrayList<ColumnInfo>(0);
         columnNameMap = new HashMap<String, ColumnInfo>(0);
 
-        interval   = interval_;
-        tablespeed = tablespeed_;
         begin      = new Date().getTime();
         startTime  = new Date();
     }
@@ -84,7 +81,8 @@ public class TableInfo {
     public ArrayList<ColumnInfo> GetColumns() { return columns; }
     public Map<Integer, ColumnInfo> GetColumnMap() { return columnMap; }
 
-    public boolean IsMultiable() { return multiable; }
+    // there are no primary key, the data can been repeatable
+    public boolean isRepeatable() { return (keyColumns.size() == 0); }
 
     public synchronized void IncInsertRows(long rows) { insertNum += rows; }
     public synchronized void IncUpdateRows(long rows) { updateNum += rows; }
@@ -99,7 +97,7 @@ public class TableInfo {
     public synchronized void IncErrUpdNum(long rows) { errUpdNum += rows; }
     public synchronized void IncErrDelNum(long rows) { errDelNum += rows; }
 
-    public void DisplayStat(StringBuffer strBuffer) {
+    public void DisplayStat(StringBuffer strBuffer, long interval, boolean tablespeed) {
 
         String tableString = 
 	    String.format("  %-60s Msgs [%12d,%12d,%12d,%12d] DMLs [%12d,%12d,%12d]"

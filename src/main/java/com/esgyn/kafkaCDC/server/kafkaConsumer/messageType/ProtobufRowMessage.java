@@ -10,7 +10,7 @@ import java.util.HashMap;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
-import com.esgyn.kafkaCDC.server.kafkaConsumer.KafkaCDCUtils;
+import com.esgyn.kafkaCDC.server.utils.Utils;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Column;
@@ -49,7 +49,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     private final int     SQL_DDL_VAL              = 160;
     private final int     SOURCEORACLE             = 1;
     private final int     SOURCEDRDS               = 2;
-    private KafkaCDCUtils kafkaCDCUtils            = null;
+    private       Utils   utils                    = null;
     public ProtobufRowMessage() {}
 
     public ProtobufRowMessage(MessageTypePara<byte[]> mtpara) throws UnsupportedEncodingException {
@@ -67,7 +67,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             return false;
         }
         esgynDB = mtpara.getEsgynDB();
-        kafkaCDCUtils = new KafkaCDCUtils();
+        utils = new Utils();
         return true;
     }
 
@@ -280,7 +280,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }else if(valueNull && Valuebs.size()==0){
 	    if(insertEmptyStr(colTypeName.toUpperCase())){
               value = "";
-            }else if (kafkaCDCUtils.isNumType(colTypeName)){
+            }else if (utils.isNumType(colTypeName)){
               value = "0";
             }
         }else {
@@ -308,7 +308,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }else if(Valuebs.size()==0){
             if(colTypeName!=null && insertEmptyStr(colTypeName.toUpperCase())){
               value = "";
-            }else if (colTypeName!=null && kafkaCDCUtils.isNumType(colTypeName)){
+            }else if (colTypeName!=null && utils.isNumType(colTypeName)){
               value = "0";
             }
         }else{
