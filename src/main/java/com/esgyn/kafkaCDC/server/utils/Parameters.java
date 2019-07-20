@@ -183,8 +183,24 @@ public class Parameters {
 	DBParams.setDBUrl(dburl);
 	DBParams.setDBUser(getStringParam("dbuser", Constants.DEFAULT_USER));
         DBParams.setDBPassword(getStringParam("dbpw", Constants.DEFAULT_PASSWORD));
-        DBParams.setDefSchema(getStringParam("schema", null));
-        DBParams.setDefTable(getStringParam("table", null));
+	String defSchema = getStringParam("schema", null);
+        DBParams.setDefSchema(getName(defSchema));
+	String defTable = getStringParam("table", null);
+        DBParams.setDefTable(getName(defTable));
+    }
+
+    private String getName(String name)
+    {
+        if (name != null) {
+            if (name.startsWith("[") && name.endsWith("]")) {
+                name = name.substring(1, name.length() - 1);
+                log.warn("The schema name is lowercase");
+            } else {
+                name = name.toUpperCase();
+            }
+        }
+
+	return name;
     }
 
     private void setKafkaOptions()
@@ -228,24 +244,7 @@ public class Parameters {
     void checkOptions()
     {
 	String defSchema = DBParams.getDefSchema();
-        if (defSchema != null) {
-            if (defSchema.startsWith("[") && defSchema.endsWith("]")) {
-                defSchema = defSchema.substring(1, defSchema.length() - 1);
-                log.warn("The schema name is lowercase");
-            } else {
-                defSchema = defSchema.toUpperCase();
-            }
-        }
-
 	String defTable = DBParams.getDefTable();
-        if (defTable != null) {
-            if (defTable.startsWith("[") && defTable.endsWith("]")) {
-                defTable = defTable.substring(1, defTable.length() - 1);
-                log.warn("The table name is lowercase");
-            } else {
-                defTable = defTable.toUpperCase();
-            }
-        }
 
 	String format = params.getFormat();
         if (format.equals("HongQuan")
@@ -327,12 +326,12 @@ public class Parameters {
         strBuffer.append("\n\t----------------------current kafkaCDC version " 
 			 + Constants.kafkaCDCVersion + "-----------------------\n");
         strBuffer.append("KafkaCDC start time: " + sdf.format(starttime))
-	    .append("\nDatabase options:")
+	    .append("\n\tDatabase options:")
 	    .append("\n\tdburl       = "    + DBParams.getDBUrl())
 	    .append("\n\tschema      = "    + DBParams.getDefSchema())
 	    .append("\n\ttable       = "    + DBParams.getDefTable())
 
-	    .append("\n\nKafka options:")
+	    .append("\n\tKafka options:")
 	    .append("\n\tbroker      = "    + KafkaParams.getBroker())
 	    .append("\n\tcommitCount = "    + KafkaParams.getCommitCount())
 	    .append("\n\tmode        = "    + KafkaParams.getFull())
@@ -349,7 +348,7 @@ public class Parameters {
 	    .append("\n\treqTO       = "    + KafkaParams.getReqTO()/1000 + "s")
 	    .append("\n\tzookeeper   = "    + KafkaParams.getZookeeper())
 
-	    .append("\n\nKafkaCDC options:")
+	    .append("\n\tKafkaCDC options:")
 	    .append("\n\toneConnect  = "    + params.isAConn())
 	    .append("\n\tbatchUpdate = "    + params.isBatchUpdate())
 	    .append("\n\tbigendian   = "    + params.isBigEndian())
