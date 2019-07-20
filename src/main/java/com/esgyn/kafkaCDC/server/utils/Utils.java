@@ -50,7 +50,6 @@ public class Utils {
                     return true;
                 }
             } catch (Exception e) {
-		e.printStackTrace();
             }
         }
         return false;
@@ -70,7 +69,6 @@ public class Utils {
                     return dateFormat;
                 }
             } catch (Exception e) {
-		e.printStackTrace();
             }
         }
         return null;

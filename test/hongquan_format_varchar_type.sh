@@ -20,7 +20,7 @@ EXPECTPATH="$EXPECTDIR/${TOPIC}_expect.log"
 
 expect <<-EOF
   set timeout 60
-  spawn ssh trafodion@$DBIP
+  spawn ssh $USER@$DBIP
    expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
@@ -61,10 +61,10 @@ cd $KAFKA_CDC/bin
 
 ./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f HongQuan --full start --sto 5 --interval 2 --key org.apache.kafka.common.serialization.LongDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
 
-#get result file from trafodion
+#get result file from $USER
 expect <<-EOF
   set timeout 60
-  spawn ssh trafodion@$DBIP
+  spawn ssh $USER@$DBIP
    expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue}
@@ -106,7 +106,7 @@ fi
 # copy result file to current host
 expect <<-EOF
   set timeout 60
-  spawn ssh trafodion@$DBIP
+  spawn ssh $USER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue }

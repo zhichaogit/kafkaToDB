@@ -28,15 +28,16 @@
 # 3. the IP better not be write "localhost"
 
 #kafka path
-KAFKA="/usr/hdp/2.4.2.0-258/kafka"
+KAFKA="$MY_SW_HOME/kafka_2.11-1.1.0"
 #kafkaCDC path
-KAFKA_CDC="/home/$USER/kafkaCDC/target/KafkaCDC"
+TOPDIR=`pwd`
+KAFKA_CDC="$TOPDIR/../target/KafkaCDC"
 
 #current host IP
 IPADDR=$(ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1 -d '/')
 #zookeeper IP
 ZKIP="localhost"
-#trafodion/esgyndb ip
+#$USER/esgyndb ip
 DBIP="localhost"
 #kafka ip
 BROKERIP="localhost"
@@ -48,7 +49,7 @@ CURRENTUSERPS="esgyndb"
 #expectResult and realResult path
 EXPECTDIR="/tmp/kafkaCDClogs"
 #kafkaCDC scripts path
-SCRIPTSDIR="$KAFKA_CDC/test"
+SCRIPTSDIR="$TOPDIR"
 #the finally result (success or failed ) path
 FINALRESULTPATH="$SCRIPTSDIR/logs/final.log"
 
@@ -64,7 +65,7 @@ fi
 expect <<-EOF
   log_user 0
   set timeout 10
-  spawn ssh trafodion@$DBIP
+  spawn ssh $USER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
@@ -92,7 +93,7 @@ if [ "$IPADDR" == "localhost" ];then
   exit 0
 fi
 #foreach exec the shell script
-for script in ${SCRIPTSDIR}/*sh
+for script in ${TOPDIR}/*sh
 do
 filePath=${script##*/}
 echo "$filePath is running ......."
@@ -105,7 +106,7 @@ done
 expect <<-EOF
   log_user 0
   set timeout 10
-  spawn ssh trafodion@$DBIP
+  spawn ssh $USER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
