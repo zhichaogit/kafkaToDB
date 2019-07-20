@@ -139,6 +139,8 @@ echo "$currentTime $TOPIC unexpected" >> $FINALRESULTPATH
 RESULT="$currentTime $TOPIC failed"
 fi
 $KAFKA/bin/kafka-topics.sh --delete --zookeeper $ZOOKEEPER --topic $TOPIC
-rm -f $DATAFILE
-rm -f $RESULTPATH
-rm -f $EXPECTPATH
+if [ "x${DEBUG}" != "xYES" ]; then
+  rm -f $DATAFILE
+  rm -f $RESULTPATH
+  rm -f $EXPECTPATH
+fi

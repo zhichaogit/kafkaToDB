@@ -175,8 +175,11 @@ else
 fi
 
 $KAFKA/bin/kafka-topics.sh --delete --zookeeper $ZOOKEEPER --topic $TOPIC
-rm -f $DATAFILE
-rm -f $RESULTPATH1
-rm -f $RESULTPATH2
-rm -f $EXPECTPATH1
-rm -f $EXPECTPATH2
+if [ "x${DEBUG}" != "xYES" ]; then
+  rm -f $DATAFILE
+  rm -f $RESULTPATH1
+  rm -f $RESULTPATH2
+  rm -f $EXPECTPATH1
+  rm -f $EXPECTPATH2
+fi
+

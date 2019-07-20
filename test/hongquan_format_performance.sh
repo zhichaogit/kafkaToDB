@@ -112,4 +112,7 @@ EOF
 RESULTPATH="$SCRIPTSDIR/logs/hongquan_format_performance_result.log"
 $KAFKA/bin/kafka-topics.sh --delete --zookeeper $ZOOKEEPER --topic $TOPIC
 RESULT="look the resultfile: $RESULTPATH"
-#rm -f $RESULTPATH
+if [ "x${DEBUG}" != "xYES" ]; then
+  rm -f $RESULTPATH
+  rm -f $EXPECTPATH
+fi

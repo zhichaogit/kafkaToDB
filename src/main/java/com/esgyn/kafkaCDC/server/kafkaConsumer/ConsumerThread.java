@@ -119,12 +119,12 @@ public class ConsumerThread<T> extends Thread {
         props.put("value.deserializer", kafkaParams.getValue());
         props.put("max.poll.records", (int) kafkaParams.getCommitCount());
         
-        if (kafkaParams.getKafkaUser() !="") {
-        props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
-        props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
-        props.put("sasl.jaas.config", 
-		  "org.apache.kafka.common.security.plain.PlainLoginModule required username=" 
-		  + kafkaParams.getKafkaUser() + " password=" + kafkaParams.getKafkaPW() +";");
+        if (kafkaParams.getKafkaUser() != null) {
+	    props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
+	    props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
+	    props.put("sasl.jaas.config", 
+		      "org.apache.kafka.common.security.plain.PlainLoginModule required username=" 
+		      + kafkaParams.getKafkaUser() + " password=" + kafkaParams.getKafkaPW() +";");
         }
  
         kafkaconsumer = new KafkaConsumer(props);

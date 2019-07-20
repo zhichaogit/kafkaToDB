@@ -311,8 +311,8 @@ public class Parameters {
 	
 	String kafkaPW = KafkaParams.getKafkaPW();
 	String kafkaUser = KafkaParams.getKafkaUser();
-        if ((!kafkaPW.equals("") && kafkaUser.equals("")) || 
-	    (kafkaPW.equals("") && !kafkaUser.equals(""))) {
+        if ((kafkaPW != null && kafkaUser == null) || 
+	    (kafkaPW == null && kafkaUser != null)) {
             reportErrorAndExit("check the kafkaUser and kafkaPW parameter pls."
 			       + "They must exist or not exist at the same time ");
         }
@@ -453,8 +453,8 @@ public class Parameters {
     }
 
     // get the partition int[]
-    public int[] getPartitionArray(String brokerstr, String a_topic,String kafkauser,
-            String kafkapasswd) {
+    public int[] getPartitionArray(String brokerstr, String a_topic,String kafkaUser,
+            String kafkaPW) {
         int[] partitioncount=null;
 
         Properties props   = new Properties();
@@ -462,11 +462,11 @@ public class Parameters {
         props.put("key.deserializer","org.apache.kafka.common.serialization.ByteArrayDeserializer");
         props.put("value.deserializer",
                 "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-        if (!kafkauser.equals("")) {
+        if (kafkaUser != null && kafkaPW != null) {
             props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
             props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
             props.put("sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule "
-		      + "required username=" + kafkauser + " password="+kafkapasswd+";");
+		      + "required username=" + kafkaUser + " password=" + kafkaPW + ";");
         }
 
         KafkaConsumer<byte[], byte[]> kafkaConsumer = new KafkaConsumer(props);

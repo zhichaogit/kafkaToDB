@@ -52,6 +52,7 @@ EXPECTDIR="/tmp/kafkaCDClogs"
 SCRIPTSDIR="$TOPDIR"
 #the finally result (success or failed ) path
 FINALRESULTPATH="$SCRIPTSDIR/logs/final.log"
+DEBUG="YES"
 
 # make sure installed tcl
 if [ "x$(rpm -qa | grep tcl)" == "x" ];then
@@ -93,13 +94,14 @@ if [ "$IPADDR" == "localhost" ];then
   exit 0
 fi
 #foreach exec the shell script
-for script in ${TOPDIR}/*sh
+#for script in ${TOPDIR}/*sh
+for script in ${TOPDIR}/hongquan_format_big_endian.sh
 do
 filePath=${script##*/}
 echo "$filePath is running ......."
 LOGPATH="${script%/*}/logs/${filePath%.*}_INFO.log"
 
-. $script >${LOGPATH} 2>${LOGPATH}
+. $script $DEBUG >${LOGPATH} 2>${LOGPATH}
 echo " $RESULT"
 done
 #clean env
