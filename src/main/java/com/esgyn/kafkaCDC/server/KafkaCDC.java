@@ -63,7 +63,7 @@ public class KafkaCDC implements Runnable {
         ctrltrhead.setName("CtrlCThread");
 
         log.info("start up CtrlCThread");
-        ctrltrhead.run();
+        ctrltrhead.start();
 
         for (ConsumerThread consumer : me.consumers) {
             try {

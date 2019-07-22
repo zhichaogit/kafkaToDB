@@ -2,6 +2,7 @@ package com.esgyn.kafkaCDC.server.utils;
 
 public class Constants {
     public final static String       DEFAULT_LOGCONFPATH   = "conf/log4j.xml";
+    public final static String       DEFAULT_JSONCONFPATH  = "conf/kafkaCDC.json";
     public final static String       kafkaCDCVersion       = "KafkaCDC-1.0.2-release";
 
     // the unit is second
@@ -104,6 +105,7 @@ public class Constants {
 
 	// system info
         {"h",  "help",        false, false, "show help information"},
-        {"v",  "version",     false, false, "print the version of KafkaCDC"}
+        {"v",  "version",     false, false, "print the version of KafkaCDC"},
+        {"R",   "readconf",    false, false, "read config paras from jsonConf file[conf/kafkaCDC.json]"}
     };   
 }

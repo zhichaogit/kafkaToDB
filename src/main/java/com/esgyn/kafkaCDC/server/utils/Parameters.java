@@ -8,19 +8,17 @@ import java.util.Properties;
 import java.text.SimpleDateFormat;
 
 import org.apache.log4j.Logger;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.config.SaslConfigs;
 
+import com.esgyn.kafkaCDC.server.bean.ConfBean;
 import com.esgyn.kafkaCDC.server.utils.Utils;
 import com.esgyn.kafkaCDC.server.utils.Constants;
 import com.esgyn.kafkaCDC.server.utils.KafkaParams;
@@ -49,6 +47,9 @@ public class Parameters {
     private HelpFormatter   formatter  = new HelpFormatter();
     private Options         exeOptions = new Options();
     private CommandLine     cmdLine    = null;
+    private Utils           utils      = null;
+    private ConfBean        confBean   = null;
+    private boolean         isReadConf = false;
     /*
      * Get command line args
      * 
@@ -107,10 +108,10 @@ public class Parameters {
 	try{
 	    cmdLine = parser.parse(exeOptions, args);
 	} catch (Exception e) {
-	    e.printStackTrace();
-	    log.error("KafkaCDC init parameters error.");
+	    log.error("KafkaCDC init parameters error.",e);
             System.exit(0);
 	}
+	    utils = new Utils();
 
         boolean getVersion = cmdLine.hasOption("version") ? true : false;
         if (getVersion) {
@@ -122,6 +123,17 @@ public class Parameters {
         if (getHelp) {
             formatter.printHelp("Consumer Server", exeOptions);
             System.exit(0);
+        }
+        isReadConf = cmdLine.hasOption("readconf") ? true :false ;
+        if (isReadConf) {
+            String jsonConf = utils.readJsonConf(Constants.DEFAULT_JSONCONFPATH);
+            log.error(jsonConf);
+            try {
+                confBean = utils.jsonParse(jsonConf);
+            } catch (Exception e) {
+                log.error("parse jsonConf has an error.make sure your json file is right.",e);
+                System.exit(0);
+            }
         }
 
         // for database options
@@ -173,19 +185,27 @@ public class Parameters {
 
     private void setDatabaseOptions()
     {
-        String  dbip        = getStringParam("dbip", Constants.DEFAULT_IPADDR);
-        String  dbport      = getStringParam("dbport", Constants.DEFAULT_PORT);
-        String  tenantUser  = getStringParam("tenant", null);
+        System.err.println("isreadConf:"+isReadConf+",db:"+confBean.getKafkaCDC().getFormat());
+        String  dbip        = isReadConf ? confBean.getEsgynDB().getDbip()
+                : getStringParam("dbip", Constants.DEFAULT_IPADDR);
+        String  dbport      = isReadConf ? confBean.getEsgynDB().getDbport()
+                :getStringParam("dbport", Constants.DEFAULT_PORT);
+        String  tenantUser  = isReadConf ? confBean.getEsgynDB().getTenant()
+                :getStringParam("tenant", null);
         String  dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/catelog=Trafodion;"
 	    + "applicationName=KafkaCDC;connectionTimeout=0";
         if (tenantUser != null)
             dburl += ";tenantName=" + tenantUser;
 	DBParams.setDBUrl(dburl);
-	DBParams.setDBUser(getStringParam("dbuser", Constants.DEFAULT_USER));
-        DBParams.setDBPassword(getStringParam("dbpw", Constants.DEFAULT_PASSWORD));
-	String defSchema = getStringParam("schema", null);
+	DBParams.setDBUser(isReadConf ? confBean.getEsgynDB().getDbuser()
+            : getStringParam("dbuser", Constants.DEFAULT_USER));
+        DBParams.setDBPassword(isReadConf ? confBean.getEsgynDB().getDbpw()
+                : getStringParam("dbpw", Constants.DEFAULT_PASSWORD));
+	String defSchema = isReadConf ? null
+            : getStringParam("schema", null);
         DBParams.setDefSchema(getName(defSchema));
-	String defTable = getStringParam("table", null);
+	String defTable = isReadConf ? null
+            : getStringParam("table", null);
         DBParams.setDefTable(getName(defTable));
     }
 
@@ -205,40 +225,66 @@ public class Parameters {
 
     private void setKafkaOptions()
     {
-        KafkaParams.setBroker(getStringParam("broker", Constants.DEFAULT_BROKER));
-	KafkaParams.setCommitCount(getLongParam("commit", Constants.DEFAULT_COMMIT_COUNT));
-        KafkaParams.setFull(getStringParam("full", null));
-	KafkaParams.setGroup(getStringParam("group", "group_0"));
+        KafkaParams.setBroker(isReadConf ? confBean.getKafka().getBroker()
+                :getStringParam("broker", Constants.DEFAULT_BROKER));
+	KafkaParams.setCommitCount(isReadConf ? confBean.getKafka().getCommit()
+            :getLongParam("commit", Constants.DEFAULT_COMMIT_COUNT));
+        KafkaParams.setFull(isReadConf ? confBean.getKafka().getFull()
+                :getStringParam("full", null));
+	KafkaParams.setGroup(isReadConf ? confBean.getKafka().getGroup()
+            :getStringParam("group", "group_0"));
         KafkaParams.setTopic(getStringParam("topic", null));
-	KafkaParams.setKafkaUser(getStringParam("kafkauser", null));
-	KafkaParams.setKafkaPW(getStringParam("kafkapw", null));
-        KafkaParams.setKey(getStringParam("key", Constants.DEFAULT_KEY));
-        KafkaParams.setValue(getStringParam("value", Constants.DEFAULT_VALUE));
-	KafkaParams.setStreamTO(getLongParam("sto", Constants.DEFAULT_STREAM_TO_S * 1000));
-	KafkaParams.setZkTO(getLongParam("zkto", Constants.DEFAULT_ZOOK_TO_S * 1000));
-        KafkaParams.setHbTO(getIntParam("hbto", Constants.DEFAULT_HEATBEAT_TO_S * 1000));
-	KafkaParams.setSeTO(getIntParam("seto", Constants.DEFAULT_SESSION_TO_S * 1000));
-	KafkaParams.setReqTO(getIntParam("reqto", Constants.DEFAULT_REQUEST_TO_S * 1000));
-        KafkaParams.setZookeeper(getStringParam("zook", null));
+	KafkaParams.setKafkaUser(isReadConf ? confBean.getKafka().getKafkauser()
+            :getStringParam("kafkauser", null));
+	KafkaParams.setKafkaPW(isReadConf ? confBean.getKafka().getKafkapw()
+            :getStringParam("kafkapw", null));
+        KafkaParams.setKey(isReadConf ? confBean.getKafka().getKey()
+                :getStringParam("key", Constants.DEFAULT_KEY));
+        KafkaParams.setValue(isReadConf ? confBean.getKafka().getValue()
+                :getStringParam("value", Constants.DEFAULT_VALUE));
+	KafkaParams.setStreamTO(isReadConf ? confBean.getKafka().getSto()
+            :getLongParam("sto", Constants.DEFAULT_STREAM_TO_S * 1000));
+	KafkaParams.setZkTO(isReadConf ? confBean.getKafka().getZkto()
+            :getLongParam("zkto", Constants.DEFAULT_ZOOK_TO_S * 1000));
+        KafkaParams.setHbTO(isReadConf ? confBean.getKafka().getHbto()
+                :getIntParam("hbto", Constants.DEFAULT_HEATBEAT_TO_S * 1000));
+	KafkaParams.setSeTO(isReadConf ? confBean.getKafka().getSeto()
+            :getIntParam("seto", Constants.DEFAULT_SESSION_TO_S * 1000));
+	KafkaParams.setReqTO(isReadConf ? confBean.getKafka().getReqto()
+            :getIntParam("reqto", Constants.DEFAULT_REQUEST_TO_S * 1000));
+        KafkaParams.setZookeeper(isReadConf ? confBean.getKafka().getZook()
+                :getStringParam("zook", null));
     }
 
     private void setKafkaCDCOptions()
     {
-	params.setAConn(getBoolParam("aconn", false));
-	params.setBatchUpdate(getBoolParam("batchUpdate", false));
-	params.setBigEndian(getBoolParam("bigendian", false));
-        params.setDelimiter(getStringParam("delim", null));
-        params.setEncoding(getStringParam("encode", Constants.DEFAULT_ENCODING));
-        params.setFormat(getStringParam("format", ""));
-        params.setInterval(getLongParam("interval", Constants.DEFAULT_INTERVAL_S * 1000));
-        params.setKeepalive(getBoolParam("keepalive", false));
+	params.setAConn(isReadConf ? confBean.getKafkaCDC().isAconn()
+            :getBoolParam("aconn", false));
+	params.setBatchUpdate(isReadConf ? confBean.getKafkaCDC().isBatchUpdate()
+            :getBoolParam("batchUpdate", false));
+	params.setBigEndian(isReadConf ? confBean.getKafkaCDC().isBigendian()
+            :getBoolParam("bigendian", false));
+        params.setDelimiter(isReadConf ? confBean.getKafkaCDC().getDelim()
+                :getStringParam("delim", null));
+        params.setEncoding(isReadConf ? confBean.getKafkaCDC().getEncode()
+                :getStringParam("encode", Constants.DEFAULT_ENCODING));
+        params.setFormat(isReadConf ? confBean.getKafkaCDC().getFormat()
+                :getStringParam("format", ""));
+        params.setInterval(isReadConf ? confBean.getKafkaCDC().getInterval()
+                :getLongParam("interval", Constants.DEFAULT_INTERVAL_S * 1000));
+        params.setKeepalive(isReadConf ? confBean.getKafkaCDC().isKeepalive()
+                :getBoolParam("keepalive", false));
 	params.setMessageClass("com.esgyn.kafkaCDC.server.kafkaConsumer.messageType." 
 			       + params.getFormat() + "RowMessage");
-	params.setPartString(getStringParam("partition", "16"));
+	params.setOutPath(isReadConf ? confBean.getKafkaCDC().getOutpath()
+            :getStringParam("outpath", null));
+	params.setPartString(isReadConf ? confBean.getKafkaCDC().getPartition()
+	        :getStringParam("partition", "16"));
 	params.setPartitions(getPartitions(params.getPartString()));
-        params.setOutPath(getStringParam("outpath", null));
-	params.setSkip(getBoolParam("skip", false));
-        params.setTableSpeed(getBoolParam("tablespeed", false));
+	params.setSkip(isReadConf ? confBean.getKafkaCDC().isSkip()
+            :getBoolParam("skip", false));
+        params.setTableSpeed(isReadConf ? confBean.getKafkaCDC().isTablespeed()
+                :getBoolParam("tablespeed", false));
     }
 
     void checkOptions()
@@ -268,7 +314,6 @@ public class Parameters {
 			       + delimiter + "] now");
         }
 
-        Utils utils = new Utils();
 	String full = KafkaParams.getFull();
         if (!full.equals("")) {
             boolean validLong = isValidLong(full);
@@ -484,7 +529,7 @@ public class Parameters {
         return partitioncount;
     }
 
-    boolean isValidLong(String str){
+    public boolean isValidLong(String str){
         try{
             long _v = Long.parseLong(str);
             return true;
@@ -493,7 +538,7 @@ public class Parameters {
         }
     }
     
-    List getNotExistParts(int[] partsArr,int[] existPartsArr) {
+    public List getNotExistParts(int[] partsArr,int[] existPartsArr) {
         List existPartitions = new ArrayList<Integer>();
         List notExistPartitions = new ArrayList<Integer>();
 
