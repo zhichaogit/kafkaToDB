@@ -8,12 +8,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.bean.ConfBean;
-import com.esgyn.kafkaCDC.server.bean.MappingBean;
 import com.google.gson.Gson;
 
 public class Utils {
@@ -27,9 +25,9 @@ public class Utils {
         dateFormats.add("yyyy/MM/dd HH:mm:ss");
         dateFormats.add("yyyy/MM/dd");
     }
-    
+
     /**
-     * 
+     *
      * @param input Date string
      * @param dateFormat
      * @return
@@ -65,7 +63,18 @@ public class Utils {
             }
         }
         return false;
-
+    }
+    /**
+     * @param intStr
+     * @return if input string is integer, otherwise false
+     */
+    public boolean isInteger(String intStr) {
+        try{
+            int i = Integer.parseInt(intStr);
+            return true;
+        }catch(NumberFormatException e){
+          return false;
+        }
     }
     /**
      * @param datevalue

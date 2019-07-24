@@ -1,5 +1,8 @@
 package com.esgyn.kafkaCDC.server.utils;
 
+import java.util.List;
+
+import com.esgyn.kafkaCDC.server.bean.MappingBean;
 import com.esgyn.kafkaCDC.server.utils.Constants;
 
 import lombok.Getter;
@@ -16,7 +19,7 @@ public class EsgynDBParams {
     @Getter 
     String                 DBUser      = Constants.DEFAULT_USER;
     @Setter
-    @Getter 
+    @Getter
     String                 DBPassword  = Constants.DEFAULT_PASSWORD;
     @Setter
     @Getter 
@@ -24,4 +27,7 @@ public class EsgynDBParams {
     @Setter
     @Getter 
     String                 defTable    = null;
+    @Setter
+    @Getter
+    List<MappingBean>      mappings    = null;
 }

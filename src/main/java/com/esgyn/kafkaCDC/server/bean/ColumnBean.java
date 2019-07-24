@@ -7,13 +7,22 @@ import lombok.Setter;
  *  column object for json conf
  */
 public class ColumnBean {
-	@Setter 
+	@Setter
     @Getter
     private String name     = null;
-	@Setter 
+	@Setter
     @Getter
     private String typename = null;
-	@Setter 
+	@Setter
+    @Getter
+	private String coltype  = null;
+	@Setter
     @Getter
     private String charset  = null;
+	@Setter
+    @Getter
+	private int    colSize  = 0;
+	@Setter
+    @Getter
+	private int    colId    = 0;
 }

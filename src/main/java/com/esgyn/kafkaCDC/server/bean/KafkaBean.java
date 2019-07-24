@@ -24,7 +24,7 @@ public class KafkaBean {
     private String       group     = null;
     @Setter
     @Getter
-    private List<String> topic     = null;
+    private String       topic     = null;
     @Setter
     @Getter
     private String       kafkauser = null;
