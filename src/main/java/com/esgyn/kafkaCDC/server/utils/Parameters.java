@@ -236,9 +236,10 @@ public class Parameters {
         KafkaParams.setBroker(isReadConf ? confBean.getKafka().getBroker()
                 :getStringParam("broker", Constants.DEFAULT_BROKER));
 	KafkaParams.setCommitCount(isReadConf ? confBean.getKafka().getCommit()
-            :getLongParam("commit", Constants.DEFAULT_COMMIT_COUNT));
-        KafkaParams.setFull(isReadConf ? confBean.getKafka().getFull()
-                :getStringParam("full", null));
+            :getLongParam("commit", Constants.DEFAULT_COMMIT_COUNT * 1000)/1000);
+	String full=isReadConf ? confBean.getKafka().getFull()
+            :getStringParam("full", null);
+        KafkaParams.setFull(full.toUpperCase());
 	KafkaParams.setGroup(isReadConf ? confBean.getKafka().getGroup()
             :getStringParam("group", "group_0"));
         KafkaParams.setTopic(isReadConf ? confBean.getKafka().getTopic():
@@ -326,7 +327,6 @@ public class Parameters {
 	String full = KafkaParams.getFull();
         if (!full.equals("")) {
             boolean validLong = isValidLong(full);
-            full = full.toUpperCase();
             if (!validLong && !utils.isDateStr(full) && !full.equals("START") && !full.equals("END")) {
 		reportErrorAndExit("the --full must have a para: \"start\" or \"end\" or "
 				   + "a Long Numeric types or date types e.g.(yyyy-MM-dd HH:mm:ss)");
@@ -422,6 +422,9 @@ public class Parameters {
 
     public int[] getPartArrayFromStr(String partString)
     {
+        if (log.isTraceEnabled()) {
+            log.trace("enter function");
+        }
 	int[]    partitions = null;
         String[] parts      = partString.split(",");
 
@@ -479,10 +482,15 @@ public class Parameters {
 				   + partitions.length + ", off: " + i);
 	    }
 	}
-
+	 if (log.isTraceEnabled()) {
+         log.trace("exit function");
+     }
 	return partitions;
     }
     public void checkKafkaPartitions(){
+        if (log.isTraceEnabled()) {
+            log.trace("enter function");
+        }
         int[] partitions = params.getPartitions();
         int[] existParts = getPartsArrayFromKafka(KafkaParams.getBroker(), KafkaParams.getTopic(),
                          KafkaParams.getKafkaUser(), KafkaParams.getKafkaPW());
@@ -493,6 +501,7 @@ public class Parameters {
                    + KafkaParams.getBroker() + "]");
             }
             partitions = existParts;
+            params.setPartitions(partitions);
         } else {
         List notExistPartitions = getNotExistParts(partitions, existParts);
         if (notExistPartitions.size() != 0) {
@@ -503,11 +512,17 @@ public class Parameters {
         }
         }
         log.info("\n\tpartitions  = " + Arrays.toString(partitions));
+        if (log.isTraceEnabled()) {
+            log.trace("exit function");
+        }
     }
 
     // get the partition int[]
     public int[] getPartsArrayFromKafka(String brokerstr, String a_topic,String kafkaUser,
             String kafkaPW) {
+        if (log.isTraceEnabled()) {
+            log.trace("enter function");
+        }
         int[] partitioncount=null;
 
         Properties props   = new Properties();
@@ -535,6 +550,9 @@ public class Parameters {
         }else {
 	    reportErrorAndExit("the topic ["+ a_topic +"] is not exist in this broker ["+brokerstr +"]");
         }
+        if (log.isTraceEnabled()) {
+            log.trace("exit function");
+        }
         return partitioncount;
     }
 
@@ -548,6 +566,9 @@ public class Parameters {
     }
     
     public List getNotExistParts(int[] partsArr,int[] existPartsArr) {
+        if (log.isTraceEnabled()) {
+            log.trace("enter function");
+        }
         List existPartitions = new ArrayList<Integer>();
         List notExistPartitions = new ArrayList<Integer>();
 
@@ -558,6 +579,9 @@ public class Parameters {
             if (!existPartitions.contains(partsArr[i])) {
                 notExistPartitions.add(partsArr[i]);
             }
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("exit function");
         }
         return notExistPartitions;
     }
@@ -580,7 +604,7 @@ public class Parameters {
     long getLongParam(String paramName, long defLongValue)
     {
 	long  param = cmdLine.hasOption(paramName) ?
-	    Long.parseLong(cmdLine.getOptionValue(paramName)) : defLongValue;
+	    Long.parseLong(cmdLine.getOptionValue(paramName))*1000 : defLongValue;
 
 	return param;
     }
@@ -588,7 +612,7 @@ public class Parameters {
     int getIntParam(String paramName, int defIntValue)
     {
 	int  param = cmdLine.hasOption(paramName) ?
-	    Integer.parseInt(cmdLine.getOptionValue(paramName)) : defIntValue;
+	    Integer.parseInt(cmdLine.getOptionValue(paramName))*1000 : defIntValue;
 
 	return param;
     }

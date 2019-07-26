@@ -37,7 +37,6 @@ public class KafkaCDC implements Runnable {
             log.info("create a dbconn for shard connection");
             me.esgyndb.setSharedConn(me.esgyndb.CreateConnection(false));
         }
-
         //start consumer theads
         for (int partition : me.params.getParams().getPartitions()) {
             // connect to kafka w/ either zook setting
