@@ -24,7 +24,7 @@ EXPECTPATH2="$EXPECTDIR/${TABLEEXP2}_expect.log"
 
 expect <<-EOF
   set timeout 60
-  spawn ssh $USER@$DBIP
+  spawn ssh $TRAFODIONUSER@$DBIP
    expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
@@ -80,7 +80,7 @@ cd $KAFKA_CDC/bin;
 #get result file from $USER
 expect <<-EOF
   set timeout 60
-  spawn ssh $USER@$DBIP
+  spawn ssh $TRAFODIONUSER@$DBIP
    expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue}
@@ -140,7 +140,7 @@ fi
 # copy result file to current host
 expect <<-EOF
   set timeout 60
-  spawn ssh $USER@$DBIP
+  spawn ssh $TRAFODIONUSER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
@@ -182,4 +182,3 @@ if [ "x${DEBUG}" != "xYES" ]; then
   rm -f $EXPECTPATH1
   rm -f $EXPECTPATH2
 fi
-

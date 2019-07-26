@@ -21,7 +21,7 @@ EXPECTPATH="$EXPECTDIR/${TOPIC}_expect.log"
 
 expect <<-EOF
   set timeout 60
-  spawn ssh $USER@$DBIP
+  spawn ssh $TRAFODIONUSER@$DBIP
    expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
@@ -95,10 +95,10 @@ KAFKA_CDC="$KAFKA_CDC"
 cd $KAFKA_CDC/bin;
 ./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f Unicom --full start --sto 5 --interval 2
 
-#get result file from $USER
+#get result file from $TRAFODIONUSER
 expect <<-EOF
   set timeout 60
-  spawn ssh $USER@$DBIP
+  spawn ssh $TRAFODIONUSER@$DBIP
    expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue}
@@ -139,7 +139,7 @@ fi
 # copy result file to current host
 expect <<-EOF
   set timeout 60
-  spawn ssh $USER@$DBIP
+  spawn ssh $TRAFODIONUSER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue }

@@ -42,6 +42,8 @@ DBIP="localhost"
 #kafka ip
 BROKERIP="localhost"
 BROKERPORT="9092"
+#trafodiion user
+TRAFODIONUSER="trafodion"
 #user(trafci) password
 TRAFODIONUSERPS="traf123"
 #user(kafkaCDCuser) password
@@ -66,7 +68,7 @@ fi
 expect <<-EOF
   log_user 0
   set timeout 10
-  spawn ssh $USER@$DBIP
+  spawn ssh $TRAFODIONUSER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
@@ -94,8 +96,7 @@ if [ "$IPADDR" == "localhost" ];then
   exit 0
 fi
 #foreach exec the shell script
-#for script in ${TOPDIR}/*sh
-for script in ${TOPDIR}/hongquan_format_big_endian.sh
+for script in `ls ${TOPDIR}/*.sh | grep -v ${TOPDIR}/invoke_all_test_shell.sh`
 do
 filePath=${script##*/}
 echo "$filePath is running ......."
@@ -108,7 +109,7 @@ done
 expect <<-EOF
   log_user 0
   set timeout 10
-  spawn ssh $USER@$DBIP
+  spawn ssh $TRAFODIONUSER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
