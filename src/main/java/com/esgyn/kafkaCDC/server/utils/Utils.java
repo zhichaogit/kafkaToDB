@@ -1,11 +1,21 @@
 package com.esgyn.kafkaCDC.server.utils;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import org.apache.log4j.Logger;
+
+import com.esgyn.kafkaCDC.server.bean.ConfBean;
+import com.google.gson.Gson;
+
 public class Utils {
+    private static Logger      log     =  Logger.getLogger(Utils.class);
     ArrayList<String> dateFormats = null;
 
     public Utils() {
@@ -15,9 +25,9 @@ public class Utils {
         dateFormats.add("yyyy/MM/dd HH:mm:ss");
         dateFormats.add("yyyy/MM/dd");
     }
-    
+
     /**
-     * 
+     *
      * @param input Date string
      * @param dateFormat
      * @return
@@ -53,7 +63,18 @@ public class Utils {
             }
         }
         return false;
-
+    }
+    /**
+     * @param intStr
+     * @return if input string is integer, otherwise false
+     */
+    public boolean isInteger(String intStr) {
+        try{
+            int i = Integer.parseInt(intStr);
+            return true;
+        }catch(NumberFormatException e){
+          return false;
+        }
     }
     /**
      * @param datevalue
@@ -98,5 +119,48 @@ public class Utils {
             default:
                 return false;
         }
+    }
+    /**
+     *  read paras from json file
+     * @param inputPath
+     * @return jsonString
+     */
+    public String readJsonConf(String inputPath) {
+        File jsonFile = new File(inputPath);
+        if (jsonFile.exists() && jsonFile.isFile()) {
+            FileInputStream fileInputStream;
+            try {
+                fileInputStream = new FileInputStream(jsonFile);
+                InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
+                int ch=0;
+                StringBuffer sb = new StringBuffer();
+                while ((ch=inputStreamReader.read())!=-1) {
+                    sb.append((char)ch);
+                }
+                inputStreamReader.close();
+                return sb.toString();
+            } catch (IOException e) {
+                log.error("read jsonFile from conf/  cause an error",e);
+            }
+        }else{
+            log.error("["+inputPath+"],not exists or not a file");
+        }
+        return null;
+    }
+    /**
+     * Parse json formatted data via Gson
+     * @param jsonString
+     * @return  jsonconfBean
+     */
+
+    public ConfBean jsonParse(String jsonString) throws Exception{
+        ConfBean jsonConf=null;
+        try {
+            Gson gson = new Gson();
+             jsonConf = gson.fromJson(jsonString,ConfBean.class);
+        } catch (Exception e) {
+           throw e;
+        }
+        return jsonConf;
     }
 }

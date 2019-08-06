@@ -73,7 +73,7 @@ public class TableState {
         format = format_;
         batchUpdate = batchUpdate_;
 
-        if (tableInfo.isRepeatable()) {
+        if (tableInfo.isRepeatable() && format.equals("HongQuan")) {
             insertRows = new IdentityHashMap<String, RowMessage>(0);
         } else {
             insertRows = new HashMap<String, RowMessage>(0);

@@ -1,19 +1,12 @@
 package com.esgyn.kafkaCDC.server;
 
-import org.apache.kafka.clients.CommonClientConfigs;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.config.SaslConfigs;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
-import com.esgyn.kafkaCDC.server.utils.Utils;
 import com.esgyn.kafkaCDC.server.utils.Constants;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
@@ -36,13 +29,14 @@ public class KafkaCDC implements Runnable {
 	me.params.init();
 
         me.esgyndb   = new EsgynDB(me.params.getDBParams());
+        me.params.checkKafkaPartitions();
+
         me.consumers = new ArrayList<ConsumerThread>(0);
 
         if (me.params.getParams().isAConn()) {
             log.info("create a dbconn for shard connection");
             me.esgyndb.setSharedConn(me.esgyndb.CreateConnection(false));
         }
-
         //start consumer theads
         for (int partition : me.params.getParams().getPartitions()) {
             // connect to kafka w/ either zook setting
@@ -63,7 +57,7 @@ public class KafkaCDC implements Runnable {
         ctrltrhead.setName("CtrlCThread");
 
         log.info("start up CtrlCThread");
-        ctrltrhead.run();
+        ctrltrhead.start();
 
         for (ConsumerThread consumer : me.consumers) {
             try {

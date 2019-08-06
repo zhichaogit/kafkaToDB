@@ -20,7 +20,7 @@ RESULTPATH="$EXPECTDIR/hongquan_format_performance_result.log"
 
 expect <<-EOF
   set timeout 60
-  spawn ssh $USER@$DBIP
+  spawn ssh $TRAFODIONUSER@$DBIP
    expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
@@ -54,10 +54,10 @@ java -cp bin:bin/*:libs/* ProducerTest
 cd $KAFKA_CDC/bin
 ./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f HongQuan --bigendian --full start --sto 5 --interval 2 --key org.apache.kafka.common.serialization.LongDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
 
-#get result file from $USERx
+#get result file from $TRAFODIONUSER
 expect <<-EOF
   set timeout 60
-  spawn ssh $USER@$DBIP
+  spawn ssh $TRAFODIONUSER@$DBIP
    expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue}
@@ -89,7 +89,7 @@ fi
 # copy result file to current host
 expect <<-EOF
   set timeout 60
-  spawn ssh $USER@$DBIP
+  spawn ssh $TRAFODIONUSER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue }

@@ -28,7 +28,7 @@ EXPECTPATH2="$EXPECTDIR/${TABLEEXP2}_expect.log"
 EXPECTPATH3="$EXPECTDIR/${TABLEEXP3}_expect.log"
 expect <<-EOF
   set timeout 100
-  spawn ssh $USER@$DBIP
+  spawn ssh $TRAFODIONUSER@$DBIP
    expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
@@ -191,10 +191,10 @@ $KAFKA/bin/kafka-console-producer.sh --broker-list $BROKER --topic $TOPIC < $DAT
 KAFKA_CDC="$KAFKA_CDC"
 cd $KAFKA_CDC/bin;
 ./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA -t $TOPIC -f Json --full start --sto 5 --interval 10 
-#get result file from $USER
+#get result file from $TRAFODIONUSER
 expect <<-EOF
   set timeout 60
-  spawn ssh $USER@$DBIP
+  spawn ssh $TRAFODIONUSER@$DBIP
    expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue}
@@ -272,7 +272,7 @@ fi
 # copy result file to current host
 expect <<-EOF
   set timeout 60
-  spawn ssh $USER@$DBIP
+  spawn ssh $TRAFODIONUSER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
@@ -307,10 +307,12 @@ else
   RESULT="$currentTime $TOPIC failed"
 fi
 $KAFKA/bin/kafka-topics.sh --delete --zookeeper $ZOOKEEPER --topic $TOPIC
-rm -f $DATAFILE
-rm -r $RESULTPATH1
-rm -r $RESULTPATH2
-rm -r $RESULTPATH3
-rm -r $EXPECTPATH1
-rm -r $EXPECTPATH2
-rm -r $EXPECTPATH3
+if [ "x${DEBUG}" != "xYES" ]; then
+  rm -f $DATAFILE
+  rm -r $RESULTPATH1
+  rm -r $RESULTPATH2
+  rm -r $RESULTPATH3
+  rm -r $EXPECTPATH1
+  rm -r $EXPECTPATH2
+  rm -r $EXPECTPATH3
+fi

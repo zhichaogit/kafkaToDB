@@ -7,19 +7,20 @@ import java.sql.SQLException;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.lang.StringBuffer;
+
 import org.apache.log4j.Logger;
 
 import java.util.Date;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 
+import com.esgyn.kafkaCDC.server.bean.ColumnBean;
+import com.esgyn.kafkaCDC.server.bean.MappingBean;
 import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
-
-import lombok.Getter;
-import lombok.Setter;
 
 public class EsgynDB {
     EsgynDBParams          DBParams    = null;
@@ -74,9 +75,13 @@ public class EsgynDB {
         startTime = new Date();
 
         tables = new HashMap<String, TableInfo>();
-
-        log.info("start to init schemas");
-        init_schemas();
+        if (DBParams.getMappings() != null) {
+            log.info("start to init mappings");
+            init_Mappings_Json();
+        }else {
+            log.info("start to init schemas");
+            init_schemas();
+        }
 
         if (log.isTraceEnabled()) {
             log.trace("exit function");
@@ -314,6 +319,123 @@ public class EsgynDB {
         }
 
         return table.GetKeyCount();
+    }
+
+    public void init_Mappings_Json(){
+        if (log.isTraceEnabled()) {
+            log.trace("enter function");
+        }
+        List<MappingBean> mappings = DBParams.getMappings();
+        for (MappingBean mapping : mappings) {
+            init_Tables_Json(mapping);
+        }
+        if (tables.size() <= 0) {
+            log.error("init schema [" + DBParams.getDefSchema() + "] fail, cann't find any table!");
+            System.exit(0);
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("exit function");
+        }
+    }
+    public void init_Tables_Json(MappingBean mapping){
+        if (log.isTraceEnabled()) {
+            log.trace("enter function");
+        }
+
+        String tableName = mapping.getOld_schema() + "." + mapping.getOld_table();
+        List<ColumnBean> columns = mapping.getColumns();
+        List<Integer>    keys    = mapping.getKeys();
+
+        TableInfo tableInfo = new TableInfo(mapping.getOld_schema(), mapping.getOld_table());
+        log.info("start to init table [" + tableName + "]");
+
+        if (columns.size()<=0) {
+            log.error("init table [" + tableName + "] is not exist!");
+        }else {
+            init_columns_json(tableInfo,columns);
+            init_keys_Json(tableInfo,keys);
+            tables.put(tableName, tableInfo);
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace("exit function");
+        }
+    }
+    public long init_columns_json(TableInfo tableInfo,List<ColumnBean> columns){
+        if (log.isTraceEnabled()) {
+            log.trace("enter function");
+        }
+        StringBuffer strBuffer = null;
+        if (log.isDebugEnabled()) {
+            strBuffer = new StringBuffer();
+            strBuffer.append("\n\tget table [" + tableInfo.GetSchemaName() + "." + tableInfo.GetTableName()
+                    + "],");
+        }
+        for (int i = 0; i < columns.size(); i++) {
+
+            String colName   = columns.get(i).getName();
+            String typeName  = columns.get(i).getTypename();
+            String colType   = columns.get(i).getColtype();
+            String colSet    = columns.get(i).getCharset();
+            int    colSize   = columns.get(i).getColSize();
+            int    colId     = columns.get(i).getColId();
+            ColumnInfo column = new ColumnInfo(colId, i, colSize, colSet, colType, typeName, colName);
+            strBuffer.append("\n\tcolName [ "+colName + "], id [" + colId + "], off [" + i + "], Type ["
+                    + typeName.trim() + "], Type ID [" + colType + "], Size ["
+                    + column.GetColumnSize() + "]");
+            tableInfo.AddColumn(column);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug(strBuffer.toString());
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("exit function [column number:" + tableInfo.GetColumnCount() + "]");
+        }
+        return tableInfo.GetColumnCount();
+    }
+
+    public long init_keys_Json(TableInfo tableInfo,List<Integer> keys) {
+        if (log.isTraceEnabled()) {
+            log.trace("enter function [table info: " + tableInfo + "]");
+        }
+        String tableName=tableInfo.GetSchemaName() + "."+ tableInfo.GetTableName();
+        ColumnInfo firstColumn = tableInfo.GetColumn(0);
+        if (firstColumn.GetColumnID() != 0) {
+            log.warn("no primary key on table [" + tableName + "], use all of columns.");
+
+            for (int i = 0; i < tableInfo.GetColumnCount(); i++) {
+                tableInfo.AddKey(tableInfo.GetColumn(i));
+            }
+
+            return tableInfo.GetKeyCount();
+        }
+
+        StringBuffer strBuffer = null;
+        if (log.isDebugEnabled()) {
+            strBuffer = new StringBuffer();
+            strBuffer.append("\n\tget primakey of [" + tableName + "],");
+        }
+        int colId = 0;
+        for (int i = 0; i < keys.size(); i++) {
+            colId = keys.get(i);
+            ColumnInfo column = tableInfo.GetColumnFromMap(colId);
+            if (log.isDebugEnabled()) {
+                strBuffer.append("\n\t key columns [" + column.GetColumnName() + "], id [" + column.GetColumnID()
+                        + "], Off [" + column.GetColumnOff() + "], Type [" + column.GetTypeName()
+                        + "], Type ID [" + column.GetColumnType() + "]");
+            }
+            tableInfo.AddKey(column);
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug(strBuffer.toString());
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace("exit function [key column number: " + tableInfo.GetKeyCount() + "]");
+        }
+
+        return tableInfo.GetKeyCount();
     }
 
     public Connection CreateConnection(boolean autocommit) {

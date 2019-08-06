@@ -1,5 +1,8 @@
 package com.esgyn.kafkaCDC.server.utils;
 
+
+import java.util.List;
+
 import com.esgyn.kafkaCDC.server.utils.Constants;
 
 import lombok.Getter;
@@ -20,7 +23,7 @@ public class KafkaParams {
     String  group       = null;
     @Setter
     @Getter
-    String  topic       = null;
+    String topic        = null;
     @Setter
     @Getter
     String  kafkaUser   = null;

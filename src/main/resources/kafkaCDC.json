@@ -1,0 +1,79 @@
+{
+	"esgynDB": {
+		"dbip": "localhost",
+		"dbport": "23400",
+		"dbuser": "db__root",
+		"dbpw": "zz",
+		"tenant": null
+	},
+	"kafka": {
+		"broker": "localhost:9092",
+		"commit": 5000,
+		"full": "start",
+		"group": "0",
+		"topic": [
+		  "topic1",
+		  "topic2",
+		  "topic3"
+		  ],
+		"kafkauser": null,
+		"kafkapw": null,
+		"key": "org.apache.kafka.common.serialization.StringDeserializer",
+		"value": "org.apache.kafka.common.serialization.StringDeserializer",
+		"sto": 60,
+		"zkto": 10,
+		"hbto": 10,
+		"seto": 30,
+		"reqto": 305,
+		"zook": null
+	},
+	"kafkaCDC": {
+	    "aconn": false,
+		"batchUpdate": false,
+		"bigendian": false,
+		"delim": ",",
+		"encode": "utf8",
+		"format": "Unicom",
+		"interval": 10,
+		"keepalive": false,
+		"outpath": null,
+		"partition": "16",
+		"skip": false,
+		"tablespeed": false
+	},
+	"mapping": [{
+		"schema": "SEABASE",
+		"table": "T001",
+		"old_schema": "",
+		"old_table": "",
+		"columns": [{
+			"name": "t001_c1",
+			"typename": "int",
+			"charset": "utf8"
+		}, {
+			"name": "t001_c2",
+			"typename": "varchar",
+			"charset": "utf8"
+		}],
+		"keys": [1]
+	}, {
+		"schema": "SEABSE",
+		"table": "tab_001",
+		"old_schema": "S1",
+		"old_table": "T1",
+		"columns": [{
+			"name": "t001_c1",
+			"typename": "int",
+			"charset": "utf8"
+		}, {
+			"name": "t001_c2",
+			"typename": "varchar",
+			"charset": "utf8"
+		}, {
+			"name": "t001_c3",
+			"typename": "varchar",
+			"charset": "utf8"
+		}],
+		"keys": [3, 1]
+	}]
+}

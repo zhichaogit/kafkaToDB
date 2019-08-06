@@ -81,8 +81,8 @@ public class TableInfo {
     public ArrayList<ColumnInfo> GetColumns() { return columns; }
     public Map<Integer, ColumnInfo> GetColumnMap() { return columnMap; }
 
-    // there are no primary key, the data can been repeatable
-    public boolean isRepeatable() { return (keyColumns.size() == 0); }
+    // there are no primary key when colId is 0, the data can been repeatable
+    public boolean isRepeatable() { return (keyColumns.get(0).GetColumnID() != 0); }
 
     public synchronized void IncInsertRows(long rows) { insertNum += rows; }
     public synchronized void IncUpdateRows(long rows) { updateNum += rows; }
