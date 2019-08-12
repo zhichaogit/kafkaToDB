@@ -22,7 +22,7 @@
 # you'll have to change the the following conf at least if you want this
 #test to run:
 # 1.example/ProducerTest.java (host:port)
-# 2.$(KAFKA,KAFKA_CDC,ZKIP,DBIP,BROKERIP,BROKERPORT,TRAFODIONUSERPS,
+# 2.$(KAFKA,KAFKA_CDC,ZKIP,DBIP,BROKERIP,BROKERPORT,DBPW,
 #CURRENTUSERPS,)
 #if there are error or faild ,you can go $SCRIPTSDIR/logs for more INFO
 # 3. the IP better not be write "localhost"
@@ -43,11 +43,11 @@ DBIP="localhost"
 BROKERIP="localhost"
 BROKERPORT="9092"
 #trafodiion user
-TRAFODIONUSER="trafodion"
+DBUSER="wangxz"
 #user(trafci) password
-TRAFODIONUSERPS="traf123"
+DBPW="traf123"
 #user(kafkaCDCuser) password
-CURRENTUSERPS="esgyndb"
+CURRENTUSERPS="wangxz"
 #expectResult and realResult path
 EXPECTDIR="/tmp/kafkaCDClogs"
 #kafkaCDC scripts path
@@ -68,10 +68,10 @@ fi
 expect <<-EOF
   log_user 0
   set timeout 10
-  spawn ssh $TRAFODIONUSER@$DBIP
+  spawn ssh $DBUSER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
-  "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
+  "password:" { send "$DBPW\r";exp_continue }
   "$ " { send "\r" }
   }
   expect "$ "
@@ -96,11 +96,11 @@ if [ "$IPADDR" == "localhost" ];then
   exit 0
 fi
 #foreach exec the shell script
-for script in `ls ${TOPDIR}/*.sh | grep -v ${TOPDIR}/invoke_all_test_shell.sh`
+for script in "hongquan_format_big_endian.sh" #`ls ${TOPDIR}/*.sh | grep -v ${TOPDIR}/invoke_all_test_shell.sh`
 do
 filePath=${script##*/}
 echo "$filePath is running ......."
-LOGPATH="${script%/*}/logs/${filePath%.*}_INFO.log"
+LOGPATH="${TOPDIR}/logs/${filePath%.*}_INFO.log"
 
 . $script $DEBUG >${LOGPATH} 2>${LOGPATH}
 echo " $RESULT"
@@ -109,10 +109,10 @@ done
 expect <<-EOF
   log_user 0
   set timeout 10
-  spawn ssh $TRAFODIONUSER@$DBIP
+  spawn ssh $DBUSER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
-  "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
+  "password:" { send "$DBPW\r";exp_continue }
   "$ " { send "\r" }
   }
   expect "$ "

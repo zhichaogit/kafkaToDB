@@ -20,10 +20,10 @@ EXPECTPATH="$EXPECTDIR/${TOPIC}_expect.log"
 
 expect <<-EOF
   set timeout 60
-  spawn ssh $TRAFODIONUSER@$DBIP
+  spawn ssh $DBUSER@$DBIP
    expect {
   "yes/no" { send "yes\r";exp_continue }
-  "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
+  "password:" { send "$DBPW\r";exp_continue }
   "$ " { send "\r" }
   }
   expect "$ "
@@ -62,13 +62,13 @@ cd $KAFKA_CDC/bin
 
 ./KafkaCDC-server.sh -p $PARTITION  -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f HongQuan --bigendian --full start --sto 5 --interval 2 --key org.apache.kafka.common.serialization.LongDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
 
-#get result file from $TRAFODIONUSER
+#get result file from $DBUSER
 expect <<-EOF
   set timeout 60
-  spawn ssh $TRAFODIONUSER@$DBIP
+  spawn ssh $DBUSER@$DBIP
    expect {
   "yes/no" { send "yes\r";exp_continue }
-  "password:" { send "$TRAFODIONUSERPS\r";exp_continue}
+  "password:" { send "$DBPW\r";exp_continue}
   "$ " { send "\r" }
   }
   expect "$ "
@@ -108,10 +108,10 @@ fi
 # copy result file to current host
 expect <<-EOF
   set timeout 60
-  spawn ssh $TRAFODIONUSER@$DBIP
+  spawn ssh $DBUSER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
-  "password:" { send "$TRAFODIONUSERPS\r";exp_continue }
+  "password:" { send "$DBPW\r";exp_continue }
   "$ " { send "\r" }
   }
   expect "$ "
