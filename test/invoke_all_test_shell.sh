@@ -67,7 +67,7 @@ fi
 #ready env
 expect <<-EOF
   log_user 0
-  set timeout 10
+  set timeout 120
   spawn ssh $DBUSER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
@@ -96,7 +96,7 @@ if [ "$IPADDR" == "localhost" ];then
   exit 0
 fi
 #foreach exec the shell script
-for script in "hongquan_format_big_endian.sh" #`ls ${TOPDIR}/*.sh | grep -v ${TOPDIR}/invoke_all_test_shell.sh`
+for script in "hongquan_format_varchar_type.sh" #`ls ${TOPDIR}/*.sh | grep -v ${TOPDIR}/invoke_all_test_shell.sh`
 do
 filePath=${script##*/}
 echo "$filePath is running ......."
@@ -108,7 +108,7 @@ done
 #clean env
 expect <<-EOF
   log_user 0
-  set timeout 10
+  set timeout 120
   spawn ssh $DBUSER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }

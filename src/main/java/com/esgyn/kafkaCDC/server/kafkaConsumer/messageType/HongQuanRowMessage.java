@@ -89,7 +89,7 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
         }
 
         if (log.isDebugEnabled()) {
-            log.info("the table mode [" + fieldSizes + "] total size [" + length + "]");
+            log.debug("the table mode [" + fieldSizes + "] total size [" + length + "]");
         }
         return true;
     }

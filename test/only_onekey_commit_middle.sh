@@ -19,7 +19,7 @@ RESULTPATH="$EXPECTDIR/${TOPIC}_result.log"
 EXPECTPATH="$EXPECTDIR/${TOPIC}_expect.log"
 
 expect <<-EOF
-  set timeout 60
+  set timeout 120
   spawn ssh $DBUSER@$DBIP
    expect {
   "yes/no" { send "yes\r";exp_continue }
@@ -96,7 +96,7 @@ cd $KAFKA_CDC/bin;
 ./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f Unicom --full start --sto 5 --interval 2 -c 3
 
 expect<<-EOF
-  set timeout 60
+  set timeout 120
   spawn ssh $DBUSER@$DBIP
    expect {
   "yes/no" { send "yes\r";exp_continue }
@@ -137,7 +137,7 @@ echo "file exist , delete /tmp/${TOPIC}_expect.log"
 fi
 # copy result file to current host
 expect <<-EOF
-  set timeout 60
+  set timeout 120
   spawn ssh $DBUSER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
