@@ -1,5 +1,5 @@
 KAFKA="$KAFKA"
-TOPIC="unicom_notcommit_when_KMess"
+TOPIC="normal_format_commitLimit512M"
 IPADDR="$IPADDR"
 ZKIP="$ZKIP"
 DBIP="$DBIP"
@@ -9,15 +9,15 @@ CURRENTUSER="$USER"
 CURRENTUSERPS="$CURRENTUSERPS"
 
 DESTSCHEMA="SEABASES1"
-TABLE="T1"
-TABLEEXP="T1EXP"
+TABLE="commitLimit"
+TABLEEXP="commitLimitexp"
 
 PARTITION="1"
+DELIM=","
 EXPECTDIR="$EXPECTDIR"
 FINALRESULTPATH="$FINALRESULTPATH"
 RESULTPATH="$EXPECTDIR/${TOPIC}_result.log"
 EXPECTPATH="$EXPECTDIR/${TOPIC}_expect.log"
-
 expect <<-EOF
   set timeout 300
   spawn ssh $DBUSER@$DBIP
@@ -31,27 +31,19 @@ expect <<-EOF
 CREATE SCHEMA IF NOT EXISTS $DESTSCHEMA;
 SET SCHEMA $DESTSCHEMA;
 DROP TABLE IF EXISTS $TABLE;
-CREATE TABLE $TABLE(c1 INT NOT NULL, c2 VARCHAR(10), c3 VARCHAR(10), PRIMARY KEY (c1));
-INSERT INTO $TABLE VALUES(1, 'I1', '+++');
-INSERT INTO $TABLE VALUES(2, 'I2', '+++');
-INSERT INTO $TABLE VALUES(3, 'I3', '+++');
-INSERT INTO $TABLE VALUES(4, 'I4', '+++');
-INSERT INTO $TABLE VALUES(5, 'I5', '+++');
-
+CREATE TABLE $TABLE(C1 INT NOT NULL PRIMARY KEY, C2 VARCHAR(16777216), C3 VARCHAR(16777216), C4 VARCHAR(16777216), C5 VARCHAR(16777216), C6 VARCHAR(16777216), C7 VARCHAR(16777216), C8 VARCHAR(16777216), C9 VARCHAR(16777216), C10 VARCHAR(16777216));
 DROP TABLE IF EXISTS $TABLEEXP;
-CREATE TABLE $TABLEEXP(c1 INT NOT NULL, c2 VARCHAR(10), c3 VARCHAR(10), PRIMARY KEY (c1));
-INSERT INTO $TABLEEXP VALUES(1, 'I1', '+++');
-INSERT INTO $TABLEEXP VALUES(2, 'I2', '+++');
-INSERT INTO $TABLEEXP VALUES(3, 'I3', '+++');
-INSERT INTO $TABLEEXP VALUES(4, 'I4', '+++');
-INSERT INTO $TABLEEXP VALUES(5, 'I5', '+++');
-
-
-UPDATE $TABLEEXP SET c1 = 5, c2 = 'u5', c3='+++' WHERE c1 = 5;
-UPDATE $TABLEEXP SET c1 = 14, c2 = 'k4', c3 ='+++' WHERE c1 = 4;
-UPDATE $TABLEEXP SET c1 = 3, c2 = 'u3', c3 ='+++' WHERE c1 = 3;
-UPDATE $TABLEEXP SET c1 = 4, c2 = 'k2', c3 ='+++' WHERE c1 = 2;
-UPDATE $TABLEEXP SET c1 = 6, c2 = 'k1', c3 ='+++' WHERE c1 = 1;
+CREATE TABLE $TABLEEXP(C1 INT NOT NULL PRIMARY KEY, C2 VARCHAR(16777216), C3 VARCHAR(16777216), C4 VARCHAR(16777216), C5 VARCHAR(16777216), C6 VARCHAR(16777216), C7 VARCHAR(16777216), C8 VARCHAR(16777216), C9 VARCHAR(16777216), C10 VARCHAR(16777216));
+INSERT INTO $TABLEEXP VALUES(1,'col2','col3','col4','col5','col6','col7','col8','col9','col10');
+INSERT INTO $TABLEEXP VALUES(2,'col2','col3','col4','col5','col6','col7','col8','col9','col10');
+INSERT INTO $TABLEEXP VALUES(3,'col2','col3','col4','col5','col6','col7','col8','col9','col10');
+INSERT INTO $TABLEEXP VALUES(4,'col2','col3','col4','col5','col6','col7','col8','col9','col10');
+INSERT INTO $TABLEEXP VALUES(5,'col2','col3','col4','col5','col6','col7','col8','col9','col10');
+INSERT INTO $TABLEEXP VALUES(6,'col2','col3','col4','col5','col6','col7','col8','col9','col10');
+INSERT INTO $TABLEEXP VALUES(7,'col2','col3','col4','col5','col6','col7','col8','col9','col10');
+INSERT INTO $TABLEEXP VALUES(8,'col2','col3','col4','col5','col6','col7','col8','col9','col10');
+INSERT INTO $TABLEEXP VALUES(9,'col2','col3','col4','col5','col6','col7','col8','col9','col10');
+INSERT INTO $TABLEEXP VALUES(10,'col2','col3','col4','col5','col6','col7','col8','col9','col10');
 EOFsql\r"
   expect "$ "
   send "exit\r"
@@ -60,11 +52,16 @@ EOF
 
 DATAFILE=/tmp/$TOPIC.data
 CLASSPATH=""
-echo "CRM_CUE2159140509447540000000058000191684022522,973813001000000005800019142338$TABLEU2018-04-02 07:59:54.0856390551u5I52++++++
-CRM_CUE2159140509447540000000058000191684022522,973813001000000005800019142338$TABLEK2018-04-02 07:59:54.08563901441k4I42++++++
-CRM_CUE2159140509447540000000058000191684022522,973813001000000005800019142338$TABLEU2018-04-02 07:59:54.0856390331u3I32++++++
-CRM_CUE2159140509447540000000058000191684022522,973813001000000005800019142338$TABLEK2018-04-02 07:59:54.0856390421k2I22++++++
-CRM_CUE2159140509447540000000058000191684022522,973813001000000005800019142338$TABLEK2018-04-02 07:59:54.0856390611k1I12++++++" > $DATAFILE
+echo "1,col2,col3,col4,col5,col6,col7,col8,col9,col10
+2,col2,col3,col4,col5,col6,col7,col8,col9,col10
+3,col2,col3,col4,col5,col6,col7,col8,col9,col10
+4,col2,col3,col4,col5,col6,col7,col8,col9,col10
+5,col2,col3,col4,col5,col6,col7,col8,col9,col10
+6,col2,col3,col4,col5,col6,col7,col8,col9,col10
+7,col2,col3,col4,col5,col6,col7,col8,col9,col10
+8,col2,col3,col4,col5,col6,col7,col8,col9,col10
+9,col2,col3,col4,col5,col6,col7,col8,col9,col10
+10,col2,col3,col4,col5,col6,col7,col8,col9,col10" | sed -e "s/,/${DELIM}/g" > $DATAFILE
 
 existtopic=`$KAFKA/bin/kafka-topics.sh --describe --topic $TOPIC --zookeeper $ZOOKEEPER`
 if [ "x$existtopic" != "x" ]; then
@@ -74,13 +71,12 @@ $KAFKA/bin/kafka-topics.sh --create --zookeeper $ZOOKEEPER --replication-factor 
 $KAFKA/bin/kafka-topics.sh --list --zookeeper $ZOOKEEPER
 $KAFKA/bin/kafka-console-producer.sh --broker-list $BROKER --topic $TOPIC < $DATAFILE
 #$KAFKA/bin/kafka-console-consumer.sh --zookeeper $ZOOKEEPER --topic $TOPIC --from-beginning
-
 KAFKA_CDC="$KAFKA_CDC"
 cd $KAFKA_CDC/bin;
+echo "./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC --delim "${DELIM}" --mode start --sto 5 --interval 2"
+./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC --delim "${DELIM}" --mode start --sto 5 --interval 2
 
-echo "./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f Unicom --mode start --sto 5 --interval 2"
-./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f Unicom --mode start --sto 5 --interval 2
-#get result file from $DBUSER
+#get result file from trafodion
 expect <<-EOF
   set timeout 300
   spawn ssh $DBUSER@$DBIP
@@ -95,10 +91,10 @@ expect <<-EOF
   send "sqlci <<EOFsql
 SET SCHEMA $DESTSCHEMA;
 LOG $RESULTPATH;
-SELECT * FROM $TABLE;
+SELECT c1 FROM $TABLE;
 log OFF;
 log $EXPECTPATH;
-SELECT * FROM $TABLEEXP;
+SELECT c1 FROM $TABLEEXP;
 log OFF;
 DROP TABLE IF EXISTS $TABLE;
 DROP TABLE IF EXISTS $TABLEEXP;
@@ -110,17 +106,16 @@ EOFsql\r"
   send "exit\r"
   expect eof
 EOF
-
 # clean the environment
 CUREXPECTDIR="/tmp"
 mkdir -p $CUREXPECTDIR
 if [ -f /tmp/${TOPIC}_result.log ];then
  rm -f /tmp/${TOPIC}_result.log
-echo "file exist, delete /tmp/${TOPIC}_result.log"
+echo "file exist ,delete /tmp/${TOPIC}_result.log"
 fi
 if [ -f /tmp/${TOPIC}_expect.log ];then
  rm -f /tmp/${TOPIC}_expect.log
-echo "file exist, delete /tmp/${TOPIC}_expect.log"
+echo "file exist , delete /tmp/${TOPIC}_expect.log"
 fi
 
 # copy result file to current host
@@ -145,21 +140,19 @@ expect <<-EOF
   send "exit\r"
   expect eof
 EOF
-# result set:
+
 RESULTPATH="$CUREXPECTDIR/${TOPIC}_result.log"
 EXPECTPATH="$CUREXPECTDIR/${TOPIC}_expect.log"
 currentTime=$(date "+%Y-%m-%d %H:%M:%S")
+# result set：
 if [ -f $RESULTPATH -a -f $EXPECTPATH -a "x$(diff -q $RESULTPATH $EXPECTPATH)" == "x" ];then
-echo "$currentTime $TOPIC expected" >> $FINALRESULTPATH
-RESULT="$currentTime $TOPIC success"
+  echo \"$currentTime $TOPIC expected\" >> $FINALRESULTPATH
+  RESULT="$currentTime $TOPIC success"
 else
-echo "$currentTime $TOPIC unexpected" >> $FINALRESULTPATH
-RESULT="$currentTime $TOPIC failed"
+  echo "$currentTime $TOPIC unexpected" >> $FINALRESULTPATH
+  RESULT="$currentTime $TOPIC failed"
 fi
-
 $KAFKA/bin/kafka-topics.sh --delete --zookeeper $ZOOKEEPER --topic $TOPIC
-if [ "x${DEBUG}" != "xYES" ]; then
-  rm -f $DATAFILE
-  rm -f $RESULTPATH
-  rm -f $EXPECTPATH
-fi
+rm -f $DATAFILE
+rm -f $RESULTPATH
+rm -f $EXPECTPATH
