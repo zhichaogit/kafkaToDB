@@ -4,15 +4,17 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map.Entry;
 
-import com.esgyn.kafkaCDC.server.esgynDB.ColumnInfo;
+import com.esgyn.kafkaCDC.server.utils.TableInfo;
+import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
+import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
-import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
-import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Map.Entry;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -26,7 +28,7 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
     String                operatorTypeSource = null;
     JsonNode              columnJsonNode     = null;
     JsonNode              keyColJsonNode     = null;
-    EsgynDB               esgynDB            = null;
+    EsgynDBParams         esgynDB            = null;
     String                colNewData         = null;
     String                colOldData         = null;
 
@@ -83,7 +85,7 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
                         strBuffer.append("operatorTypeSource: [" + operatorTypeSource + "]\n");
                     // log.debug(strBuffer);
                 }
-		tableInfo = esgynDB.GetTableInfo(schemaName + "." + tableName);
+		tableInfo = esgynDB.getTableInfo(schemaName + "." + tableName);
                 if (tableInfo == null) {
                     if (log.isDebugEnabled()) {
                         log.error("Table [" + schemaName + "." + tableName
@@ -211,17 +213,17 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
             colOldData = entry.getValue().toString().replace("\"", "");
         }
 
-        ColumnInfo colInfo = tableInfo.GetColumn(colName);
+        ColumnInfo colInfo = tableInfo.getColumn(colName);
 
         if (colInfo == null) {
             log.error("Table [" + schemaName + "." + tableName + "] have not column [" + colName
                     + "]");
             return false;
         }
-        int colId = colInfo.GetColumnID();
+        int colId = colInfo.getColumnID();
 
 
-        ColumnValue columnValue = new ColumnValue(colId, colNewData, colOldData,colInfo.GetTypeName());
+        ColumnValue columnValue = new ColumnValue(colId, colNewData, colOldData,colInfo.getTypeName());
 
         columns.put(colId, columnValue);
 
@@ -251,7 +253,7 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
                 log.trace("colOldData:[" + colOldData + "]");
             }
         }
-        ColumnInfo colInfo = tableInfo.GetColumn(colName);
+        ColumnInfo colInfo = tableInfo.getColumn(colName);
 
         if (colInfo == null) {
             log.error("Table [" + schemaName + "." + tableName + "] have not column [" + colName
@@ -260,11 +262,11 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
             return false;
         }
         if (isOdd(i)) {
-            int colId = colInfo.GetColumnID();
-            ColumnValue columnValue = new ColumnValue(colId, colNewData, colOldData,colInfo.GetTypeName());
+            int colId = colInfo.getColumnID();
+            ColumnValue columnValue = new ColumnValue(colId, colNewData, colOldData,colInfo.getTypeName());
 
             if (ifKeyCol && operatorTypeSource.equals("update")
-                    && !columnValue.GetCurValue().equals(columnValue.GetOldValue())) {
+                    && !columnValue.getCurValue().equals(columnValue.getOldValue())) {
                 operatorTypeSource = "updatePK";
             }
 

@@ -21,14 +21,15 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.log4j.Logger;
 
+import com.esgyn.kafkaCDC.server.utils.TableInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
-import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
 import com.esgyn.kafkaCDC.server.esgynDB.TableState;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 
 import com.esgyn.kafkaCDC.server.utils.Utils;
 import com.esgyn.kafkaCDC.server.utils.KafkaParams;
+import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
 
 import java.io.UnsupportedEncodingException;
 import kafka.consumer.ConsumerTimeoutException;
@@ -56,7 +57,7 @@ public class ConsumerThread<T> extends Thread {
     private String              outPutPath;
     private boolean             aconn   = false;
     private boolean             batchUpdate = false;
-
+    private EsgynDBParams       DBParams;
     long                        cacheNum;
     long                        kafkaPollNum;
     long                        latestTime;
@@ -81,6 +82,7 @@ public class ConsumerThread<T> extends Thread {
             log.trace("enter function");
         }
         esgyndb     = esgyndb_;
+	DBParams    = esgyndb.getDBParams();
 	kafkaParams = kafkaParams_;
 
         skip = skip_;
@@ -279,15 +281,15 @@ public class ConsumerThread<T> extends Thread {
     public boolean commit_tables_() throws SQLException {
         for (TableState tableState : tables.values()) {
     		if (!tableState.CommitTable(outPutPath,format)) {
-                esgyndb.AddErrInsertNum(tableState.GetErrInsertRows());
-                esgyndb.AddErrUpdateNum(tableState.GetErrUpdateRows());
-                esgyndb.AddErrDeleteNum(tableState.GetErrDeleteRows());
+                esgyndb.AddErrInsertNum(tableState.getErrInsert());
+                esgyndb.AddErrUpdateNum(tableState.getErrUpdate());
+                esgyndb.AddErrDeleteNum(tableState.getErrDelete());
                 esgyndb.AddKafkaPollNum(kafkaPollNum);
                 kafkaPollNum = 0;
                 esgyndb.setLatestTime(latestTime);
                 latestTime = 0;
-                esgyndb.AddTransTotal(tableState.GetTransTotal());
-                esgyndb.AddTransFails(tableState.GetTransFails());
+                esgyndb.AddTransTotal(tableState.getTransTotal());
+                esgyndb.AddTransFails(tableState.getTransFails());
                 tableState.ClearCache();
                 if (!skip) 
                 return false;
@@ -298,14 +300,14 @@ public class ConsumerThread<T> extends Thread {
         }
         kafkaconsumer.commitSync();
         for (TableState tableState : tables.values()) {
-            esgyndb.AddInsMsgNum(tableState.GetCacheInsert());
-            esgyndb.AddUpdMsgNum(tableState.GetCacheUpdate());
-            esgyndb.AddKeyMsgNum(tableState.GetCacheUpdkey());
-            esgyndb.AddDelMsgNum(tableState.GetCacheDelete());
+            esgyndb.AddInsMsgNum(tableState.getCacheInsert());
+            esgyndb.AddUpdMsgNum(tableState.getCacheUpdate());
+            esgyndb.AddKeyMsgNum(tableState.getCacheUpdkey());
+            esgyndb.AddDelMsgNum(tableState.getCacheDelete());
 
-            esgyndb.AddInsertNum(tableState.GetInsertRows());
-            esgyndb.AddUpdateNum(tableState.GetUpdateRows());
-            esgyndb.AddDeleteNum(tableState.GetDeleteRows());
+            esgyndb.AddInsertNum(tableState.getInsertRows());
+            esgyndb.AddUpdateNum(tableState.getUpdateRows());
+            esgyndb.AddDeleteNum(tableState.getDeleteRows());
 
             esgyndb.AddTotalNum(cacheNum);
             cacheNum = 0;
@@ -313,8 +315,8 @@ public class ConsumerThread<T> extends Thread {
             kafkaPollNum = 0;
             esgyndb.setLatestTime(latestTime);
             latestTime = 0;
-            esgyndb.AddTransTotal(tableState.GetTransTotal());
-            esgyndb.AddTransFails(tableState.GetTransFails());
+            esgyndb.AddTransTotal(tableState.getTransTotal());
+            esgyndb.AddTransFails(tableState.getTransFails());
             tableState.ClearCache();
         }
         if (tables.size()==0) {
@@ -385,16 +387,16 @@ public class ConsumerThread<T> extends Thread {
         }
 
         T msg = (T) record.value();
-        String tableName = esgyndb.GetDefaultSchema() + "." + esgyndb.GetDefaultTable();
+        String tableName = DBParams.getDefSchema() + "." + DBParams.getDefTable();
         TableState tableState = tables.get(tableName);
         if (log.isTraceEnabled()) {
             log.trace("1 tableNameFull[" + tableName + "],\ntableState if null ["
                     + (tableState == null) + "]");
         }
         // if tableName is null,should found it from message
-        if (esgyndb.GetDefaultTable() != null) {
+        if (DBParams.getDefTable() != null) {
             if (tableState == null) {
-                TableInfo tableInfo = esgyndb.GetTableInfo(tableName);
+                TableInfo tableInfo = DBParams.getTableInfo(tableName);
                 if (tableInfo == null) {
                     if (log.isDebugEnabled()) {
                         log.warn("the table [" + tableName + "] is not exists!");
@@ -403,7 +405,7 @@ public class ConsumerThread<T> extends Thread {
                     return;
                 }
 
-                tableState = new TableState(tableInfo,format, batchUpdate);
+                tableState = new TableState(tableInfo, format, batchUpdate);
 
                 if (!isInitStmt(tableState)) {
                     if (log.isDebugEnabled()) {
@@ -413,13 +415,15 @@ public class ConsumerThread<T> extends Thread {
                 }
             } else {
                 if (log.isTraceEnabled()) {
-                    log.debug(" tableInfo if null [" + (tableState.GetTableInfo() == null) + "]");
+                    log.debug(" tableInfo if null [" + (tableState.getTableInfo() == null) + "]");
                 }
             }
         }
 
-        MessageTypePara typeMessage = new MessageTypePara(esgyndb, tables, tableState, dbConn,
-                delimiter, partitionID, msg, encoding, bigEndian,offset);
+        MessageTypePara typeMessage = new MessageTypePara(esgyndb.getDBParams(), 
+							  tables, tableState, dbConn,
+							  delimiter, partitionID, msg, 
+							  encoding, bigEndian,offset);
 
         if (!urm.init(typeMessage))
             return;
@@ -428,10 +432,10 @@ public class ConsumerThread<T> extends Thread {
             return;
 
         if (log.isDebugEnabled()) {
-            log.debug("operatorType[" + urm.GetOperatorType() + "]\n" + "cacheNum [" + cacheNum
+            log.debug("operatorType[" + urm.getOperatorType() + "]\n" + "cacheNum [" + cacheNum
 		      + "]\n" + "commitCount [" + kafkaParams.getCommitCount() + "]");
         }
-        if (urm.GetOperatorType().equals("K")&&(!batchUpdate)) {
+        if (urm.getOperatorType().equals("K")&&(!batchUpdate)) {
             commit_tables();
             if (log.isDebugEnabled()) {
                 log.debug(" before the table [" + tableName + "] message has commit"
@@ -439,11 +443,11 @@ public class ConsumerThread<T> extends Thread {
             }
         }
 
-        if (esgyndb.GetDefaultTable() == null) {
-            tableName = urm.GetSchemaName() + "." + urm.GetTableName();
+        if (DBParams.getDefTable() == null) {
+            tableName = urm.getSchemaName() + "." + urm.getTableName();
             tableState = tables.get(tableName);
             if (tableState == null) {
-                TableInfo tableInfo = esgyndb.GetTableInfo(tableName);
+                TableInfo tableInfo = DBParams.getTableInfo(tableName);
 
                 if (tableInfo == null) {
                     if (log.isDebugEnabled()) {
@@ -481,10 +485,10 @@ public class ConsumerThread<T> extends Thread {
         tables.put(tableName, tableState);
 
         if (log.isDebugEnabled()) {
-            log.debug("operatorType[" + urm.GetOperatorType() + "]\n" + "cacheNum [" + cacheNum
+            log.debug("operatorType[" + urm.getOperatorType() + "]\n" + "cacheNum [" + cacheNum
 		      + "]\n" + "commitCount [" + kafkaParams.getCommitCount() + "]");
         }
-        if (urm.GetOperatorType().equals("K")&&(!batchUpdate)) {
+        if (urm.getOperatorType().equals("K")&&(!batchUpdate)) {
             commit_tables();
             if (log.isDebugEnabled()) {
                 log.debug(" before the table [" + tableName + "] message has commit"

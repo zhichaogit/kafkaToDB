@@ -19,7 +19,12 @@ import java.util.List;
 import java.util.ArrayList;
 import org.apache.log4j.Logger;
 
+import com.esgyn.kafkaCDC.server.utils.TableInfo;
+import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
+
+import lombok.Getter;
+import lombok.Setter;
 
 public class TableState {
     private String                         schemaName  = null;
@@ -32,10 +37,15 @@ public class TableState {
     private long                           cacheUpdkey = 0;
     private long                           cacheDelete = 0;
 
+    @Getter
     private long                           errInsert   = 0;
+    @Getter
     private long                           errUpdate   = 0;
+    @Getter
     private long                           errDelete   = 0;
+    @Getter
     private long                           transFails  = 0;
+    @Getter
     private long                           transTotal  = 0;
 
     private boolean                        commited    = true;
@@ -43,6 +53,7 @@ public class TableState {
     private boolean                        batchUpdate = false;
 
     private Connection                     dbConn      = null;
+    @Getter
     private TableInfo                      tableInfo   = null;
 
     private PreparedStatement              insertStmt  = null;
@@ -52,9 +63,9 @@ public class TableState {
     private final String                   U_OPERATE   = "update_operate";
     private final String                   D_OPERATE   = "delete_operate";
     private List<RowMessage>               msgs        = null;
-    Map<String, RowMessage> insertRows  = null;
-    Map<String, RowMessage> updateRows  = null;
-    Map<String, RowMessage> deleteRows  = null;
+    Map<String, RowMessage>                insertRows  = null;
+    Map<String, RowMessage>                updateRows  = null;
+    Map<String, RowMessage>                deleteRows  = null;
 
     ArrayList<ColumnInfo>                  keyColumns  = null;
     ArrayList<ColumnInfo>                  columns     = null;
@@ -64,12 +75,12 @@ public class TableState {
 
     public TableState(TableInfo tableInfo_, String format_, boolean batchUpdate_) {
         tableInfo = tableInfo_;
-        schemaName = tableInfo.GetSchemaName();
-        tableName = tableInfo.GetTableName();
+        schemaName = tableInfo.getSchemaName();
+        tableName = tableInfo.getTableName();
 
-        keyColumns = tableInfo.GetKeyColumns();
-        columns = tableInfo.GetColumns();
-        columnMap = tableInfo.GetColumnMap();
+        keyColumns = tableInfo.getKeyColumns();
+        columns = tableInfo.getColumns();
+        columnMap = tableInfo.getColumnMap();
         format = format_;
         batchUpdate = batchUpdate_;
 
@@ -84,7 +95,7 @@ public class TableState {
     }
 
     public boolean InitStmt(Connection dbConn_,boolean skip) {
-        if (columns.get(0).GetColumnID() == 0)
+        if (columns.get(0).getColumnID() == 0)
             havePK = true;
 
           dbConn = dbConn_;
@@ -100,16 +111,16 @@ public class TableState {
         ColumnInfo column = columns.get(0);
         String valueSql = ") VALUES(?";
         String insertSql = "UPSERT USING LOAD INTO \"" + schemaName + "\"." + "\"" + tableName
-                + "\"" + "(" + column.GetColumnName();
+                + "\"" + "(" + column.getColumnName();
 	if (skip) {
             insertSql = "UPSERT INTO \"" + schemaName + "\"." + "\"" + tableName
-                    + "\"" + "(" + column.GetColumnName();
+                    + "\"" + "(" + column.getColumnName();
         }
 
         for (int i = 1; i < columns.size(); i++) {
             column = columns.get(i);
             valueSql += ", ?";
-            insertSql += ", " + column.GetColumnName();
+            insertSql += ", " + column.getColumnName();
         }
 
         insertSql += valueSql + ");";
@@ -130,11 +141,11 @@ public class TableState {
 
     public String where_condition() {
         ColumnInfo keyInfo = keyColumns.get(0);
-        String whereSql = " WHERE " + keyInfo.GetColumnName() + " = ?";
+        String whereSql = " WHERE " + keyInfo.getColumnName() + " = ?";
 
         for (int i = 1; i < keyColumns.size(); i++) {
             keyInfo = keyColumns.get(i);
-            whereSql += " AND " + keyInfo.GetColumnName() + " = ?";
+            whereSql += " AND " + keyInfo.getColumnName() + " = ?";
         }
         return whereSql;
     }
@@ -143,11 +154,11 @@ public class TableState {
         ColumnInfo column = columns.get(0);
 
         String updateSql = "update \"" + schemaName + "\"." + "\"" + tableName + "\"" + " SET "+
-               column.GetColumnName() + "= ?";
+               column.getColumnName() + "= ?";
 
         for (int i = 1; i < columns.size(); i++) {
             column = columns.get(i);
-            updateSql += ", " + column.GetColumnName() + " = ? ";
+            updateSql += ", " + column.getColumnName() + " = ? ";
         }
         updateSql += where_condition() + ";";
 
@@ -199,23 +210,23 @@ public class TableState {
 
         for (int i = 0; i < keyColumns.size(); i++) {
             ColumnInfo keyInfo = keyColumns.get(i);
-            ColumnValue column = rowValues.get(keyInfo.GetColumnOff());
+            ColumnValue column = rowValues.get(keyInfo.getColumnOff());
 
             if (column == null)
                 continue;
 
             if (log.isDebugEnabled()) {
-                log.debug("key id: " + i + ", type: " + cur + " column [id: " + column.GetColumnID()
-                        + ", cur value: " + column.GetCurValue() + ", old value: "
-                        + column.GetOldValue() + "] cur is null: [" + column.CurValueIsNull()
-                        + "] old is null: [" + column.OldValueIsNull() + "]");
+                log.debug("key id: " + i + ", type: " + cur + " column [id: " + column.getColumnID()
+                        + ", cur value: " + column.getCurValue() + ", old value: "
+                        + column.getOldValue() + "] cur is null: [" + column.curValueIsNull()
+                        + "] old is null: [" + column.oldValueIsNull() + "]");
             }
 
             if (cur) {
-                if (column.CurValueIsNull()) {
+                if (column.curValueIsNull()) {
                     if (havePK) {
                         log.error("the cur primary key value is null. column name ["
-                                + keyInfo.GetColumnName() + "] message [" + message + "]");
+                                + keyInfo.getColumnName() + "] message [" + message + "]");
                         return null;
                     } else {
                         if (key == null) {
@@ -230,16 +241,16 @@ public class TableState {
                      * with key2:["a", "aa"];
                      */
                     if (key == null) {
-                        key = column.GetCurValue();
+                        key = column.getCurValue();
                     } else {
-                        key += "" + column.GetCurValue();
+                        key += "" + column.getCurValue();
                     }
                 }
             } else {
-                if (column.OldValueIsNull()) {
+                if (column.oldValueIsNull()) {
                     if (havePK) {
                         log.error("the old primary key value is null. column name ["
-                                + keyInfo.GetColumnName() + "] message [" + message + "]");
+                                + keyInfo.getColumnName() + "] message [" + message + "]");
                         return null;
                     } else {
                         if (key == null) {
@@ -254,9 +265,9 @@ public class TableState {
                      * with key2:["a", "aa"];
                      */
                     if (key == null) {
-                        key = column.GetOldValue();
+                        key = column.getOldValue();
                     } else {
-                        key += "" + column.GetOldValue();
+                        key += "" + column.getOldValue();
                     }
                 }
             }
@@ -274,9 +285,9 @@ public class TableState {
             log.trace("enter function");
         }
 
-        Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
+        Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
 
-        String message = rowMessage.GetMessage();
+        String message = rowMessage.getMessage();
         String key = get_key_value(message, rowValues, true);
 
         if (log.isDebugEnabled()) {
@@ -311,12 +322,12 @@ public class TableState {
 
         for (int i = 0; i < keyColumns.size(); i++) {
             ColumnInfo keyInfo = keyColumns.get(i);
-            cacheValue = rowValues.get(keyInfo.GetColumnOff());
+            cacheValue = rowValues.get(keyInfo.getColumnOff());
             if (cacheValue == null)
                 continue;
 
-            String oldValue = cacheValue.GetOldValue();
-            String curValue = cacheValue.GetCurValue();
+            String oldValue = cacheValue.getOldValue();
+            String curValue = cacheValue.getCurValue();
             if (log.isDebugEnabled()) {
                 log.debug("update the keys [" + oldValue + "] to [" + curValue + "]");
             }
@@ -324,7 +335,7 @@ public class TableState {
             if (havePK && !curValue.equals(oldValue)) {
                 log.error("U message cann't update the keys,"
                         + "tablename ["+schemaName+"."+tableName+"],curValue ["+curValue+"],oldValue "
-                        + "["+oldValue+"] ,keyCol:"+keyInfo.GetColumnName()+"message [" + message + "]\n");
+                        + "["+oldValue+"] ,keyCol:"+keyInfo.getColumnName()+"message [" + message + "]\n");
                 return 0;
             }
         }
@@ -337,9 +348,9 @@ public class TableState {
             log.trace("enter function");
         }
 
-        Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
+        Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
 
-        String message = rowMessage.GetMessage();
+        String message = rowMessage.getMessage();
         if (!format.equals("Protobuf") && (check_update_key(rowValues, message) == 0))
             return 0;
 
@@ -355,19 +366,19 @@ public class TableState {
         RowMessage insertRM = insertRows.get(key);
 
         if (insertRM != null) {
-            Map<Integer, ColumnValue> insertRow = insertRM.GetColumns();
+            Map<Integer, ColumnValue> insertRow = insertRM.getColumns();
             if (insertRow != null) {
             /*
              * exist in insert map, must be not exist in update and delete update the insert row in
              * memory
              */
                 for (ColumnValue value : rowValues.values()) {
-                    insertRow.put(value.GetColumnID(), value);
+                    insertRow.put(value.getColumnID(), value);
                 }
                 if (log.isDebugEnabled()) {
                     log.debug("update row key [" + key + "] is exist in insert cache");
                 }
-                insertRM.columns = insertRow;
+                insertRM.setColumns(insertRow);
                 insertRows.put(key, insertRM);
             }
         } else {
@@ -377,7 +388,7 @@ public class TableState {
             RowMessage deleteRM = deleteRows.get(key);
             
             if (deleteRM != null) {
-                Map<Integer, ColumnValue> deleterow = deleteRM.GetColumns();
+                Map<Integer, ColumnValue> deleterow = deleteRM.getColumns();
                 if (deleterow != null) {
                     if (log.isDebugEnabled()) {
                         log.error("update row key is exist in delete cache [" + key + "]," 
@@ -394,7 +405,7 @@ public class TableState {
                     if (log.isDebugEnabled()) {
                         log.trace("the key ["+key+"] exist in updateRows");
                     }
-                    Map<Integer, ColumnValue> updateRow = updateRM.GetColumns();
+                    Map<Integer, ColumnValue> updateRow = updateRM.getColumns();
                     if (updateRow != null) {
                         if (log.isDebugEnabled()) {
                              log.debug("update row key is exist in update cache [" + key + "],"
@@ -404,16 +415,16 @@ public class TableState {
                         ColumnValue cacheValue;
 
                         for (ColumnValue value : updateRow.values()) {
-                            cacheValue = rowValues.get(value.GetColumnID());
+                            cacheValue = rowValues.get(value.getColumnID());
                             if (cacheValue != null) {
-                                value = new ColumnValue(cacheValue.GetColumnID(),
-                                        cacheValue.GetCurValue(), value.GetOldValue(),
-                                        tableInfo.GetColumn(cacheValue.GetColumnID()).GetTypeName());
+                                value = new ColumnValue(cacheValue.getColumnID(),
+                                        cacheValue.getCurValue(), value.getOldValue(),
+                                        tableInfo.getColumn(cacheValue.getColumnID()).getTypeName());
                             }
 
-                            rowValues.put(value.GetColumnID(), value);
+                            rowValues.put(value.getColumnID(), value);
                         }
-                    rowMessage.columns = rowValues;
+			rowMessage.setColumns(rowValues);
                     }
                 }
 
@@ -436,8 +447,8 @@ public class TableState {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
-        Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
-        String message = rowMessage.GetMessage();
+        Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
+        String message = rowMessage.getMessage();
         String oldkey = get_key_value(message, rowValues, false);
         String newkey = get_key_value(message, rowValues, true);
 
@@ -452,7 +463,7 @@ public class TableState {
         RowMessage insertRM = insertRows.get(newkey);
 
         if (insertRM != null) {
-            Map<Integer, ColumnValue> insertRow = insertRM.GetColumns();
+            Map<Integer, ColumnValue> insertRow = insertRM.getColumns();
             /*
              * exist in insert map, must be not exist in update and delete update the insert row in
              * memory
@@ -471,7 +482,7 @@ public class TableState {
             RowMessage deleteRM = deleteRows.get(oldkey);
 
             if (deleteRM != null) {
-                Map<Integer, ColumnValue> deleterow = deleteRM.GetColumns();
+                Map<Integer, ColumnValue> deleterow = deleteRM.getColumns();
                 if (deleterow != null) {
                     if (log.isDebugEnabled()) {
                         log.error("update row key is exist in delete cache [" + oldkey + "]," 
@@ -486,7 +497,7 @@ public class TableState {
                 RowMessage updateRM = updateRows.get(oldkey);
                 Map<Integer, ColumnValue> updateRow = null;
                 if (updateRM != null) {
-                    updateRow = updateRM.GetColumns();
+                    updateRow = updateRM.getColumns();
                     if (log.isDebugEnabled()) {
                         log.debug("updkey row [key: " + oldkey + "] in update cache [" + updateRow + "]");
                     }
@@ -494,27 +505,27 @@ public class TableState {
                         ColumnValue cacheValue;
 
                         for (ColumnValue value : rowValues.values()) {
-                            cacheValue = updateRow.get(value.GetColumnID());
+                            cacheValue = updateRow.get(value.getColumnID());
                             if (cacheValue != null) {
-                                value = new ColumnValue(value.GetColumnID(), value.GetCurValue(),
-                                        cacheValue.GetOldValue(),
-                                        tableInfo.GetColumn(cacheValue.GetColumnID()).GetTypeName());
-                                updateRow.put(value.GetColumnID(), value);
+                                value = new ColumnValue(value.getColumnID(), value.getCurValue(),
+                                        cacheValue.getOldValue(),
+                                        tableInfo.getColumn(cacheValue.getColumnID()).getTypeName());
+                                updateRow.put(value.getColumnID(), value);
                             } else {
-                                updateRow.put(value.GetColumnID(), new ColumnValue(value));
+                                updateRow.put(value.getColumnID(), new ColumnValue(value));
                             }
                         }
-                        updateRM.columns=updateRow;
+                        updateRM.setColumns(updateRow);
                         // delete the old update message
                         updateRows.remove(oldkey);
                     }
                 }else {
                     updateRow = new HashMap<Integer, ColumnValue>(0);
                     for (ColumnValue value : rowValues.values()) {
-                        updateRow.put(value.GetColumnID(), new ColumnValue(value));
+                        updateRow.put(value.getColumnID(), new ColumnValue(value));
                     }
                     updateRM = rowMessage;
-                    updateRM.columns = updateRow;
+                    updateRM.setColumns(updateRow);
                 }
                 // add new insert message
                 updateRows.put(newkey, updateRM);
@@ -535,8 +546,8 @@ public class TableState {
             log.trace("enter function");
         }
 
-        Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
-        String message = rowMessage.GetMessage();
+        Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
+        String message = rowMessage.getMessage();
         String oldkey = get_key_value(message, rowValues, false);
         String newkey = get_key_value(message, rowValues, true);
 
@@ -550,14 +561,14 @@ public class TableState {
 
         RowMessage insertRM = insertRows.get(oldkey);
         if (insertRM !=null) {
-            Map<Integer, ColumnValue> insertRow = insertRM.GetColumns();
+            Map<Integer, ColumnValue> insertRow = insertRM.getColumns();
             if (insertRow != null) {
                 /*
                  * exist in insert map, must be not exist in update and delete update the 
                  * insert row in memory
                  */
                 for (ColumnValue value : rowValues.values()) {
-                    insertRow.put(value.GetColumnID(), new ColumnValue(value));
+                    insertRow.put(value.getColumnID(), new ColumnValue(value));
                 }
 
                 if (log.isDebugEnabled()) {
@@ -568,7 +579,7 @@ public class TableState {
                 insertRows.remove(oldkey);
 
                 // insert the new key
-                insertRM.columns = insertRow;
+                insertRM.setColumns(insertRow);
                 insertRows.put(newkey, insertRM);
 
                 // delete the old key on disk
@@ -579,7 +590,7 @@ public class TableState {
             RowMessage deleteRM = deleteRows.get(oldkey);
             RowMessage updateRM = updateRows.get(oldkey);
             if (deleteRM != null && updateRM==null) {
-            Map<Integer, ColumnValue> deleterow = deleteRM.GetColumns();
+            Map<Integer, ColumnValue> deleterow = deleteRM.getColumns();
                 if (deleterow != null) {
                     if (log.isDebugEnabled()) {
                         log.error("update row key is exist in delete cache [" + oldkey
@@ -590,7 +601,7 @@ public class TableState {
             } else {
                 Map<Integer, ColumnValue> updateRow = null;
                 if (updateRM != null) {
-                    updateRow = updateRM.GetColumns();
+                    updateRow = updateRM.getColumns();
                     if (log.isDebugEnabled()) {
                         log.debug(
                             "updkey row [key: " + oldkey + "] in update cache [" + updateRow + "]");
@@ -599,14 +610,14 @@ public class TableState {
                         ColumnValue cacheValue;
 
                         for (ColumnValue value : rowValues.values()) {
-                            cacheValue = updateRow.get(value.GetColumnID());
+                            cacheValue = updateRow.get(value.getColumnID());
                             if (cacheValue != null) {
-                                value = new ColumnValue(value.GetColumnID(), value.GetCurValue(),
-                                        cacheValue.GetOldValue(),
-                                        tableInfo.GetColumn(cacheValue.GetColumnID()).GetTypeName());
-                                updateRow.put(value.GetColumnID(), value);
+                                value = new ColumnValue(value.getColumnID(), value.getCurValue(),
+                                        cacheValue.getOldValue(),
+                                        tableInfo.getColumn(cacheValue.getColumnID()).getTypeName());
+                                updateRow.put(value.getColumnID(), value);
                             } else {
-                                updateRow.put(value.GetColumnID(), new ColumnValue(value));
+                                updateRow.put(value.getColumnID(), new ColumnValue(value));
                             }
                         }
                         // delete the old update message
@@ -615,10 +626,10 @@ public class TableState {
                 } else {
                     updateRow = new HashMap<Integer, ColumnValue>(0);
                     for (ColumnValue value : rowValues.values()) {
-                        updateRow.put(value.GetColumnID(), new ColumnValue(value));
+                        updateRow.put(value.getColumnID(), new ColumnValue(value));
                     }
                     updateRM = rowMessage;
-                    updateRM.columns = updateRow;
+                    updateRM.setColumns(updateRow);
                 }
 
                 // add new insert message
@@ -626,7 +637,7 @@ public class TableState {
 
                 // delete the data on the disk
                 if (!oldkey.equals(newkey)){
-                    rowMessage.columns = rowValues;
+                    rowMessage.setColumns(rowValues);
                     deleteRows.put(oldkey, rowMessage);
                 }
             }
@@ -647,8 +658,8 @@ public class TableState {
             log.trace("exit function");
         }
 
-        Map<Integer, ColumnValue> rowValues = rowMessage.GetColumns();
-        String message = rowMessage.GetMessage();
+        Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
+        String message = rowMessage.getMessage();
         String key = get_key_value(message, rowValues, false);
 
         // delete cur row
@@ -843,7 +854,8 @@ public class TableState {
         flushAndClose_bufferOutput(bufferOutput);
     }
 
-     public void printBatchErrMess(int[] insertCounts, Map<Integer, RowMessage> errRows,String operate_type) {
+     public void printBatchErrMess(int[] insertCounts, Map<Integer, 
+				   RowMessage> errRows,String operate_type) {
         if (log.isDebugEnabled()) {
             log.trace("enter function");
         }
@@ -861,40 +873,63 @@ public class TableState {
    
                      switch (format) {
                         case "Protobuf":
-                            log.error("Error on request #" + i +": Execute failed,\n"
-                                    + "throw BatchUpdateException when deal whith the kafka message ."
-                                    + "offset:["+mtpara.getOffset()+"],"
-                                    + "table:["+rowMessage.schemaName+"."+rowMessage.tableName+"],"
-                                    + "operate type:["+rowMessage.GetOperatorType()+"],"
-                                    + "source message:["+mtpara.getMessage() +"]\n"
-                                    + "parsed message:["+rowMessage.messagePro+"]");
+                            log.error("Error on request #" + i +": Execute "
+				      + "failed,\nthrow BatchUpdateException"
+				      + " when deal whith the kafka message."
+				      + "offset:[" + mtpara.getOffset()+"],"
+				      + "table:[" + rowMessage.getSchemaName()
+				      + "." + rowMessage.getTableName() 
+				      + "], operate type:[" 
+				      + rowMessage.getOperatorType()
+				      + "], source message:[" 
+				      + mtpara.getMessage() 
+				      + "]\nparsed message:[" 
+				      + rowMessage.messagePro+"]");
                             break;
                         case "Json":
                         case "Unicom":
                         case "UnicomJson":
-                            log.error("Error on request #" + i +": Execute failed when operate the ["+operate_type+"]\n"
-                                    + "throw BatchUpdateException when deal whith the kafka message ."
-                                    + "offset:["+mtpara.getOffset()+"],"
-                                    + "table:["+rowMessage.schemaName+"."+rowMessage.tableName+"],"
-                                    + "operate type:["+rowMessage.GetOperatorType()+"],"
-                                    + "source message:["+mtpara.getMessage() +"]");
+                            log.error("Error on request #" + i 
+				      + ": Execute failed when operate the ["
+				      + operate_type 
+				      + "]\nthrow BatchUpdateException when "
+				      + "deal whith the kafka message. offset:["
+				      + mtpara.getOffset() + "], table:["
+				      + rowMessage.getSchemaName() + "."
+				      + rowMessage.getTableName() + "],"
+				      + "operate type:[" 
+				      + rowMessage.getOperatorType() + "],"
+				      + "source message:[" + mtpara.getMessage()
+				      +"]");
                             break;
                         case "HongQuan":
-                            log.error("Error on request #" + i +": Execute failed when operate the ["+operate_type+"]\n"
-                                    + "throw BatchUpdateException when deal whith the kafka message ."
-                                    + "table:["+rowMessage.schemaName+"."+rowMessage.tableName+"],"
-                                    + "offset:["+mtpara.getOffset()+"],"
-                                    + "operate type:["+rowMessage.GetOperatorType()+"],"
-                                    + "source message:["+mtpara.getMessage() +"]\n"
-                                    + "parsed message:["+new String((rowMessage.data))+"]");
+                            log.error("Error on request #" + i 
+				      + ": Execute failed when operate the ["
+				      + operate_type 
+				      + "]\nthrow BatchUpdateException when "
+				      + "deal whith the kafka message ."
+				      + "table:[" + rowMessage.getSchemaName() 
+				      + "." + rowMessage.getTableName() + "],"
+				      + "offset:[" + mtpara.getOffset() + "],"
+				      + "operate type:[" 
+				      + rowMessage.getOperatorType() + "],"
+				      + "source message:[" + mtpara.getMessage()
+				      + "]\nparsed message:[" 
+				      + new String((rowMessage.data)) + "]");
                             break;
                         default:
-                            log.error("Error on request #" + i +": Execute failed when operate the ["+operate_type+"]\n"
-                                    + "throw BatchUpdateException when deal whith the kafka message ."
-                                    + "table:["+rowMessage.schemaName+"."+rowMessage.tableName+"],"
-                                    + "offset:["+mtpara.getOffset()+"],"
-                                    + "operate type:["+rowMessage.GetOperatorType()+"],"
-                                    + "source message:["+mtpara.getMessage() +"]");
+                            log.error("Error on request #" + i 
+				      + ": Execute failed when operate the ["
+				      + operate_type + "]\n"
+				      + "throw BatchUpdateException when deal "
+				      + "whith the kafka message. table:["
+				      + rowMessage.getSchemaName() + "." 
+				      + rowMessage.getTableName() + "],"
+				      + "offset:[" + mtpara.getOffset() + "],"
+				      + "operate type:[" 
+				      + rowMessage.getOperatorType() + "],"
+				      + "source message:[" + mtpara.getMessage()
+				      + "]");
                             break;
                      }
                     }
@@ -924,22 +959,24 @@ public class TableState {
     public BufferedOutputStream init_bufferOutput(String filepath,String schemaName,String tableName) {
         BufferedOutputStream bufferedOutput =null;
         if (log.isDebugEnabled()) {
-            log.trace("enter function,filepath:"+filepath+",schemaName:"+schemaName+","
-                    + "tableName:"+tableName);
+            log.trace("enter function, filepath:\"" + filepath 
+		      + "\", schemaName: " + schemaName + ", tableName: "
+		      + tableName);
         }
         if (filepath!=null) {
             
             // create parent path
-            if (!filepath.substring(filepath.length()-1).equals("/")) 
-                filepath=filepath+"/";
-            String fullOutPutPath=filepath+schemaName +"/"+tableName;
+            if (!filepath.substring(filepath.length() - 1).equals("/")) 
+                filepath = filepath + "/";
+            String fullOutPutPath = filepath + schemaName + "/" + tableName;
             if (log.isDebugEnabled()) {
-                log.trace("filepath:"+fullOutPutPath);
+                log.trace("filepath: \"" + fullOutPutPath + "\"");
             }
             File file = new File(fullOutPutPath);
             if (!file.getParentFile().exists()) {
                 if (!file.getParentFile().mkdirs()) {
-                   log.error("create kafka error message output path [" + schemaName +"] dir faild");
+                   log.error("create kafka error message output path ["
+			     + schemaName +"] dir faild");
                 }
             }
            // new output buff
@@ -986,9 +1023,9 @@ public class TableState {
             tableInfo.IncDelMsgNum(cacheDelete);
         }
 
-            tableInfo.IncErrInsNum(errInsert);
-            tableInfo.IncErrUpdNum(errUpdate);
-            tableInfo.IncDelMsgNum(errDelete);
+	tableInfo.IncErrInsNum(errInsert);
+	tableInfo.IncErrUpdNum(errUpdate);
+	tableInfo.IncDelMsgNum(errDelete);
 
         insertRows.clear();
         updateRows.clear();
@@ -1021,28 +1058,28 @@ public class TableState {
 
         for (int i = 0; i < columns.size(); i++) {
             ColumnInfo columnInfo = columns.get(i);
-            ColumnValue columnValue = row.get(columnInfo.GetColumnOff());
-            if (columnValue == null || columnValue.CurValueIsNull()) {
+            ColumnValue columnValue = row.get(columnInfo.getColumnOff());
+            if (columnValue == null || columnValue.curValueIsNull()) {
                 if (log.isDebugEnabled()) {
                     strBuffer.append("\tcolumn: " + i + " [null]\n");
                 }
-                insertStmt.setNull(i + 1, columnInfo.GetColumnType());
+                insertStmt.setNull(i + 1, columnInfo.getColumnType());
             } else {
                 if (log.isDebugEnabled()) {
-                    strBuffer.append("\tcolumn: " + i + ", value [" + columnValue.GetCurValue() 
+                    strBuffer.append("\tcolumn: " + i + ", value [" + columnValue.getCurValue() 
                                      + "]\n");
                 }
                 try {
-                    insertStmt.setString(i + 1, columnValue.GetCurValue());
+                    insertStmt.setString(i + 1, columnValue.getCurValue());
                 } catch (SQLException se) {
                     if (isNotDisConnAndTOExpection(se)) {
                         log.error("\nThere is a error when set value to insertStmt, the paramInt,["
-                                +(i+1)+","+columnValue.GetCurValue()+"]");
+                                +(i+1)+","+columnValue.getCurValue()+"]");
                     }
                     throw se;
                 }catch (Exception e) {
                     log.error("\nThere is a error when set value to insertStmt, the paramInt,["
-                            +(i+1)+","+columnValue.GetCurValue()+"]");
+                            +(i+1)+","+columnValue.getCurValue()+"]");
                     throw e;
                 }
             }
@@ -1077,10 +1114,10 @@ public class TableState {
         int offset = 0;
         Map<Integer, RowMessage> errRows = new HashMap<Integer, RowMessage>(0);
         for (RowMessage insertRM : insertRows.values()) {
-            Map<Integer, ColumnValue> cols = insertRM.GetColumns();
+            Map<Integer, ColumnValue> cols = insertRM.getColumns();
             if (log.isDebugEnabled()) {
                 log.debug("insert row offset: " + offset+ ",rowmessage:"
-                        +cols.get(0).GetCurValue()+"\n");
+                        +cols.get(0).getCurValue()+"\n");
             }
             try {
                 insert_row_data(cols,offset);
@@ -1153,28 +1190,28 @@ public class TableState {
             //set col values
             for (int i = 0; i < columns.size(); i++) {
                 columnInfo = columns.get(i);
-                ColumnValue columnValue = row.get(columnInfo.GetColumnOff());
-                if (columnValue == null || columnValue.CurValueIsNull()) {
+                ColumnValue columnValue = row.get(columnInfo.getColumnOff());
+                if (columnValue == null || columnValue.curValueIsNull()) {
                     if (log.isDebugEnabled()) {
                         strBuffer.append("\tcolumn: " + i + " [null]\n");
                     }
-                  updateStmt.setNull(i + 1, columnInfo.GetColumnType());
+                  updateStmt.setNull(i + 1, columnInfo.getColumnType());
                 } else {
                     if (log.isDebugEnabled()) {
-                        strBuffer.append("\tcolumn: " + i + ", value [" + columnValue.GetCurValue()
+                        strBuffer.append("\tcolumn: " + i + ", value [" + columnValue.getCurValue()
                                          + "]\n");
                     }
                     try {
-                        updateStmt.setString(i + 1, columnValue.GetCurValue());
+                        updateStmt.setString(i + 1, columnValue.getCurValue());
                     } catch (SQLException se) {
                         if (isNotDisConnAndTOExpection(se)) {
                             log.error("\nThere is a error when set value to updateStmt, the paramInt,["
-                                    +(i+1)+","+columnValue.GetCurValue()+"]");
+                                    +(i+1)+","+columnValue.getCurValue()+"]");
                         }
                         throw se;
                     }catch (Exception e) {
                         log.error("\nThere is a error when set value to updateStmt, the paramInt,["
-                                +(i+1)+","+columnValue.GetCurValue()+"]");
+                                +(i+1)+","+columnValue.getCurValue()+"]");
                         throw e;
                     }
                 }
@@ -1182,28 +1219,28 @@ public class TableState {
             //set key values
             for (int i = 0; i < keyColumns.size(); i++) {
                 keyInfo = keyColumns.get(i);
-                keyValue = row.get(keyInfo.GetColumnOff());
+                keyValue = row.get(keyInfo.getColumnOff());
 
-                if (keyValue == null || keyValue.OldValueIsNull()) {
+                if (keyValue == null || keyValue.oldValueIsNull()) {
                     if (havePK) {
                         String key = get_key_value(null, row, false);
                         log.error("the primary key value is null [table:" + schemaName + "." + tableName
-                                + ", column:" + keyInfo.GetColumnName() + "]");
+                                + ", column:" + keyInfo.getColumnName() + "]");
                         result = 0;
                         break;
                     }
-                    updateStmt.setNull(columns.size()+ (i + 1), keyInfo.GetColumnType());
+                    updateStmt.setNull(columns.size()+ (i + 1), keyInfo.getColumnType());
                 } else {
                     if (log.isDebugEnabled()) {
-                        strBuffer.append("\tkey id:" + i + ", column id:" + keyInfo.GetColumnOff()
-                                + ", key [" + keyValue.GetOldValue() + "]");
+                        strBuffer.append("\tkey id:" + i + ", column id:" + keyInfo.getColumnOff()
+                                + ", key [" + keyValue.getOldValue() + "]");
                     }
                     try {
-                        updateStmt.setString(columns.size()+ (i + 1), keyValue.GetOldValue());
+                        updateStmt.setString(columns.size()+ (i + 1), keyValue.getOldValue());
                     } catch (SQLException se) {
                         if (isNotDisConnAndTOExpection(se)) {
                             log.error("\nThere is a error when set value to updateStmt,the errorCode["
-                                    +se.getErrorCode()+"],the paramInt,["+(i+1)+","+keyValue.GetOldValue()+"]");
+                                    +se.getErrorCode()+"],the paramInt,["+(i+1)+","+keyValue.getOldValue()+"]");
                         }
                         throw se;
                     }
@@ -1226,7 +1263,7 @@ public class TableState {
        //one by one update if  format is not protobuf
         for (int i = 0; i < keyColumns.size(); i++) {
             keyInfo = keyColumns.get(i);
-            keyValue = row.get(keyInfo.GetColumnOff());
+            keyValue = row.get(keyInfo.getColumnOff());
             if (keyValue == null)
                 continue;
 
@@ -1236,18 +1273,18 @@ public class TableState {
                 whereSql += " AND ";
             }
 
-            whereSql += keyInfo.GetColumnName() + keyValue.GetOldCondStr();
+            whereSql += keyInfo.getColumnName() + keyValue.getOldCondStr();
         }
 
         for (ColumnValue columnValue : row.values()) {
             if (columnInfo != null)
                 updateSql += ", ";
 
-            columnInfo = columns.get(columnValue.GetColumnID());
-            updateSql += columnInfo.GetColumnName() + " = " + columnValue.GetCurValueStr();
+            columnInfo = columns.get(columnValue.getColumnID());
+            updateSql += columnInfo.getColumnName() + " = " + columnValue.getCurValueStr();
             if (log.isDebugEnabled()) {
-                strBuffer.append("\tcolumn: " + columnInfo.GetColumnOff() + ", value ["
-                        + columnValue.GetCurValue() + "]\n");
+                strBuffer.append("\tcolumn: " + columnInfo.getColumnOff() + ", value ["
+                        + columnValue.getCurValue() + "]\n");
             }
         }
 
@@ -1263,7 +1300,7 @@ public class TableState {
             st.executeUpdate(updateSql);
         } catch (SQLException se) {
             log.error("\nthere is a error when execute the update sql,the execute sql:["+updateSql+"]"
-                    + ",the coltype is ["+columnInfo.GetTypeName()+"]");
+                    + ",the coltype is ["+columnInfo.getTypeName()+"]");
             throw se;
         }
         st.close();
@@ -1299,7 +1336,7 @@ public class TableState {
             errRows.put(offset, updateRow);
             if (updateRow != null) {
                 try {
-                    update_row_data(updateRow.GetColumns(),offset);
+                    update_row_data(updateRow.getColumns(),offset);
                 } catch (SQLException se) {
                     if (isNotDisConnAndTOExpection(se)) {
                         matchErr(updateRow);
@@ -1358,28 +1395,28 @@ public class TableState {
         }
         for (int i = 0; i < keyColumns.size(); i++) {
             ColumnInfo keyInfo = keyColumns.get(i);
-            ColumnValue keyValue = row.get(keyInfo.GetColumnOff());
+            ColumnValue keyValue = row.get(keyInfo.getColumnOff());
 
-            if (keyValue == null || keyValue.OldValueIsNull()) {
+            if (keyValue == null || keyValue.oldValueIsNull()) {
                 if (havePK) {
                     String key = get_key_value(null, row, false);
                     log.error("the primary key value is null [table:" + schemaName + "." + tableName
-                            + ", column:" + keyInfo.GetColumnName() + "]");
+                            + ", column:" + keyInfo.getColumnName() + "]");
                     result = 0;
                     break;
                 }
-                deleteStmt.setNull(i + 1, keyInfo.GetColumnType());
+                deleteStmt.setNull(i + 1, keyInfo.getColumnType());
             } else {
                 if (log.isDebugEnabled()) {
-                    strBuffer.append("\tkey id:" + i + ", column id:" + keyInfo.GetColumnOff() 
-                            + ", key [" + keyValue.GetOldValue() + "]");
+                    strBuffer.append("\tkey id:" + i + ", column id:" + keyInfo.getColumnOff() 
+                            + ", key [" + keyValue.getOldValue() + "]");
                 }
                 try {
-                    deleteStmt.setString(i + 1, keyValue.GetOldValue());
+                    deleteStmt.setString(i + 1, keyValue.getOldValue());
                 } catch (SQLException se) {
                     if (isNotDisConnAndTOExpection(se)) {
                         log.error("\nThere is a error when set value to deleteStmt,the errorCode["
-                                +se.getErrorCode()+"],the paramInt,["+(i+1)+","+keyValue.GetOldValue()+"]");
+                                +se.getErrorCode()+"],the paramInt,["+(i+1)+","+keyValue.getOldValue()+"]");
                     }
                     throw se;
                 }
@@ -1421,7 +1458,7 @@ public class TableState {
             }
             errRows.put(offset, deleteRow);
             try {
-                delete_row_data(deleteRow.GetColumns(),offset);
+                delete_row_data(deleteRow.getColumns(),offset);
             }catch (SQLException se) {
                 if (isNotDisConnAndTOExpection(se)) {
                     matchErr(deleteRow);
@@ -1471,33 +1508,37 @@ public class TableState {
         if (operateRM.mtpara!=null) {
             switch (format) {
                 case "Protobuf":
-                    log.error("kafka offset:["+operateRM.mtpara.getOffset()+"],"
-                            + "table:["+operateRM.schemaName+"."+operateRM.tableName+"],"
-                            + "operate type:["+operateRM.GetOperatorType()+"],"
-                            + "source message:["+operateRM.mtpara.getMessage() +"]\n"
-                            + "parsed message:["+operateRM.messagePro+"]");
+                    log.error("kafka offset:[" + operateRM.mtpara.getOffset() 
+			      + "], table:[" + operateRM.getSchemaName() + "." 
+			      + operateRM.getTableName() + "], operate type:["
+			      + operateRM.getOperatorType() + "], source message:[" 
+			      + operateRM.mtpara.getMessage() +"]\nparsed message:["
+			      + operateRM.messagePro + "]");
                     break;
                 case "Json":
                 case "Unicom":
                 case "UnicomJson":
-                    log.error("kafka offset:["+operateRM.mtpara.getOffset()+"],"
-                            + "table:["+operateRM.schemaName+"."+operateRM.tableName+"],"
-                            + "operate type:["+operateRM.GetOperatorType()+"],"
-                            + "source message:["+operateRM.mtpara.getMessage() +"]\n");
+                    log.error("kafka offset:[" + operateRM.mtpara.getOffset() 
+			      + "], table:[" + operateRM.getSchemaName() + "."
+			      + operateRM.getTableName() + "], operate type:["
+			      + operateRM.getOperatorType() + "], source message:[" 
+			      + operateRM.mtpara.getMessage() + "]\n");
                     break;
                 case "HongQuan":
-                    log.error("kafka offset:["+operateRM.mtpara.getOffset()+"],"
-                            + "table:["+operateRM.schemaName+"."+operateRM.tableName+"],"
-                            + "operate type:["+operateRM.GetOperatorType()+"],"
-                            + "source message:["+operateRM.mtpara.getMessage() +"]\n"
-                            + "parsed message:["+new String((operateRM.data)) +"]");
+                    log.error("kafka offset:[" + operateRM.mtpara.getOffset()
+			      + "], table:[" + operateRM.getSchemaName() + "."
+			      + operateRM.getTableName() + "], operate type:["
+			      + operateRM.getOperatorType() + "], source message:["
+			      + operateRM.mtpara.getMessage() +"]\nparsed message:["
+			      + new String((operateRM.data)) + "]");
                     break;
 
                 default:
-                    log.error("kafka offset:["+operateRM.mtpara.getOffset()+"],"
-                            + "table:["+operateRM.schemaName+"."+operateRM.tableName+"],"
-                            + "operate type:["+operateRM.GetOperatorType()+"],"
-                            + "source message:["+operateRM.mtpara.getMessage() +"]");
+                    log.error("kafka offset:[" + operateRM.mtpara.getOffset() 
+			      + "], table:[" + operateRM.getSchemaName() + "."
+			      + operateRM.getTableName() + "], operate type:["
+			      + operateRM.getOperatorType() + "], source message:["
+			      +operateRM.mtpara.getMessage() +"]");
                     break;
             }
             }
@@ -1513,7 +1554,7 @@ public class TableState {
 
     public void AddColumn(ColumnInfo column) {
         columns.add(column);
-        columnMap.put(column.GetColumnID(), column);
+        columnMap.put(column.getColumnID(), column);
     }
 
     public ColumnInfo GetColumn(int index) {
@@ -1532,60 +1573,40 @@ public class TableState {
         keyColumns.add(column);
     }
 
-    public ColumnInfo GetKey(int index) {
+    public ColumnInfo getKey(int index) {
         return keyColumns.get(index);
     }
 
-    public long GetKeyCount() {
+    public long getKeyCount() {
         return keyColumns.size();
     }
 
-    public long GetCacheInsert() {
+    public long getCacheInsert() {
         return commited ? cacheInsert : 0;
     }
 
-    public long GetCacheUpdate() {
+    public long getCacheUpdate() {
         return commited ? cacheUpdate : 0;
     }
 
-    public long GetCacheUpdkey() {
+    public long getCacheUpdkey() {
         return commited ? cacheUpdkey : 0;
     }
 
-    public long GetCacheDelete() {
+    public long getCacheDelete() {
         return commited ? cacheDelete : 0;
     }
 
-    public long GetInsertRows() {
+    public long getInsertRows() {
         return commited ? insertRows.size() : 0;
     }
 
-    public long GetUpdateRows() {
+    public long getUpdateRows() {
         return commited ? updateRows.size() : 0;
     }
 
-    public long GetDeleteRows() {
+    public long getDeleteRows() {
         return commited ? deleteRows.size() : 0;
-    }
-
-    public long GetErrInsertRows() {
-        return errInsert;
-    }
-
-    public long GetErrUpdateRows() {
-        return errUpdate;
-    }
-
-    public long GetErrDeleteRows() {
-        return errDelete;
-    }
-
-    public long GetTransTotal() {
-        return transTotal;
-    }
-
-    public long GetTransFails() {
-        return transFails;
     }
 
     public long InsertMessageToTable(RowMessage urm) {
@@ -1594,7 +1615,7 @@ public class TableState {
         }
         msgs.add(urm);
 
-        switch (urm.GetOperatorType()) {
+        switch (urm.getOperatorType()) {
             case "I":
                 InsertRow(urm);
                 break;
@@ -1613,7 +1634,7 @@ public class TableState {
                 break;
 
             default:
-                log.error("operator [" + urm.GetOperatorType() + "]");
+                log.error("operator [" + urm.getOperatorType() + "]");
                 return 0;
         }
 
@@ -1621,9 +1642,5 @@ public class TableState {
             log.trace("exit function");
         }
         return 1;
-    }
-
-    public TableInfo GetTableInfo() {
-        return tableInfo;
     }
 }

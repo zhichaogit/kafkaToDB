@@ -2,14 +2,35 @@ package com.esgyn.kafkaCDC.server.esgynDB;
 
 import com.esgyn.kafkaCDC.server.utils.Utils;
 
+import lombok.Getter;
+import lombok.Setter;
+
 public class ColumnValue {
-    int    columnID     = 0;
-    String curValue     = null;
-    String curValueStr  = null;
-    String oldValue     = null;
-    String oldValueStr  = null;
-    String nullValueStr = "null";
-    String oldCondStr   = " is null";
+    @Setter
+    @Getter
+    private int    columnID     = 0;
+    @Setter
+    @Getter
+    private String curValue     = null;
+    @Setter
+    @Getter
+    private String curValueStr  = null;
+    @Setter
+    @Getter
+    private String oldValue     = null;
+    @Setter
+    @Getter
+    private String oldValueStr  = null;
+    @Setter
+    @Getter
+    private String nullValueStr = "null";
+    @Setter
+    @Getter
+    private String oldCondStr   = " is null";
+
+
+    public boolean curValueIsNull() { return curValue == null; }
+    public boolean oldValueIsNull() { return oldValue == null; }
 
     public ColumnValue(int columnID_, String curValue_, String oldValue_,String colTypeName_) {
         Utils utils = new Utils();
@@ -40,20 +61,11 @@ public class ColumnValue {
     }
 
     public ColumnValue(ColumnValue value) {
-        columnID = value.GetColumnID();
-        curValue = value.GetCurValue();
-        oldValue = value.GetOldValue();
-        curValueStr = value.GetCurValueStr();
-        oldValueStr = value.GetOldValueStr();
-        oldCondStr = value.GetOldCondStr();
+        columnID = value.getColumnID();
+        curValue = value.getCurValue();
+        oldValue = value.getOldValue();
+        curValueStr = value.getCurValueStr();
+        oldValueStr = value.getOldValueStr();
+        oldCondStr = value.getOldCondStr();
     }
-
-    public int GetColumnID() { return columnID; }
-    public boolean CurValueIsNull() { return curValue == null; }
-    public boolean OldValueIsNull() { return oldValue == null; }
-    public String GetCurValue() { return curValue; }
-    public String GetOldValue() { return oldValue; }
-    public String GetCurValueStr() { return curValueStr; }
-    public String GetOldValueStr() { return oldValueStr; }
-    public String GetOldCondStr() { return oldCondStr; }
 }

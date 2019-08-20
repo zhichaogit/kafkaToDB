@@ -5,9 +5,9 @@ import java.util.HashMap;
 import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
-import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
-import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
+import com.esgyn.kafkaCDC.server.utils.TableInfo;
+import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
 
 public class UnicomRowMessage extends RowMessage<String> {
     private static Logger log               = Logger.getLogger(UnicomRowMessage.class);
@@ -27,7 +27,7 @@ public class UnicomRowMessage extends RowMessage<String> {
     String                catlogName        = null;
     String                timestamp         = null;
     String                emptystr          = "";
-    EsgynDB               esgynDB           = null;
+    EsgynDBParams         esgynDB           = null;
 
     public UnicomRowMessage() {}
 
@@ -78,14 +78,14 @@ public class UnicomRowMessage extends RowMessage<String> {
         operatorType = formats[2];
         timestamp = formats[3];
 
-        tableInfo = esgynDB.GetTableInfo(schemaName+"."+tableName);
+        tableInfo = esgynDB.getTableInfo(schemaName + "." + tableName);
         if (tableInfo == null) {
             if (log.isDebugEnabled()) {
                 log.error("Table [" + schemaName + "." + tableName
                         + "] is not exist in EsgynDB.");
             }
 
-                return false;
+	    return false;
         }
         StringBuffer strBuffer = null;
         if (log.isDebugEnabled()) {
@@ -107,7 +107,7 @@ public class UnicomRowMessage extends RowMessage<String> {
             }
             offset = 0;
             ColumnValue column = get_column(formats[i].getBytes(),tableInfo);
-            columns.put(column.GetColumnID(), column);
+            columns.put(column.getColumnID(), column);
         }
         if (log.isDebugEnabled()) {
             log.debug(strBuffer.toString());
@@ -193,6 +193,6 @@ public class UnicomRowMessage extends RowMessage<String> {
         if (log.isDebugEnabled()) {
             log.debug("cur value [" + currValue + "] old value [" + oldValue + "] cid ["+cid+"]");
         }
-        return new ColumnValue(cid, currValue, oldValue,tableInfo.GetColumn(cid).GetTypeName());
+        return new ColumnValue(cid, currValue, oldValue,tableInfo.getColumn(cid).getTypeName());
     }
 }

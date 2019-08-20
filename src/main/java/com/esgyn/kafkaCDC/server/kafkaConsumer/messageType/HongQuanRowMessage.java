@@ -7,9 +7,9 @@ import org.apache.log4j.Logger;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 
-import com.esgyn.kafkaCDC.server.esgynDB.ColumnInfo;
+import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
+import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
-import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.esgynDB.TableState;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 
@@ -17,7 +17,7 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
     private static Logger           log         = Logger.getLogger(HongQuanRowMessage.class);
 
     private int                     length      = 0;
-    private EsgynDB                 esgyndb     = null;
+    private EsgynDBParams           esgyndb     = null;
     private Map<String, TableState> tables      = null;
     private int[]                   fieldSizes  = null;
     private int[]                   fieldTypes  = null;
@@ -38,10 +38,10 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
             log.trace("enter function");
         }
         data = (byte[]) mtpara.getMessage();
-        bigEndian = mtpara.getBigEndian();
+        bigEndian = mtpara.isBigEndian();
         esgyndb = mtpara.getEsgynDB();
         tables = mtpara.getTables();
-        tableInfo = mtpara.getTableState().GetTableInfo();
+        tableInfo = mtpara.getTableState().getTableInfo();
 
         if (log.isDebugEnabled()) {
             StringBuffer strBuffer = new StringBuffer();
@@ -59,12 +59,12 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
             log.debug(strBuffer);
         }
 
-        fieldSizes = new int[(int) tableInfo.GetColumnCount()];
-        fieldTypes = new int[(int) tableInfo.GetColumnCount()];
-        for (int i = 0; i < tableInfo.GetColumnCount(); i++) {
-            ColumnInfo column = tableInfo.GetColumn(i);
-            fieldSizes[i] = column.GetColumnSize();
-            fieldTypes[i] = column.GetColumnType();
+        fieldSizes = new int[(int) tableInfo.getColumnCount()];
+        fieldTypes = new int[(int) tableInfo.getColumnCount()];
+        for (int i = 0; i < tableInfo.getColumnCount(); i++) {
+            ColumnInfo column = tableInfo.getColumn(i);
+            fieldSizes[i] = column.getColumnSize();
+            fieldTypes[i] = column.getColumnType();
             switch (fieldTypes[i]) {
                 case 136: // TINYINT
                 case 137: // UNSIGNED TINYINT
@@ -128,7 +128,7 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
                 case 134: // SIGNED LARGEINT
                 case 138: // UNSIGNED LARGEINT
                     columnValue = new ColumnValue(i, get_column(data, offset, fieldSizes[i]), null,
-                            tableInfo.GetColumn(i).GetTypeName());
+                            tableInfo.getColumn(i).getTypeName());
                     break;
 
                 case 64: // VARCHAR
@@ -136,7 +136,7 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
                 case 0: // CHAR
                     columnValue =
                             new ColumnValue(i, bytes2HexString(data, offset, fieldSizes[i]), null,
-                                    tableInfo.GetColumn(i).GetTypeName());
+                                    tableInfo.getColumn(i).getTypeName());
                     break;
 
                 default:
@@ -149,7 +149,7 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
 
             if (log.isDebugEnabled()) {
                 strBuffer.append(
-                        "\n\tColumn: [" + columnValue.GetCurValue() + "], size: " + fieldSizes[i]);
+                        "\n\tColumn: [" + columnValue.getCurValue() + "], size: " + fieldSizes[i]);
             }
 
             columns.put(i, columnValue);

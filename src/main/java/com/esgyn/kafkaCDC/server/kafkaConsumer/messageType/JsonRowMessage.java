@@ -5,9 +5,9 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import com.esgyn.kafkaCDC.server.esgynDB.ColumnInfo;
+import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
+import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
-import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,7 +25,7 @@ public class JsonRowMessage extends RowMessage<String> {
     String                position           = null;
     JsonNode              dataJsonNode       = null;
     JsonNode              oldJsonNode        = null;
-    EsgynDB               esgynDB            = null;
+    EsgynDBParams         esgynDB            = null;
 
     public JsonRowMessage() {}
 
@@ -64,7 +64,7 @@ public class JsonRowMessage extends RowMessage<String> {
                     strBuffer.append("oldJsonNode:[" + oldJsonNode.toString() + "]\n");
                 log.debug(strBuffer);
             }
-            tableInfo = esgynDB.GetTableInfo(schemaName + "." + tableName);
+            tableInfo = esgynDB.getTableInfo(schemaName + "." + tableName);
 
             if (tableInfo == null) {
                 if (log.isDebugEnabled()) {
@@ -136,15 +136,15 @@ public class JsonRowMessage extends RowMessage<String> {
                 String colNewData = entry.getValue().toString().replace("\"", "");
                 String colName = "\"" + entry.getKey().toString() + "\"";
 
-                ColumnInfo colInfo = tableInfo.GetColumn(colName);
+                ColumnInfo colInfo = tableInfo.getColumn(colName);
                 if (colInfo == null) {
                     log.error("Table [" + schemaName + "." + tableName + "] have not column ["
                             + colName + "]");
 
                     return false;
                 }
-                int colId = colInfo.GetColumnID();
-                ColumnValue columnValue = new ColumnValue(colId, colNewData, null,colInfo.GetTypeName());
+                int colId = colInfo.getColumnID();
+                ColumnValue columnValue = new ColumnValue(colId, colNewData, null,colInfo.getTypeName());
                 columns.put(colId, columnValue);
 
                 if (log.isDebugEnabled()) {
@@ -164,23 +164,23 @@ public class JsonRowMessage extends RowMessage<String> {
                 Entry<String, JsonNode> entry = it.next();
                 String colNewData = entry.getValue().toString().replace("\"", "");
                 String colName = "\"" + entry.getKey().toString() + "\"";
-                ColumnInfo colInfo = tableInfo.GetColumn(colName);
-                int colId = colInfo.GetColumnID();
+                ColumnInfo colInfo = tableInfo.getColumn(colName);
+                int colId = colInfo.getColumnID();
                 ColumnValue columnValue = (ColumnValue) columns.get(colId);
                 if (columnValue != null) {
                     // when message have "data" info
-                    columnValue = new ColumnValue(colId, columnValue.GetCurValue(), colNewData,colInfo.GetTypeName());
+                    columnValue = new ColumnValue(colId, columnValue.getCurValue(), colNewData,colInfo.getTypeName());
                 } else {
                     // if message is delete Operate and there isn't "data" info
                     if (dataJsonNode == null) {
-                        columnValue = new ColumnValue(colId, null, colNewData,colInfo.GetTypeName());
+                        columnValue = new ColumnValue(colId, null, colNewData,colInfo.getTypeName());
                     } else {
-                        columnValue = new ColumnValue(colId, colNewData, null,colInfo.GetTypeName());
+                        columnValue = new ColumnValue(colId, colNewData, null,colInfo.getTypeName());
                     }
                 }
 
                 if (operatorTypeSource.equals("update")
-                        && !columnValue.GetCurValue().equals(columnValue.GetOldValue())) {
+                        && !columnValue.getCurValue().equals(columnValue.getOldValue())) {
                     operatorTypeSource = "updatePK";
                 }
                 columns.put(colId, columnValue);
@@ -189,7 +189,7 @@ public class JsonRowMessage extends RowMessage<String> {
                     strBuffer
                             .append("column name [" + colName + ":" + colId + "], column old data ["
                                     + colNewData + "]\n" + "columnValue [" + columnValue + "]\n"
-                                    + "columnOldValue [" + columnValue.GetOldValue() + "]\n");
+                                    + "columnOldValue [" + columnValue.getOldValue() + "]\n");
                 }
             }
         }

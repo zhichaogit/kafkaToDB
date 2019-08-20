@@ -1,4 +1,4 @@
-package com.esgyn.kafkaCDC.server.esgynDB;
+package com.esgyn.kafkaCDC.server.utils;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -6,11 +6,31 @@ import java.util.ArrayList;
 import java.util.Date;
 import org.apache.log4j.Logger;
 
-public class TableInfo {
-    private String           schemaName    = null;
-    private String           tableName     = null;
+import lombok.Getter;
+import lombok.Setter;
 
+public class TableInfo {
+    @Setter
+    @Getter
+    private String           schemaName    = null;
+    @Setter
+    @Getter
+    private String           tableName     = null;
+    @Setter
+    @Getter
+    private String           srcSchemaName = null;
+    @Setter
+    @Getter
+    private String           srcTableName  = null;
+    @Setter
+    @Getter
     private boolean          multiable     = false;;
+    @Setter
+    @Getter
+    private ArrayList<ColumnInfo> columns  = null;
+    @Setter
+    @Getter
+    private ArrayList<Integer>    keys     = null;
 
     private long             insMsgNum     = 0;
     private long             updMsgNum     = 0;
@@ -24,11 +44,6 @@ public class TableInfo {
     private long             insertNum     = 0;
     private long             updateNum     = 0;
     private long             deleteNum     = 0;
-
-    ArrayList<ColumnInfo>    keyColumns    = null;
-    ArrayList<ColumnInfo>    columns       = null;
-    Map<Integer, ColumnInfo> columnMap     = null;
-    Map<String, ColumnInfo>  columnNameMap = null;
 
     private long           interval        = 0;
     private boolean        tablespeed      = false;
@@ -46,6 +61,10 @@ public class TableInfo {
     private long           maxDSpeed       = 0;
     private static Logger    log = Logger.getLogger(TableInfo.class);
 
+    ArrayList<ColumnInfo>    keyColumns    = null;
+    Map<Integer, ColumnInfo> columnMap     = null;
+    Map<String, ColumnInfo>  columnNameMap = null;
+
     public TableInfo(String schemaName_, String tableName_) {
         tableName  = tableName_;
         schemaName = schemaName_;
@@ -61,28 +80,25 @@ public class TableInfo {
 
     public void AddColumn(ColumnInfo column) {
         columns.add(column);
-        columnMap.put(column.GetColumnID(), column);
-        columnNameMap.put(column.GetColumnName(), column);
+        columnMap.put(column.getColumnID(), column);
+        columnNameMap.put(column.getColumnName(), column);
     }
 
-    public String GetTableName() { return tableName; }
-    public String GetSchemaName() { return schemaName; }
+    public ColumnInfo getColumn(int index) { return columns.get(index); }
+    public ColumnInfo getColumn(String colName) { return columnNameMap.get(colName);}
+    public ColumnInfo getColumnFromMap(int colid) { return columnMap.get(colid); }
 
-    public ColumnInfo GetColumn(int index) { return columns.get(index); }
-    public ColumnInfo GetColumn(String colName) { return columnNameMap.get(colName);}
-    public ColumnInfo GetColumnFromMap(int colid) { return columnMap.get(colid); }
-
-    public long GetColumnCount() { return columns.size(); }
+    public long getColumnCount() { return columns.size(); }
     public void AddKey(ColumnInfo column) { keyColumns.add(column); }
-    public ColumnInfo GetKey(int index) { return keyColumns.get(index); }
-    public long GetKeyCount() { return keyColumns.size(); }
+    public ColumnInfo getKey(int index) { return keyColumns.get(index); }
+    public long getKeyCount() { return keyColumns.size(); }
 
-    public ArrayList<ColumnInfo> GetKeyColumns() { return keyColumns; }
-    public ArrayList<ColumnInfo> GetColumns() { return columns; }
-    public Map<Integer, ColumnInfo> GetColumnMap() { return columnMap; }
+    public ArrayList<ColumnInfo> getKeyColumns() { return keyColumns; }
+    public ArrayList<ColumnInfo> getColumns() { return columns; }
+    public Map<Integer, ColumnInfo> getColumnMap() { return columnMap; }
 
     // there are no primary key when colId is 0, the data can been repeatable
-    public boolean isRepeatable() { return (keyColumns.get(0).GetColumnID() != 0); }
+    public boolean isRepeatable() { return (keyColumns.get(0).getColumnID() != 0); }
 
     public synchronized void IncInsertRows(long rows) { insertNum += rows; }
     public synchronized void IncUpdateRows(long rows) { updateNum += rows; }

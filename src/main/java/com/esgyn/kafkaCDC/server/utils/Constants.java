@@ -3,7 +3,7 @@ package com.esgyn.kafkaCDC.server.utils;
 public class Constants {
     public final static String       DEFAULT_LOGCONFPATH   = "conf/log4j.xml";
     public final static String       DEFAULT_JSONCONFPATH  = "conf/kafkaCDC.json";
-    public final static String       kafkaCDCVersion       = "KafkaCDC-1.0.2-release";
+    public final static String       KafkaCDC_VERSION      = "KafkaCDC-1.0.2-release";
 
     // the unit is second
     public final static long         DEFAULT_STREAM_TO_S   = 60;
@@ -41,6 +41,7 @@ public class Constants {
 	// database information
         {"",   "batchUpdate", false, false, "batchUpdate means update operate will batch execute,"
 	 + " default: one by one excute "},
+	{"",   "conf",        false,  true, "database server ip, default: \"localhost\""},
         {"d",  "dbip",        false,  true, "database server ip, default: \"localhost\""},
         {"",   "dbport",      false,  true, "database server port, default: 23400"},
         {"",   "dbuser",      false,  true, "database server user, default: db__root"},
@@ -105,7 +106,6 @@ public class Constants {
 
 	// system info
         {"h",  "help",        false, false, "show help information"},
-        {"v",  "version",     false, false, "print the version of KafkaCDC"},
-        {"R",   "readconf",    false, false, "read config paras from jsonConf file[conf/kafkaCDC.json]"}
+        {"v",  "version",     false, false, "print the version of KafkaCDC"}
     };   
 }

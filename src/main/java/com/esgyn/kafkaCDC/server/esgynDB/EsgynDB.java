@@ -4,12 +4,8 @@ import java.sql.ResultSet;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
 
-import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.lang.StringBuffer;
 
 import org.apache.log4j.Logger;
@@ -18,19 +14,18 @@ import java.util.Date;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 
-import com.esgyn.kafkaCDC.server.bean.ColumnBean;
-import com.esgyn.kafkaCDC.server.bean.MappingBean;
+import com.esgyn.kafkaCDC.server.utils.TableInfo;
 import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
 
+import lombok.Getter;
+import lombok.Setter;
+
 public class EsgynDB {
-    EsgynDBParams          DBParams    = null;
-
-    String                 NOTINITT1   = "SB_HISTOGRAMS";
-    String                 NOTINITT2   = "SB_HISTOGRAM_INTERVALS";
-    String                 NOTINITT3   = "SB_PERSISTENT_SAMPLES";
-
+    @Setter
+    @Getter
+    private EsgynDBParams  DBParams    = null;
     Connection             sharedConn  = null;
-    Map<String, TableInfo> tables      = null;
+
     private static Logger  log         = Logger.getLogger(EsgynDB.class);
 
     private long           totalMsgNum = 0;
@@ -69,373 +64,14 @@ public class EsgynDB {
 		      + ", db user: " + DBParams_.getDBUser() + "]");
         }
 
-	DBParams = DBParams_;
+	DBParams  = DBParams_;
 
-        begin = new Date().getTime();
+        begin     = new Date().getTime();
         startTime = new Date();
 
-        tables = new HashMap<String, TableInfo>();
-        if (DBParams.getMappings() != null) {
-            log.info("start to init mappings");
-            init_Mappings_Json();
-        }else {
-            log.info("start to init schemas");
-            init_schemas();
-        }
-
         if (log.isTraceEnabled()) {
             log.trace("exit function");
         }
-    }
-
-    private void init_schemas() {
-        ResultSet schemaRS = null;
-        Connection dbconn_Meta = CreateConnection(true);
-
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
-
-        try {
-            DatabaseMetaData dbmd = dbconn_Meta.getMetaData();
-            String schemaName = null;
-
-            if (DBParams.getDefSchema() == null) {
-                schemaRS = dbmd.getSchemas();
-                while (schemaRS.next()) {
-                    schemaName = schemaRS.getString("TABLE_SCHEM");
-                    log.info("start to init schema [" + schemaName + "]");
-                    init_schema(dbconn_Meta, schemaName);
-                }
-            } else {
-                log.info("start to init default schema [" + DBParams.getDefSchema() + "]");
-                init_schema(dbconn_Meta, DBParams.getDefSchema());
-
-                if (tables.size() <= 0) {
-                    log.error("init schema [" + DBParams.getDefSchema() + "] fail, cann't find any table!");
-                    System.exit(0);
-                }
-            }
-        } catch (SQLException sqle) {
-            log.error("SQLException has occurred when init_schemas.",sqle);
-        } catch (Exception e) {
-            log.error("Exception has occurred when init_schemas.",e);
-        } finally {
-            CloseConnection(dbconn_Meta);
-        }
-
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
-    }
-
-    public TableInfo init_schema(Connection dbconn, String schemaName) {
-        TableInfo tableInfo = null;
-
-        if (log.isTraceEnabled()) {
-            log.trace("enter function [schema: " + schemaName + "]");
-        }
-
-        try {
-            if (DBParams.getDefTable() == null) {
-                String getTables ="SELECT OBJECT_NAME TABLE_NAME FROM "
-                        + "TRAFODION.\"_MD_\".OBJECTS ob WHERE ob.CATALOG_NAME='TRAFODION' "
-                        + "AND ob.SCHEMA_NAME = ? AND OBJECT_TYPE='BT' "
-                        + "AND OBJECT_NAME NOT in('"
-                        + NOTINITT1 + "','" + NOTINITT2 +"','" + NOTINITT3 + "');";
-                PreparedStatement psmt = (PreparedStatement) dbconn.prepareStatement(getTables);
-
-                psmt.setString(1, schemaName);
-                ResultSet tableRS = psmt.executeQuery();
-                while (tableRS.next()) {
-                    String tableNameStr = tableRS.getString("TABLE_NAME");
-                    init_tables(tableInfo,dbconn,schemaName,tableNameStr);
-                }
-            } else {
-                String[] tables= DBParams.getDefTable().split(",");
-                for (String table : tables) {
-                    init_tables(tableInfo,dbconn,DBParams.getDefSchema(),table);
-                }
-                if (tables.length > 1) 
-                    DBParams.setDefTable(null);
-            }
-        } catch (SQLException sqle) {
-            log.error("SQLException has occurred when init_schema.",sqle);
-        } catch (Exception e) {
-            log.error("Exception has occurred when init_schema.",e);
-        }
-
-        if (log.isTraceEnabled()) {
-            log.trace("exit function [table info: " + tableInfo + "]");
-        }
-
-        return tableInfo;
-    }
-	
-    public void init_tables(TableInfo tableInfo,Connection dbconn,String schema,String table) {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
-        String tableName = schema + "." + table;
-        tableInfo = new TableInfo(schema, table);
-
-        log.info("start to init table [" + tableName + "]");
-        if (init_culumns(dbconn, tableInfo) <= 0) {
-            log.error("init table [" + tableName + "] is not exist!");
-        } else {
-            init_keys(dbconn, tableInfo);
-            tables.put(tableName, tableInfo);
-        }
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
-    }
-    public long init_culumns(Connection dbconn, TableInfo table) {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function [table info: " + table + "]");
-        }
-
-        try {
-            String getTableColumns ="SELECT ? TABLE_NAME, c.COLUMN_NAME COLUMN_NAME, "
-                    + "c.FS_DATA_TYPE DATA_TYPE, c.SQL_DATA_TYPE TYPE_NAME, "
-                    + "c.COLUMN_SIZE COLUMN_SIZE, c.NULLABLE NULLABLE, c.CHARACTER_SET CHARACTER_SET, "
-                    + "c.COLUMN_NUMBER ORDINAL_POSITION FROM \"_MD_\".COLUMNS c WHERE "
-                    + "c.object_uid=(select object_uid from \"_MD_\".OBJECTS o where o.CATALOG_NAME= "
-                    + "'TRAFODION'  AND o.SCHEMA_NAME=? AND o.object_name=?) AND "
-                    + "c.COLUMN_CLASS != 'S'  ORDER BY c.COLUMN_NUMBER;" ;
-            PreparedStatement psmt = (PreparedStatement) dbconn.prepareStatement(getTableColumns);
-
-            psmt.setString(1, table.GetTableName());
-            psmt.setString(2, table.GetSchemaName());
-            psmt.setString(3, table.GetTableName());
-
-            ResultSet columnRS = psmt.executeQuery();
-            StringBuffer strBuffer = new StringBuffer();
-            strBuffer.append("get table \"" + table.GetSchemaName() + "." + table.GetTableName()
-                    + "\" column sql \"" + getTableColumns + "\"\n columns [\n");
-
-            int colOff = 0;
-            int colId = 0;
-            while (columnRS.next()) {
-                String colName = columnRS.getString("COLUMN_NAME");
-                String typeName = columnRS.getString("TYPE_NAME");
-                String colType = columnRS.getString("DATA_TYPE");
-                String colSet = columnRS.getString("CHARACTER_SET");
-                int colSize = Integer.parseInt(columnRS.getString("COLUMN_SIZE"));
-
-                colId = Integer.parseInt(columnRS.getString("ORDINAL_POSITION"));
-                ColumnInfo column =
-		    new ColumnInfo(colId, colOff, colSize, colSet, colType, typeName, colName);
-
-                strBuffer.append("\t" + colName + " [id: " + colId + ", off: " + colOff + ", Type: "
-                        + typeName.trim() + ", Type ID: " + colType + ", Size: "
-                        + column.GetColumnSize() + "]\n");
-
-                table.AddColumn(column);
-                colOff++;
-            }
-            strBuffer.append("]");
-            log.debug(strBuffer.toString());
-            psmt.close();
-        } catch (SQLException sqle) {
-            log.error("SQLException has occurred when init_culumns.",sqle);
-        } catch (Exception e) {
-            log.error("Exception has occurred when init_culumns",e);
-        }
-
-        if (log.isTraceEnabled()) {
-            log.trace("exit function [column number:" + table.GetColumnCount() + "]");
-        }
-
-        return table.GetColumnCount();
-    }
-
-    public long init_keys(Connection dbconn, TableInfo table) {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function [table info: " + table + "]");
-        }
-
-        ColumnInfo firstColumn = table.GetColumn(0);
-        if (firstColumn.GetColumnID() != 0) {
-            log.warn("no primary key on table [" + table.GetSchemaName() + "."
-                    + table.GetTableName() + "], use all of columns.");
-
-            for (int i = 0; i < table.GetColumnCount(); i++) {
-                table.AddKey(table.GetColumn(i));
-            }
-
-            return table.GetKeyCount();
-        }
-
-        try {
-            String getTableKeys ="SELECT c.object_uid,c.FS_DATA_TYPE DATA_TYPE, c.SQL_DATA_TYPE "
-                    + "TYPE_NAME, k.KEYSEQ_NUMBER, c.NULLABLE NULLABLE, c.COLUMN_PRECISION "
-                    + "DECIMAL_DIGITS,  c.COLUMN_NUMBER KEY_COLUMN_ID, c.COLUMN_NUMBER "
-                    + "ORDINAL_POSITION  FROM (select c.*  from \"_MD_\".COLUMNS c  WHERE "
-                    + "c.OBJECT_UID=(select object_uid from \"_MD_\".OBJECTS o where "
-                    + "o.CATALOG_NAME= 'TRAFODION'  AND o.SCHEMA_NAME=? AND o.object_name=?)) c," 
-                    + "(select * from  \"_MD_\".KEYS k where k.OBJECT_UID=(select object_uid from "
-                    + "\"_MD_\".OBJECTS o where o.CATALOG_NAME= 'TRAFODION'  AND o.SCHEMA_NAME=? AND "
-                    + "o.object_name=?)) k where  c.OBJECT_UID=k.OBJECT_UID  AND c.COLUMN_NUMBER = "
-                    + "k.COLUMN_NUMBER AND c.COLUMN_CLASS != 'S' ORDER BY k.KEYSEQ_NUMBER; ";
-            PreparedStatement psmt = (PreparedStatement) dbconn.prepareStatement(getTableKeys);
-
-            psmt.setString(1, table.GetSchemaName());
-            psmt.setString(2, table.GetTableName());
-            psmt.setString(3, table.GetSchemaName());
-            psmt.setString(4, table.GetTableName());
-            ResultSet keysRS = psmt.executeQuery();
-            StringBuffer strBuffer = null;
-            if (log.isDebugEnabled()) {
-                strBuffer = new StringBuffer();
-                strBuffer.append("get primakey of \"" + table.GetSchemaName() + "\".\""
-                        + table.GetTableName() + "\" key columns\n[\n");
-            }
-            int colId = 0;
-            while (keysRS.next()) {
-                colId = Integer.parseInt(keysRS.getString("KEY_COLUMN_ID"));
-                ColumnInfo column = table.GetColumnFromMap(colId);
-                if (log.isDebugEnabled()) {
-                    strBuffer.append("\t" + column.GetColumnName() + " [id: " + column.GetColumnID()
-                            + ", Off: " + column.GetColumnOff() + ", Type: " + column.GetTypeName()
-                            + ", Type ID: " + column.GetColumnType() + "]\n");
-                }
-
-                table.AddKey(column);
-            }
-            if (log.isDebugEnabled()) {
-                strBuffer.append("]\n");
-                log.debug(strBuffer.toString());
-            }
-            psmt.close();
-        } catch (SQLException sqle) {
-            log.error("SQLException has occurred when init_keys",sqle);
-        } catch (Exception e) {
-            log.error("Exception has occurred when init_keys",e);
-        }
-
-        if (log.isTraceEnabled()) {
-            log.trace("exit function [key column number: " + table.GetKeyCount() + "]");
-        }
-
-        return table.GetKeyCount();
-    }
-
-    public void init_Mappings_Json(){
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
-        List<MappingBean> mappings = DBParams.getMappings();
-        for (MappingBean mapping : mappings) {
-            init_Tables_Json(mapping);
-        }
-        if (tables.size() <= 0) {
-            log.error("init schema [" + DBParams.getDefSchema() + "] fail, cann't find any table!");
-            System.exit(0);
-        }
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
-    }
-    public void init_Tables_Json(MappingBean mapping){
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
-
-        String tableName = mapping.getOld_schema() + "." + mapping.getOld_table();
-        List<ColumnBean> columns = mapping.getColumns();
-        List<Integer>    keys    = mapping.getKeys();
-
-        TableInfo tableInfo = new TableInfo(mapping.getOld_schema(), mapping.getOld_table());
-        log.info("start to init table [" + tableName + "]");
-
-        if (columns.size()<=0) {
-            log.error("init table [" + tableName + "] is not exist!");
-        }else {
-            init_columns_json(tableInfo,columns);
-            init_keys_Json(tableInfo,keys);
-            tables.put(tableName, tableInfo);
-        }
-
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
-    }
-    public long init_columns_json(TableInfo tableInfo,List<ColumnBean> columns){
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
-        StringBuffer strBuffer = null;
-        if (log.isDebugEnabled()) {
-            strBuffer = new StringBuffer();
-            strBuffer.append("\n\tget table [" + tableInfo.GetSchemaName() + "." + tableInfo.GetTableName()
-                    + "],");
-        }
-        for (int i = 0; i < columns.size(); i++) {
-
-            String colName   = columns.get(i).getName();
-            String typeName  = columns.get(i).getTypename();
-            String colType   = columns.get(i).getColtype();
-            String colSet    = columns.get(i).getCharset();
-            int    colSize   = columns.get(i).getColSize();
-            int    colId     = columns.get(i).getColId();
-            ColumnInfo column = new ColumnInfo(colId, i, colSize, colSet, colType, typeName, colName);
-            strBuffer.append("\n\tcolName [ "+colName + "], id [" + colId + "], off [" + i + "], Type ["
-                    + typeName.trim() + "], Type ID [" + colType + "], Size ["
-                    + column.GetColumnSize() + "]");
-            tableInfo.AddColumn(column);
-        }
-        if (log.isDebugEnabled()) {
-            log.debug(strBuffer.toString());
-        }
-        if (log.isTraceEnabled()) {
-            log.trace("exit function [column number:" + tableInfo.GetColumnCount() + "]");
-        }
-        return tableInfo.GetColumnCount();
-    }
-
-    public long init_keys_Json(TableInfo tableInfo,List<Integer> keys) {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function [table info: " + tableInfo + "]");
-        }
-        String tableName=tableInfo.GetSchemaName() + "."+ tableInfo.GetTableName();
-        ColumnInfo firstColumn = tableInfo.GetColumn(0);
-        if (firstColumn.GetColumnID() != 0) {
-            log.warn("no primary key on table [" + tableName + "], use all of columns.");
-
-            for (int i = 0; i < tableInfo.GetColumnCount(); i++) {
-                tableInfo.AddKey(tableInfo.GetColumn(i));
-            }
-
-            return tableInfo.GetKeyCount();
-        }
-
-        StringBuffer strBuffer = null;
-        if (log.isDebugEnabled()) {
-            strBuffer = new StringBuffer();
-            strBuffer.append("\n\tget primakey of [" + tableName + "],");
-        }
-        int colId = 0;
-        for (int i = 0; i < keys.size(); i++) {
-            colId = keys.get(i);
-            ColumnInfo column = tableInfo.GetColumnFromMap(colId);
-            if (log.isDebugEnabled()) {
-                strBuffer.append("\n\t key columns [" + column.GetColumnName() + "], id [" + column.GetColumnID()
-                        + "], Off [" + column.GetColumnOff() + "], Type [" + column.GetTypeName()
-                        + "], Type ID [" + column.GetColumnType() + "]");
-            }
-            tableInfo.AddKey(column);
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug(strBuffer.toString());
-        }
-
-        if (log.isTraceEnabled()) {
-            log.trace("exit function [key column number: " + tableInfo.GetKeyCount() + "]");
-        }
-
-        return tableInfo.GetKeyCount();
     }
 
     public Connection CreateConnection(boolean autocommit) {
@@ -485,24 +121,12 @@ public class EsgynDB {
         }
     }
 
-    public String GetDefaultSchema() {
-        return DBParams.getDefSchema();
-    }
-
-    public String GetDefaultTable() {
-        return DBParams.getDefTable();
-    }
-
     public Connection getSharedConn() {
         return sharedConn;
     }
 
     public void setSharedConn(Connection sharedConn) {
         this.sharedConn = sharedConn;
-    }
-
-    public TableInfo GetTableInfo(String tableName_) {
-        return tables.get(tableName_);
     }
 
     public synchronized void AddInsMsgNum(long insMsgNum_) {
@@ -592,7 +216,9 @@ public class EsgynDB {
                 + ", K: " + keyMsgNum + ", D: " + delMsgNum + "] DMLs [insert: " + insertNum + ", update: " + updateNum
                 + ", delete: " + deleteNum + "] Fails [insert: " + errInsertNum + ", update: " + errUpdateNum
                 + ", delete: " + errDeleteNum + "]\n");
-        for (TableInfo tableInfo : tables.values()) {
+
+	Map<String, TableInfo> tableHashMap = DBParams.getTableHashMap();
+        for (TableInfo tableInfo : tableHashMap.values()) {
             tableInfo.DisplayStat(strBuffer, interval, tablespeed);
         }
         log.info(strBuffer.toString());

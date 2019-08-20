@@ -22,13 +22,10 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.config.SaslConfigs;
 
-import com.esgyn.kafkaCDC.server.bean.ColumnBean;
-import com.esgyn.kafkaCDC.server.bean.ConfBean;
-import com.esgyn.kafkaCDC.server.bean.MappingBean;
-import com.esgyn.kafkaCDC.server.esgynDB.ColumnInfo;
-import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
 import com.esgyn.kafkaCDC.server.utils.Utils;
 import com.esgyn.kafkaCDC.server.utils.Constants;
+import com.esgyn.kafkaCDC.server.utils.TableInfo;
+import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
 import com.esgyn.kafkaCDC.server.utils.KafkaParams;
 import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
 import com.esgyn.kafkaCDC.server.utils.KafkaCDCParams;
@@ -37,12 +34,18 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class Parameters {
+    @Setter
     @Getter
-    private KafkaParams    KafkaParams    = new KafkaParams();
+    private KafkaParams    kafka       = null;
+    @Setter
     @Getter
-    private EsgynDBParams  DBParams       = new EsgynDBParams();
+    private EsgynDBParams  esgynDB     = null;
+    @Setter
     @Getter
-    private KafkaCDCParams params         = new KafkaCDCParams();
+    private KafkaCDCParams kafkaCDC    = null;
+    @Setter
+    @Getter 
+    private List<TableInfo> mappings   = null;
 
     public Parameters(String[] args_) 
     {
@@ -56,8 +59,6 @@ public class Parameters {
     private Options         exeOptions = new Options();
     private CommandLine     cmdLine    = null;
     private Utils           utils      = null;
-    private ConfBean        confBean   = null;
-    private boolean         isReadConf = false;
     /*
      * Get command line args
      * 
@@ -66,6 +67,7 @@ public class Parameters {
      *                  default: multiple connections
      * -b --broker <arg> broker location (node0:9092[,node1:9092]) 
      *    --batchUpdate batchUpdate means update operate will batch execute, default: one by one excute
+     *    --conf <arg> read parameters from config file
      * -c --commit <arg> num message per Kakfa synch/pull (num recs, default is 5000) 
      * -d --dbip <arg> database server ip 
      * -e --encode <arg> character encoding of data, default: utf8 
@@ -119,11 +121,11 @@ public class Parameters {
 	    log.error("KafkaCDC init parameters error.",e);
             System.exit(0);
 	}
-	    utils = new Utils();
+	utils = new Utils();
 
         boolean getVersion = cmdLine.hasOption("version") ? true : false;
         if (getVersion) {
-            log.info("KafkaCDC current version is: " + Constants.kafkaCDCVersion);
+            log.info("KafkaCDC current version is: " + Constants.KafkaCDC_VERSION);
             System.exit(0);
         }
 
@@ -132,25 +134,27 @@ public class Parameters {
             formatter.printHelp("Consumer Server", exeOptions);
             System.exit(0);
         }
-        isReadConf = cmdLine.hasOption("readconf") ? true :false ;
-        if (isReadConf) {
-            String jsonConf = utils.readJsonConf(Constants.DEFAULT_JSONCONFPATH);
+
+        if (cmdLine.hasOption("conf")) {
+	    String confPath = getStringParam("conf", Constants.DEFAULT_JSONCONFPATH);
+
             try {
-                confBean = utils.jsonParse(jsonConf);
+                // params = utils.jsonParse(confPath);
             } catch (Exception e) {
                 log.error("parse jsonConf has an error.make sure your json file is right.",e);
                 System.exit(0);
             }
-        }
+        } else {
 
-        // for database options
-	setDatabaseOptions();
+	    // for database options
+	    setDatabaseOptions();
 
-	// for kafka options
-	setKafkaOptions();
+	    // for kafka options
+	    setKafkaOptions();
 
-	// for KafkaCDC options
-	setKafkaCDCOptions();
+	    // for KafkaCDC options
+	    setKafkaCDCOptions();
+	}
 
 	checkOptions();
 
@@ -192,32 +196,25 @@ public class Parameters {
 
     private void setDatabaseOptions()
     {
-        String  dbip        = isReadConf ? confBean.getEsgynDB().getDbip()
-                : getStringParam("dbip", Constants.DEFAULT_IPADDR);
-        String  dbport      = isReadConf ? confBean.getEsgynDB().getDbport()
-                :getStringParam("dbport", Constants.DEFAULT_PORT);
-        String  tenantUser  = isReadConf ? confBean.getEsgynDB().getTenant()
-                :getStringParam("tenant", null);
+	esgynDB = new EsgynDBParams();
+        String  dbip        = getStringParam("dbip", Constants.DEFAULT_IPADDR);
+        String  dbport      = getStringParam("dbport", Constants.DEFAULT_PORT);
+        String  tenantUser  = getStringParam("tenant", null);
         String  dburl = "jdbc:t4jdbc://" + dbip + ":" + dbport + "/catelog=Trafodion;"
 	    + "applicationName=KafkaCDC;connectionTimeout=0";
         if (tenantUser != null)
             dburl += ";tenantName=" + tenantUser;
-	DBParams.setDBUrl(dburl);
-	DBParams.setDBUser(isReadConf ? confBean.getEsgynDB().getDbuser()
-            : getStringParam("dbuser", Constants.DEFAULT_USER));
-        DBParams.setDBPassword(isReadConf ? confBean.getEsgynDB().getDbpw()
-                : getStringParam("dbpw", Constants.DEFAULT_PASSWORD));
-	String defSchema = isReadConf ? null
-            : getStringParam("schema", null);
-        DBParams.setDefSchema(getName(defSchema));
-	String defTable = isReadConf ? null
-            : getStringParam("table", null);
-        DBParams.setDefTable(getName(defTable));
-    List<MappingBean> mappings= isReadConf ? confBean.getMapping() : null;
-        DBParams.setMappings(mappings);
+	esgynDB.setDBUrl(dburl);
+	esgynDB.setDBUser(getStringParam("dbuser", Constants.DEFAULT_USER));
+        esgynDB.setDBPassword(getStringParam("dbpw", Constants.DEFAULT_PASSWORD));
+	String defSchema = getStringParam("schema", null);
+        esgynDB.setDefSchema(getTrueName(defSchema));
+	String defTable = getStringParam("table", null);
+        esgynDB.setDefTable(getTrueName(defTable));
+	esgynDB.init();
     }
 
-    private String getName(String name)
+    private String getTrueName(String name)
     {
         if (name != null) {
             if (name.startsWith("[") && name.endsWith("]")) {
@@ -233,78 +230,53 @@ public class Parameters {
 
     private void setKafkaOptions()
     {
-        KafkaParams.setBroker(isReadConf ? confBean.getKafka().getBroker()
-                :getStringParam("broker", Constants.DEFAULT_BROKER));
-	KafkaParams.setCommitCount(isReadConf ? confBean.getKafka().getCommit()
-            :getLongParam("commit", Constants.DEFAULT_COMMIT_COUNT * 1000)/1000);
-	String full=isReadConf ? confBean.getKafka().getFull()
-            :getStringParam("full", null);
-        KafkaParams.setFull(full.toUpperCase());
-	KafkaParams.setGroup(isReadConf ? confBean.getKafka().getGroup()
-            :getStringParam("group", "group_0"));
-        KafkaParams.setTopic(isReadConf ? confBean.getKafka().getTopic():
-            getStringParam("topic", null));                //todo
-	KafkaParams.setKafkaUser(isReadConf ? confBean.getKafka().getKafkauser()
-            :getStringParam("kafkauser", null));
-	KafkaParams.setKafkaPW(isReadConf ? confBean.getKafka().getKafkapw()
-            :getStringParam("kafkapw", null));
-        KafkaParams.setKey(isReadConf ? confBean.getKafka().getKey()
-                :getStringParam("key", Constants.DEFAULT_KEY));
-        KafkaParams.setValue(isReadConf ? confBean.getKafka().getValue()
-                :getStringParam("value", Constants.DEFAULT_VALUE));
-	KafkaParams.setStreamTO(isReadConf ? confBean.getKafka().getSto()* 1000
-            :getLongParam("sto", Constants.DEFAULT_STREAM_TO_S * 1000));
-	KafkaParams.setZkTO(isReadConf ? confBean.getKafka().getZkto()* 1000
-            :getLongParam("zkto", Constants.DEFAULT_ZOOK_TO_S * 1000));
-        KafkaParams.setHbTO(isReadConf ? confBean.getKafka().getHbto()* 1000
-                :getIntParam("hbto", Constants.DEFAULT_HEATBEAT_TO_S * 1000));
-	KafkaParams.setSeTO(isReadConf ? confBean.getKafka().getSeto()* 1000
-            :getIntParam("seto", Constants.DEFAULT_SESSION_TO_S * 1000));
-	KafkaParams.setReqTO(isReadConf ? confBean.getKafka().getReqto()* 1000
-            :getIntParam("reqto", Constants.DEFAULT_REQUEST_TO_S * 1000));
-        KafkaParams.setZookeeper(isReadConf ? confBean.getKafka().getZook()
-                :getStringParam("zook", null));
+	kafka = new KafkaParams();
+        kafka.setBroker(getStringParam("broker", Constants.DEFAULT_BROKER));
+	kafka.setCommitCount(getLongParam("commit", Constants.DEFAULT_COMMIT_COUNT * 1000)/1000);
+	String full=getStringParam("full", null);
+        kafka.setFull(full.toUpperCase());
+	kafka.setGroup(getStringParam("group", "group_0"));
+        kafka.setTopic(getStringParam("topic", null));                //todo
+	kafka.setKafkaUser(getStringParam("kafkauser", null));
+	kafka.setKafkaPW(getStringParam("kafkapw", null));
+        kafka.setKey(getStringParam("key", Constants.DEFAULT_KEY));
+        kafka.setValue(getStringParam("value", Constants.DEFAULT_VALUE));
+	kafka.setStreamTO(getLongParam("sto", Constants.DEFAULT_STREAM_TO_S * 1000));
+	kafka.setZkTO(getLongParam("zkto", Constants.DEFAULT_ZOOK_TO_S * 1000));
+        kafka.setHbTO(getIntParam("hbto", Constants.DEFAULT_HEATBEAT_TO_S * 1000));
+	kafka.setSeTO(getIntParam("seto", Constants.DEFAULT_SESSION_TO_S * 1000));
+	kafka.setReqTO(getIntParam("reqto", Constants.DEFAULT_REQUEST_TO_S * 1000));
+        kafka.setZookeeper(getStringParam("zook", null));
     }
 
     private void setKafkaCDCOptions()
     {
-	params.setAConn(isReadConf ? confBean.getKafkaCDC().isAconn()
-            :getBoolParam("aconn", false));
-	params.setBatchUpdate(isReadConf ? confBean.getKafkaCDC().isBatchUpdate()
-            :getBoolParam("batchUpdate", false));
-	params.setBigEndian(isReadConf ? confBean.getKafkaCDC().isBigendian()
-            :getBoolParam("bigendian", false));
-        params.setDelimiter(isReadConf ? confBean.getKafkaCDC().getDelim()
-                :getStringParam("delim", null));
-        params.setEncoding(isReadConf ? confBean.getKafkaCDC().getEncode()
-                :getStringParam("encode", Constants.DEFAULT_ENCODING));
-        params.setFormat(isReadConf ? confBean.getKafkaCDC().getFormat()
-                :getStringParam("format", ""));
-        params.setInterval(isReadConf ? confBean.getKafkaCDC().getInterval()* 1000
-                :getLongParam("interval", Constants.DEFAULT_INTERVAL_S * 1000));
-        params.setKeepalive(isReadConf ? confBean.getKafkaCDC().isKeepalive()
-                :getBoolParam("keepalive", false));
-	params.setMessageClass("com.esgyn.kafkaCDC.server.kafkaConsumer.messageType." 
-			       + params.getFormat() + "RowMessage");
-	params.setOutPath(isReadConf ? confBean.getKafkaCDC().getOutpath()
-            :getStringParam("outpath", null));
-	params.setPartString(isReadConf ? confBean.getKafkaCDC().getPartition()
-	        :getStringParam("partition", "16"));
-	params.setPartitions(getPartArrayFromStr(params.getPartString()));
-	params.setSkip(isReadConf ? confBean.getKafkaCDC().isSkip()
-            :getBoolParam("skip", false));
-        params.setTableSpeed(isReadConf ? confBean.getKafkaCDC().isTablespeed()
-                :getBoolParam("tablespeed", false));
+	kafkaCDC = new KafkaCDCParams();
+	kafkaCDC.setAConn(getBoolParam("aconn", false));
+	kafkaCDC.setBatchUpdate(getBoolParam("batchUpdate", false));
+	kafkaCDC.setBigEndian(getBoolParam("bigendian", false));
+        kafkaCDC.setDelimiter(getStringParam("delim", null));
+        kafkaCDC.setEncoding(getStringParam("encode", Constants.DEFAULT_ENCODING));
+        kafkaCDC.setFormat(getStringParam("format", ""));
+        kafkaCDC.setInterval(getLongParam("interval", Constants.DEFAULT_INTERVAL_S * 1000));
+        kafkaCDC.setKeepalive(getBoolParam("keepalive", false));
+	kafkaCDC.setMsgClass("com.esgyn.kafkaCDC.server.kafkaConsumer.messageType." 
+			   + kafkaCDC.getFormat() + "RowMessage");
+	kafkaCDC.setOutPath(getStringParam("outpath", null));
+	kafkaCDC.setPartition(getStringParam("partition", "16"));
+	kafkaCDC.setPartitions(getPartArrayFromStr(kafkaCDC.getPartition()));
+	kafkaCDC.setSkip(getBoolParam("skip", false));
+        kafkaCDC.setTableSpeed(getBoolParam("tablespeed", false));
     }
 
     void checkOptions()
     {
-	String defSchema = DBParams.getDefSchema();
-	String defTable = DBParams.getDefTable();
+	String defSchema = esgynDB.getDefSchema();
+	String defTable = esgynDB.getDefTable();
 
-	String format = params.getFormat();
+	String format = kafkaCDC.getFormat();
         if (format.equals("HongQuan")
-	    && (KafkaParams.getKey() == null || KafkaParams.getValue() == null)) {
+	    && (kafka.getKey() == null || kafka.getValue() == null)) {
 	    reportErrorAndExit("\"HongQuan\" format must need key and value parameter. ");
         }
 
@@ -318,13 +290,13 @@ public class Parameters {
             }
         }
 
-	String delimiter = params.getDelimiter();
+	String delimiter = kafkaCDC.getDelimiter();
         if (format.equals("") && delimiter != null && delimiter.length() != 1) {
 	    reportErrorAndExit("the delimiter must be a single character. but it's [" 
 			       + delimiter + "] now");
         }
 
-	String full = KafkaParams.getFull();
+	String full = kafka.getFull();
         if (!full.equals("")) {
             boolean validLong = isValidLong(full);
             if (!validLong && !utils.isDateStr(full) && !full.equals("START") && !full.equals("END")) {
@@ -338,32 +310,32 @@ public class Parameters {
         }
 
         // interval ||streamTO ||zkTO || hbTO || seTO ||reqTo can't be "0"
-        if (params.getInterval() <= 0) {
+        if (kafkaCDC.getInterval() <= 0) {
             reportErrorAndExit("the interval parameter can't less than or equal \"0\" ");
         }
 
-        if (KafkaParams.getStreamTO() <= 0) {
+        if (kafka.getStreamTO() <= 0) {
 	    reportErrorAndExit("the sto parameter can't less than or equal \" 0\" ");
         }
 
-        if (KafkaParams.getZkTO() <= 0) {
+        if (kafka.getZkTO() <= 0) {
 	    reportErrorAndExit("the zkTO parameter can't less than or equal \"0\" ");
         }
 
-        if (KafkaParams.getHbTO() <= 0) {
+        if (kafka.getHbTO() <= 0) {
 	    reportErrorAndExit("the hbTO parameter can't less than or equal \"0\" ");
         }
 
-        if (KafkaParams.getSeTO() <= 0) {
+        if (kafka.getSeTO() <= 0) {
 	    reportErrorAndExit("the seTO parameter can't less than or equal \"0\" ");
         }
 
-        if (KafkaParams.getReqTO() <= 0) {
+        if (kafka.getReqTO() <= 0) {
 	    reportErrorAndExit("the reqTO parameter can't less than or equal \"0\" ");
         }
 	
-	String kafkaPW = KafkaParams.getKafkaPW();
-	String kafkaUser = KafkaParams.getKafkaUser();
+	String kafkaPW = kafka.getKafkaPW();
+	String kafkaUser = kafka.getKafkaUser();
         if ((kafkaPW != null && kafkaUser == null) || 
 	    (kafkaPW == null && kafkaUser != null)) {
             reportErrorAndExit("check the kafkaUser and kafkaPW parameter pls."
@@ -377,62 +349,62 @@ public class Parameters {
         StringBuffer strBuffer = new StringBuffer();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
-        strBuffer.append("\n\t----------------------current kafkaCDC version " 
-			 + Constants.kafkaCDCVersion + "-----------------------\n");
+        strBuffer.append("\n\n----------------------current kafkaCDC version " 
+			 + Constants.KafkaCDC_VERSION + "-----------------------\n");
         strBuffer.append("KafkaCDC start time: " + sdf.format(starttime))
-	    .append("\n\tDatabase options:")
-	    .append("\n\tdburl       = "    + DBParams.getDBUrl())
-	    .append("\n\tschema      = "    + DBParams.getDefSchema())
-	    .append("\n\ttable       = "    + DBParams.getDefTable())
+	    .append("\nDatabase options:")
+	    .append("\n\tdburl       = "    + esgynDB.getDBUrl())
+	    .append("\n\tschema      = "    + esgynDB.getDefSchema())
+	    .append("\n\ttable       = "    + esgynDB.getDefTable())
 
-	    .append("\n\tKafka options:")
-	    .append("\n\tbroker      = "    + KafkaParams.getBroker())
-	    .append("\n\tcommitCount = "    + KafkaParams.getCommitCount())
-	    .append("\n\tmode        = "    + KafkaParams.getFull())
-	    .append("\n\tgroup       = "    + KafkaParams.getGroup())
-	    .append("\n\ttopic       = "    + KafkaParams.getTopic())
-	    .append("\n\tkafkauser   = "    + KafkaParams.getKafkaUser())
-	    .append("\n\tkafkapasswd = "    + KafkaParams.getKafkaPW())
-	    .append("\n\tkey         = "    + KafkaParams.getKey())
-	    .append("\n\tvalue       = "    + KafkaParams.getValue())
-	    .append("\n\tstreamTO    = "    + KafkaParams.getStreamTO()/1000 + "s")
-	    .append("\n\tzkTO        = "    + KafkaParams.getZkTO()/1000 + "s")
-	    .append("\n\tbhTO        = "    + KafkaParams.getHbTO()/1000 + "s")
-	    .append("\n\tseTO        = "    + KafkaParams.getSeTO()/1000 + "s")
-	    .append("\n\treqTO       = "    + KafkaParams.getReqTO()/1000 + "s")
-	    .append("\n\tzookeeper   = "    + KafkaParams.getZookeeper())
+	    .append("\n\nKafka options:")
+	    .append("\n\tbroker      = "    + kafka.getBroker())
+	    .append("\n\tcommitCount = "    + kafka.getCommitCount())
+	    .append("\n\tmode        = "    + kafka.getFull())
+	    .append("\n\tgroup       = "    + kafka.getGroup())
+	    .append("\n\ttopic       = "    + kafka.getTopic())
+	    .append("\n\tkafkauser   = "    + kafka.getKafkaUser())
+	    .append("\n\tkafkapasswd = "    + kafka.getKafkaPW())
+	    .append("\n\tkey         = "    + kafka.getKey())
+	    .append("\n\tvalue       = "    + kafka.getValue())
+	    .append("\n\tstreamTO    = "    + kafka.getStreamTO()/1000 + "s")
+	    .append("\n\tzkTO        = "    + kafka.getZkTO()/1000 + "s")
+	    .append("\n\tbhTO        = "    + kafka.getHbTO()/1000 + "s")
+	    .append("\n\tseTO        = "    + kafka.getSeTO()/1000 + "s")
+	    .append("\n\treqTO       = "    + kafka.getReqTO()/1000 + "s")
+	    .append("\n\tzookeeper   = "    + kafka.getZookeeper())
 
-	    .append("\n\tKafkaCDC options:")
-	    .append("\n\toneConnect  = "    + params.isAConn())
-	    .append("\n\tbatchUpdate = "    + params.isBatchUpdate())
-	    .append("\n\tbigendian   = "    + params.isBigEndian())
-	    .append("\n\tdelimiter   = \""  + params.getDelimiter() + "\"")
-	    .append("\n\tencode      = "    + params.getEncoding())
-	    .append("\n\tformat      = "    + params.getFormat())
-	    .append("\n\tinterval    = "    + params.getInterval()/1000 + "s")
-	    .append("\n\tkeepalive   = "    + params.isKeepalive())
-	    .append("\n\tmessageClass= "    + params.getMessageClass())
-	    .append("\n\toutpath     = "    + params.getOutPath())
-	    .append("\n\tpartString  = "    + params.getPartString())
+	    .append("\n\nKafkaCDC options:")
+	    .append("\n\toneConnect  = "    + kafkaCDC.isAConn())
+	    .append("\n\tbatchUpdate = "    + kafkaCDC.isBatchUpdate())
+	    .append("\n\tbigendian   = "    + kafkaCDC.isBigEndian())
+	    .append("\n\tdelimiter   = \""  + kafkaCDC.getDelimiter() + "\"")
+	    .append("\n\tencode      = "    + kafkaCDC.getEncoding())
+	    .append("\n\tformat      = "    + kafkaCDC.getFormat())
+	    .append("\n\tinterval    = "    + kafkaCDC.getInterval()/1000 + "s")
+	    .append("\n\tkeepalive   = "    + kafkaCDC.isKeepalive())
+	    .append("\n\tmessageClass= "    + kafkaCDC.getMsgClass())
+	    .append("\n\toutpath     = "    + kafkaCDC.getOutPath())
+	    .append("\n\tpartition   = "    + kafkaCDC.getPartition())
 
-	    .append("\n\tskip        = "    + params.isSkip())
-	    .append("\n\ttablespeed  = "    + params.isTableSpeed());
+	    .append("\n\tskip        = "    + kafkaCDC.isSkip())
+	    .append("\n\ttablespeed  = "    + kafkaCDC.isTableSpeed());
         log.info(strBuffer.toString());
     }
 
-    public int[] getPartArrayFromStr(String partString)
+    public int[] getPartArrayFromStr(String partition)
     {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
 	int[]    partitions = null;
-        String[] parts      = partString.split(",");
+        String[] parts      = partition.split(",");
 
-        if (partString.equals("-1"))
+        if (partition.equals("-1"))
 	    return partitions;
 
 	if (parts.length < 1) {
-	    reportErrorAndExit("partition parameter format error [" + partString
+	    reportErrorAndExit("partition parameter format error [" + partition
 			       + "], the right format: \"id [, id] ...\", " 
 			       + "id should be: \"id-id\"");
 	}
@@ -449,7 +421,7 @@ public class Parameters {
 	    for (String part : parts) {
 		items = part.split("-");
 		if (items == null || items.length > 2 || items.length == 0) {
-		    reportErrorAndExit("partition parameter format error [" + partString
+		    reportErrorAndExit("partition parameter format error [" + partition
 				       + "], the right format: \"id [, id] ...\", "
 				       + "id should be: \"id-id\"");
 		} else if (items.length == 2) {
@@ -477,7 +449,7 @@ public class Parameters {
 	Arrays.sort(partitions);
 	for (i = 1; i < partitions.length; i++) {
 	    if (partitions[i - 1] == partitions[i]) {
-		reportErrorAndExit("partition parameter duplicate error [" + partString + "], pre: "
+		reportErrorAndExit("partition parameter duplicate error [" + partition + "], pre: "
 				   + partitions[i - 1] + ", cur: " + partitions[i] + ", total: "
 				   + partitions.length + ", off: " + i);
 	    }
@@ -491,22 +463,22 @@ public class Parameters {
         if (log.isTraceEnabled()) {
             log.trace("enter function");
         }
-        int[] partitions = params.getPartitions();
-        int[] existParts = getPartsArrayFromKafka(KafkaParams.getBroker(), KafkaParams.getTopic(),
-                         KafkaParams.getKafkaUser(), KafkaParams.getKafkaPW());
-        if (params.getPartString().equals("-1")) {
+        int[] partitions = kafkaCDC.getPartitions();
+        int[] existParts = getPartsArrayFromKafka(kafka.getBroker(), kafka.getTopic(),
+                         kafka.getKafkaUser(), kafka.getKafkaPW());
+        if (kafkaCDC.getPartition().equals("-1")) {
             if (existParts == null) {
-        reportErrorAndExit("the topic [" + KafkaParams.getTopic()
+        reportErrorAndExit("the topic [" + kafka.getTopic()
                    + "] maybe not exist in the broker ["
-                   + KafkaParams.getBroker() + "]");
+                   + kafka.getBroker() + "]");
             }
             partitions = existParts;
-            params.setPartitions(partitions);
+            kafkaCDC.setPartitions(partitions);
         } else {
         List notExistPartitions = getNotExistParts(partitions, existParts);
         if (notExistPartitions.size() != 0) {
         reportErrorAndExit("there is partitons :" + Arrays.toString(existParts)
-                   + "in the topic:[" + KafkaParams.getTopic()
+                   + "in the topic:[" + kafka.getTopic()
                    + "], but the partitions you specify [" + notExistPartitions
                    + "] is not exist in this topic");
         }

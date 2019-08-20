@@ -2,18 +2,23 @@ package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+
+import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import com.esgyn.kafkaCDC.server.esgynDB.ColumnInfo;
+import com.esgyn.kafkaCDC.server.utils.TableInfo;
+import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
+
 import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
 import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
-import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
-import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Map.Entry;
+
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
+
 import org.apache.log4j.Logger;
 
 public class userDefinedRowMessage extends RowMessage<String>{

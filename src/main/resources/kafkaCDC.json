@@ -1,14 +1,16 @@
 {
 	"esgynDB": {
-		"dbip": "localhost",
-		"dbport": "23400",
-		"dbuser": "db__root",
-		"dbpw": "zz",
-		"tenant": null
+		"DBIP": "localhost",
+		"DBPort": "23400",
+		"DBDriver": "org.trafodion.jdbc.t4.T4Driver",
+		"DBUser": "db__root",
+		"DBPW": "zz",
+		"DBSchema": "SEABASE"
+		"DBTenant": null
 	},
 	"kafka": {
 		"broker": "localhost:9092",
-		"commit": 5000,
+		"commitCount": 5000,
 		"full": "start",
 		"group": "0",
 		"topic": [
@@ -16,63 +18,63 @@
 		  "topic2",
 		  "topic3"
 		  ],
-		"kafkauser": null,
-		"kafkapw": null,
+		"kafkaUser": null,
+		"kafkaPW": null,
 		"key": "org.apache.kafka.common.serialization.StringDeserializer",
 		"value": "org.apache.kafka.common.serialization.StringDeserializer",
-		"sto": 60,
-		"zkto": 10,
-		"hbto": 10,
-		"seto": 30,
-		"reqto": 305,
-		"zook": null
+		"streamTO": 60,
+		"zkTO": 10,
+		"hbTO": 10,
+		"seTO": 30,
+		"reqTO": 305,
+		"zookeeper": null
 	},
 	"kafkaCDC": {
-	    "aconn": false,
+		"aConn": false,
 		"batchUpdate": false,
-		"bigendian": false,
-		"delim": ",",
-		"encode": "utf8",
+		"bigEndian": false,
+		"delimiter": ",",
+		"encoding": "UTF8",
 		"format": "Unicom",
 		"interval": 10,
 		"keepalive": false,
-		"outpath": null,
+		"outPath": null,
 		"partition": "16",
 		"skip": false,
-		"tablespeed": false
+		"tableSpeed": false
 	},
-	"mapping": [{
-		"schema": "SEABASE",
-		"table": "T001",
-		"old_schema": "",
-		"old_table": "",
+	"mappings": [{
+		"schemaName": "SEABASE",
+		"tableName": "T001",
+		"srcSchemaName": "",
+		"srcTableName": "",
 		"columns": [{
-			"name": "t001_c1",
-			"typename": "int",
-			"charset": "utf8"
+			"columnName": "t001_c1",
+			"typeName": "int",
+			"columnSet": "utf8"
 		}, {
-			"name": "t001_c2",
-			"typename": "varchar",
-			"charset": "utf8"
+			"columnName": "t001_c2",
+			"typeName": "varchar",
+			"columnSet": "utf8"
 		}],
 		"keys": [1]
 	}, {
-		"schema": "SEABSE",
-		"table": "tab_001",
-		"old_schema": "S1",
-		"old_table": "T1",
+		"schemaName": "SEABSE",
+		"tableName": "tab_001",
+		"srcSchemaName": "S1",
+		"srcTableName": "T1",
 		"columns": [{
-			"name": "t001_c1",
-			"typename": "int",
-			"charset": "utf8"
+			"columnName": "t001_c1",
+			"typeName": "int",
+			"columnSet": "utf8"
 		}, {
-			"name": "t001_c2",
-			"typename": "varchar",
-			"charset": "utf8"
+			"columnName": "t001_c2",
+			"typeName": "varchar",
+			"columnSet": "utf8"
 		}, {
-			"name": "t001_c3",
-			"typename": "varchar",
-			"charset": "utf8"
+			"columNname": "t001_c3",
+			"typeName": "varchar",
+			"columnSet": "utf8"
 		}],
 		"keys": [3, 1]
 	}]

@@ -1,31 +1,41 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
 
 import java.util.Map;
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.io.UnsupportedEncodingException;
+
+import com.esgyn.kafkaCDC.server.utils.TableInfo;
+import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
+import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
+import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Record;
+
 import org.apache.log4j.Logger;
 
-import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
-import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
-import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
-import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
-import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Record;
+import lombok.Getter;
+import lombok.Setter;
 
 public class RowMessage<T> implements Cloneable{
     protected static Logger          log          = Logger.getLogger(RowMessage.class);
     public MessageTypePara<T>        mtpara       = null;
     public T                         message_     = null;
-    public String                    message      = null;
-    public Record                    messagePro   = null;
-    public byte[]                    data         = null;
-    public String                    schemaName   = null;
-    public String                    tableName    = null;
-    public String                    delimiter    = "\\,";
-    public String                    operatorType = "I";
     public int                       thread       = -1;
     public TableInfo                 tableInfo    = null;
+    public Record                    messagePro   = null;
+    public byte[]                    data         = null;
+    public String                    delimiter    = "\\,";
 
-    public Map<Integer, ColumnValue> columns      = null;
+    @Getter
+    protected String                 message      = null;
+    @Getter
+    protected String                 schemaName   = null;
+    @Getter
+    protected String                 tableName    = null;
+    @Getter
+    protected String                 operatorType = "I";
+    @Setter
+    @Getter
+    protected Map<Integer, ColumnValue> columns     = null;
 
     public RowMessage() {}
 
@@ -35,11 +45,11 @@ public class RowMessage<T> implements Cloneable{
 
     public boolean init(MessageTypePara<T> mtpara_) throws UnsupportedEncodingException {
         mtpara = mtpara_;
-        EsgynDB esgynDB_ = mtpara.getEsgynDB();
+        EsgynDBParams esgynDB_ = mtpara.getEsgynDB();
         String delimiter_ = mtpara.getDelimiter();
-        schemaName = esgynDB_.GetDefaultSchema();
-        tableName = esgynDB_.GetDefaultTable();
-        tableInfo = esgynDB_.GetTableInfo(schemaName+"."+tableName);
+        schemaName = esgynDB_.getDefSchema();
+        tableName = esgynDB_.getDefTable();
+        tableInfo = esgynDB_.getTableInfo(schemaName+"."+tableName);
         if (log.isTraceEnabled()) {
             log.trace("enter function [schema: " + schemaName + ", table: " + tableName
                     + ", delimiter: \"" + delimiter_ + "\", thread id: " + mtpara.getThread()
@@ -89,7 +99,7 @@ public class RowMessage<T> implements Cloneable{
             if (log.isDebugEnabled()) {
                 strBuffer.append("\n\tColumn: " + formats[i]);
             }
-            ColumnValue columnValue = new ColumnValue(i, formats[i], null,tableInfo.GetColumn(i).GetTypeName());
+            ColumnValue columnValue = new ColumnValue(i, formats[i], null,tableInfo.getColumn(i).getTypeName());
             columns.put(i, columnValue);
         }
         if (log.isDebugEnabled()) {
@@ -103,28 +113,9 @@ public class RowMessage<T> implements Cloneable{
 
         return true;
     }
+
     @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
-    }
-
-    public String GetTableName() {
-        return tableName;
-    }
-
-    public String GetSchemaName() {
-        return schemaName;
-    }
-
-    public String GetOperatorType() {
-        return operatorType;
-    }
-
-    public String GetMessage() {
-        return message;
-    }
-
-    public Map<Integer, ColumnValue> GetColumns() {
-        return columns;
     }
 }

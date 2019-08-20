@@ -7,18 +7,20 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.util.HashMap;
 
-import com.esgyn.kafkaCDC.server.esgynDB.ColumnInfo;
-import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
-import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
 import com.esgyn.kafkaCDC.server.utils.Utils;
+import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
+import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
+import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
+
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Column;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Record;
+
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
-import com.esgyn.kafkaCDC.server.esgynDB.TableInfo;
+import com.esgyn.kafkaCDC.server.utils.TableInfo;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -35,7 +37,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 
     String                catlogName               = null;
     String                emptystr                 = "";
-    EsgynDB               esgynDB                  = null;
+    EsgynDBParams         esgynDB                  = null;
     private final int     INSERT_DRDS              = 0;
     private final int     UPDATE_DRDS              = 1;
     private final int     DELETE_DRDS              = 2;
@@ -65,7 +67,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         } catch (InvalidProtocolBufferException e) {
             log.error("parseFrom Record has error ,make sure you data pls",e);
             return false;
-        }
+	}
         esgynDB = mtpara.getEsgynDB();
         utils = new Utils();
         return true;
@@ -97,11 +99,11 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }
 
         if (schemaName==null) 
-          schemaName = esgynDB.GetDefaultSchema();
+          schemaName = esgynDB.getDefSchema();
 
         if (tableName==null) 
-          tableName = esgynDB.GetDefaultTable();
-          tableInfo = esgynDB.GetTableInfo(schemaName + "." + tableName);        
+          tableName = esgynDB.getDefTable();
+          tableInfo = esgynDB.getTableInfo(schemaName + "." + tableName);        
           int operationType = messagePro.getOperationType();
 
         if (tableInfo == null) {
@@ -152,7 +154,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 return false;
             }
 
-            columns.put(columnvalue.GetColumnID(), columnvalue);
+            columns.put(columnvalue.getColumnID(), columnvalue);
         }
         // get column
         for (int i = 0; i < colNum; i++) {
@@ -167,7 +169,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 return false;
             }
 
-            columns.put(columnvalue.GetColumnID(), columnvalue);
+            columns.put(columnvalue.getColumnID(), columnvalue);
         }
         //operationType
         switch (operationType) {
@@ -232,8 +234,8 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 if (log.isDebugEnabled()) {
                     log.debug("the data maybe come form oracle,source col index:"+index);
                 }
-                ColumnInfo columnInfo = tableInfo.GetColumn(index);
-                colTypeName = columnInfo.GetTypeName().trim();
+                ColumnInfo columnInfo = tableInfo.getColumn(index);
+                colTypeName = columnInfo.getTypeName().trim();
                 newValue = covertValue1(newNull,newValuebs,colTypeName,messagePro,index,colname);
                 oldValue = covertValue1(oldNull,oldValuebs,colTypeName,messagePro,index,colname);
                 break;
@@ -241,15 +243,15 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 if (log.isDebugEnabled()) {
                     log.debug("the data maybe come form mysql(DRDS),source col name:"+colname);
                 }
-                ColumnInfo colInfo = tableInfo.GetColumn("\"" + colname.toString() + "\"");
+                ColumnInfo colInfo = tableInfo.getColumn("\"" + colname.toString() + "\"");
                 if (colInfo==null) {
                     log.error("columnname from kafka is["+colname+"],"
                             + "it not exist esgyndb ["+schemaName+"."+tableName+"]\n"
                             + "the kafka message:"+messagePro);
                 }else {
-                    colTypeName = colInfo.GetTypeName().trim();
+                    colTypeName = colInfo.getTypeName().trim();
                 }
-                index    = colInfo.GetColumnID();
+                index    = colInfo.getColumnID();
                 newValue = covertValue2(newNull,newValuebs,colTypeName,messagePro,index,colname);
                 oldValue = covertValue2(oldNull,oldValuebs,colTypeName,messagePro,index,colname);
                 break;

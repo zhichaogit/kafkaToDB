@@ -11,7 +11,6 @@ import java.util.Date;
 
 import org.apache.log4j.Logger;
 
-import com.esgyn.kafkaCDC.server.bean.ConfBean;
 import com.google.gson.Gson;
 
 public class Utils {
@@ -149,18 +148,20 @@ public class Utils {
     }
     /**
      * Parse json formatted data via Gson
-     * @param jsonString
-     * @return  jsonconfBean
+     * @param confPath
+     * @return  Parameters
      */
 
-    public ConfBean jsonParse(String jsonString) throws Exception{
-        ConfBean jsonConf=null;
+    public Parameters jsonParse(String confPath) throws Exception{
+        Parameters params = null;
+	String     jsonString = readJsonConf(confPath);
+
         try {
             Gson gson = new Gson();
-             jsonConf = gson.fromJson(jsonString,ConfBean.class);
+	    params = gson.fromJson(jsonString, Parameters.class);
         } catch (Exception e) {
            throw e;
         }
-        return jsonConf;
+        return params;
     }
 }

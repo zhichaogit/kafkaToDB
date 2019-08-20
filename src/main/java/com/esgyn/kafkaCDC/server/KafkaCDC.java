@@ -28,31 +28,27 @@ public class KafkaCDC implements Runnable {
         me.params    = new Parameters(args);
 	me.params.init();
 
-        me.esgyndb   = new EsgynDB(me.params.getDBParams());
+        me.esgyndb   = new EsgynDB(me.params.getEsgynDB());
         me.params.checkKafkaPartitions();
 
         me.consumers = new ArrayList<ConsumerThread>(0);
 
-        if (me.params.getParams().isAConn()) {
-            log.info("create a dbconn for shard connection");
-            me.esgyndb.setSharedConn(me.esgyndb.CreateConnection(false));
-        }
         //start consumer theads
-        for (int partition : me.params.getParams().getPartitions()) {
+        for (int partition : me.params.getKafkaCDC().getPartitions()) {
             // connect to kafka w/ either zook setting
 	    ConsumerThread consumer = 
-		new ConsumerThread(me.esgyndb, me.params.getKafkaParams(), 
-				   me.params.getParams().isSkip(), me.params.getParams().isBigEndian(),
-				   me.params.getParams().getDelimiter(), me.params.getParams().getFormat(),
-				   me.params.getParams().getEncoding(), partition,
-				   me.params.getParams().getMessageClass(), me.params.getParams().getOutPath(), 
-				   me.params.getParams().isAConn(), me.params.getParams().isBatchUpdate());
+		new ConsumerThread(me.esgyndb, me.params.getKafka(), 
+				   me.params.getKafkaCDC().isSkip(), me.params.getKafkaCDC().isBigEndian(),
+				   me.params.getKafkaCDC().getDelimiter(), me.params.getKafkaCDC().getFormat(),
+				   me.params.getKafkaCDC().getEncoding(), partition,
+				   me.params.getKafkaCDC().getMsgClass(), me.params.getKafkaCDC().getOutPath(), 
+				   me.params.getKafkaCDC().isAConn(), me.params.getKafkaCDC().isBatchUpdate());
             consumer.setName("ConsumerThread-" + partition);
             me.consumers.add(consumer);
             consumer.start();
         }
 
-        me.running = me.params.getParams().getPartitions().length;
+        me.running = me.params.getKafkaCDC().getPartitions().length;
         Thread ctrltrhead = new Thread(me);
         ctrltrhead.setName("CtrlCThread");
 
@@ -68,7 +64,7 @@ public class KafkaCDC implements Runnable {
             }
         }
 
-        if (me.params.getParams().isAConn()) {
+        if (me.params.getKafkaCDC().isAConn()) {
             log.info("close connection");
             me.esgyndb.CloseConnection(me.esgyndb.getSharedConn());
         }
@@ -104,7 +100,7 @@ public class KafkaCDC implements Runnable {
 
             if (esgyndb != null) {
                 log.info("show the last results:");
-                esgyndb.DisplayDatabase(params.getParams().getInterval(), params.getParams().isTableSpeed());
+                esgyndb.DisplayDatabase(params.getKafkaCDC().getInterval(), params.getKafkaCDC().isTableSpeed());
             } else {
                 log.warn("didn't connect to database!");
             }
@@ -121,28 +117,28 @@ public class KafkaCDC implements Runnable {
         boolean alreadydisconnected=false;
         while (running != 0) {
             try {
-                Thread.sleep(params.getParams().getInterval());
+                Thread.sleep(params.getKafkaCDC().getInterval());
                 if (alreadydisconnected) {
                     break;
                 }
-                esgyndb.DisplayDatabase(params.getParams().getInterval(), params.getParams().isTableSpeed());
+                esgyndb.DisplayDatabase(params.getKafkaCDC().getInterval(), params.getKafkaCDC().isTableSpeed());
                 boolean firstAliveConsumer=true;
                 for (int i = 0; i < consumers.size(); i++) {
                     ConsumerThread consumer = consumers.get(i);
                     if (!consumer.GetState()) {
                         running--;
                     }else {
-                        if (params.getParams().isAConn() && firstAliveConsumer) {
+                        if (params.getKafkaCDC().isAConn() && firstAliveConsumer) {
                             // single conn
-                            if (params.getParams().isKeepalive() && !consumer.KeepAliveEveryConn()) {
+                            if (params.getKafkaCDC().isKeepalive() && !consumer.KeepAliveEveryConn()) {
                                 log.error("All Thread is disconnected from EsgynDB!");
                                 alreadydisconnected=true;
                                 break;
                             }
                             firstAliveConsumer=false;
-                        }else if(!params.getParams().isAConn()){
+                        }else if(!params.getKafkaCDC().isAConn()){
                             //multiple conn
-                            if (params.getParams().isKeepalive() && !consumer.KeepAliveEveryConn()) {
+                            if (params.getKafkaCDC().isKeepalive() && !consumer.KeepAliveEveryConn()) {
                                 log.error(consumer.getName()+" Thread is disconnected from EsgynDB!"
                                         + "\n this thread will stop");
                                 try {

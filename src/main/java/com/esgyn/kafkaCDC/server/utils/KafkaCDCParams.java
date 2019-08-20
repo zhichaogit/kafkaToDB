@@ -10,47 +10,47 @@ import lombok.Setter;
 public class KafkaCDCParams {
     @Setter 
     @Getter 
-    boolean aConn       = false;
+    private boolean aConn       = false;
     @Setter 
     @Getter
-    boolean batchUpdate = false;
+    private boolean batchUpdate = false;
     @Setter 
     @Getter
-    boolean bigEndian   = false;
+    private boolean bigEndian   = false;
     @Setter 
     @Getter
-    long    commitCount = Constants.DEFAULT_COMMIT_COUNT;
+    private long    commitCount = Constants.DEFAULT_COMMIT_COUNT;
     @Setter 
     @Getter
-    String  delimiter   = null;
+    private String  delimiter   = ",";
     @Setter 
     @Getter
-    String  encoding    = Constants.DEFAULT_ENCODING;
+    private String  encoding    = Constants.DEFAULT_ENCODING;
     @Setter 
     @Getter
-    String  format      = null;
+    private String  format      = null;
     @Setter 
     @Getter
-    long    interval    = Constants.DEFAULT_INTERVAL_S;
+    private long    interval    = Constants.DEFAULT_INTERVAL_S;
     @Setter 
     @Getter
-    boolean keepalive   = false;
+    private boolean keepalive   = false;
     @Setter 
     @Getter
-    String  messageClass= Constants.DEFAULT_MESSAGECLASS;
+    private String  msgClass    = Constants.DEFAULT_MESSAGECLASS;
     @Setter 
     @Getter
-    String  outPath     = null;
+    private String  outPath     = null;
     @Setter 
     @Getter
-    int[]   partitions  = null;
+    private String  partition   = null;
     @Setter 
     @Getter
-    String  partString  = null;
+    private int[]   partitions  = null;
     @Setter 
     @Getter
-    boolean skip        = false;
+    private boolean skip        = false;
     @Setter 
     @Getter
-    boolean tableSpeed  = false;
+    private boolean tableSpeed  = false;
 }
