@@ -1,0 +1,7 @@
+# Generate the MessageDB.java via protoc
+  MessageDB.java is generated from the message_db.proto file using protoc(protobuf-3.6.0).
+  1.load and install protobuf-3.6.0 on linux
+  2.execute: protoc  --java_out=$exportPath $protofile
+       e.g.: protoc  --java_out=/opt/proto /opt/proto/message_db.proto
+       
+  you will find MessageDB.java at /opt/proto/com/esgyn/kafkaCDC/server/kafkaConsumer/messageType/protobufSerializtion/
