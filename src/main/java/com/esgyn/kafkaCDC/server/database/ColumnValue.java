@@ -1,4 +1,4 @@
-package com.esgyn.kafkaCDC.server.esgynDB;
+package com.esgyn.kafkaCDC.server.database;
 
 import com.esgyn.kafkaCDC.server.utils.Utils;
 
@@ -33,12 +33,11 @@ public class ColumnValue {
     public boolean oldValueIsNull() { return oldValue == null; }
 
     public ColumnValue(int columnID_, String curValue_, String oldValue_,String colTypeName_) {
-        Utils utils = new Utils();
         columnID = columnID_;
 
         if (curValue_ != null) {
             curValue = curValue_.replace("\"", "").replace("\'", "");
-            if (utils.isNumType(colTypeName_)) {
+            if (Utils.isNumType(colTypeName_)) {
                 curValueStr = curValue;
             }else {
                 curValueStr = "\'" + curValue + "\'";
@@ -49,7 +48,7 @@ public class ColumnValue {
 
         if (oldValue_ != null) {
             oldValue = oldValue_.replace("\"", "").replace("\'", "");
-            if (utils.isNumType(colTypeName_)) {
+            if (Utils.isNumType(colTypeName_)) {
                 oldValueStr = oldValue;
             }else {
                 oldValueStr = "\'" + oldValue + "\'";

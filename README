@@ -1,6 +1,6 @@
 # kafkaCDC 
 usage: Consumer Server
-    --aconn <arg>       specify one connection for esgyndb,not need arg.default: multiple connections
+    --aconn <arg>       specify one connection for database,not need arg.default: multiple connections
  -b,--broker <arg>      bootstrap.servers setting, ex: <node>:9092,default: "localhost:9092"
     --bigendian         the data format is big endian, default: little endian
     --batchUpdate       batchUpdate means update operate will batch execute,default: one by one excute
@@ -39,12 +39,16 @@ usage: Consumer Server
  -s,--schema <arg>      default database schema, use the schema from data without this option,
                         you should write like this [schemaName] if schemaName is lowerCase. default:null
     --seto <arg>        session.timeout.ms, default: 30s
+    --showConsumers     show the consumers details information, defaults:true
+    --showLoader        show the loader details information, defaults:true
+    --showTasks         show the consume thread tasks details information, defaults:false
+    --showTables        show the table details information, defaults:true
+    --showSpeed         print the tables run speed info,not need arg,default:false
     --skip              skip all errors of data, default: false
     --sto <arg>         kafka poll time-out limit, default: 60s
  -t,--topic <arg>       REQUIRED. topic of subscription
     --table <arg>       table name, default: null,you should write like this [tablename]  if tablename is lowerCase
     --tenant <arg>      tanent user name, default: null
-    --tablespeed <arg>  print the tables run speed info,not need arg,default:false
  -v,--version           print the version of KafkaCDC
     --value <arg>       value deserializer, default is:
                         org.apache.kafka.common.serialization.StringDeserializer

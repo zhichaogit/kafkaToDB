@@ -8,40 +8,37 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 
 import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
-import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
-import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
-import com.esgyn.kafkaCDC.server.esgynDB.TableState;
-import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
+import com.esgyn.kafkaCDC.server.utils.KafkaCDCParams;
+import com.esgyn.kafkaCDC.server.database.ColumnValue;
+import com.esgyn.kafkaCDC.server.database.TableState;
+
+import lombok.Getter;
+import lombok.Setter;
 
 public class HongQuanRowMessage extends RowMessage<byte[]> {
     private static Logger           log         = Logger.getLogger(HongQuanRowMessage.class);
 
     private int                     length      = 0;
-    private EsgynDBParams           esgyndb     = null;
     private Map<String, TableState> tables      = null;
     private int[]                   fieldSizes  = null;
     private int[]                   fieldTypes  = null;
     private boolean                 allFixTypes = true;
-    private boolean                 bigEndian   = true;
 
+    private byte[]                  data        = null;
+    private boolean                 bigEndian   = true;
 
     public HongQuanRowMessage() {}
 
-    public HongQuanRowMessage(MessageTypePara<byte[]> mtpara_) throws UnsupportedEncodingException {
-        init(mtpara_);
-    }
-
     @Override
-    public boolean init(MessageTypePara<byte[]> mtpara_) throws UnsupportedEncodingException {
-        super.init(mtpara_);
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
-        data = (byte[]) mtpara.getMessage();
-        bigEndian = mtpara.isBigEndian();
-        esgyndb = mtpara.getEsgynDB();
-        tables = mtpara.getTables();
-        tableInfo = mtpara.getTableState().getTableInfo();
+    protected boolean init_() {
+	boolean retValue = true;
+
+        if (log.isTraceEnabled()) { log.trace("enter"); }
+	
+        data = (byte[]) message;
+	msgString = new String(message);
+	KafkaCDCParams kafkaCDC = params.getKafkaCDC();
+        bigEndian = kafkaCDC.isBigEndian();
 
         if (log.isDebugEnabled()) {
             StringBuffer strBuffer = new StringBuffer();
@@ -76,9 +73,9 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
                 case 138: // UNSIGNED LARGEINT
                     break;
 
-                case 64: // VARCHAR
-                case 2: // NCHAR
-                case 0: // CHAR
+                case 64:  // VARCHAR
+                case 2:   // NCHAR
+                case 0:   // CHAR
                     allFixTypes = false;
                     break;
 
@@ -91,7 +88,8 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
         if (log.isDebugEnabled()) {
             log.debug("the table mode [" + fieldSizes + "] total size [" + length + "]");
         }
-        return true;
+
+        return retValue;
     }
 
 
@@ -161,9 +159,7 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
             log.debug(strBuffer.toString());
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
+        if (log.isTraceEnabled()) { log.trace("exit"); }
 
         return true;
     }
@@ -205,4 +201,11 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
         return new String(b, start, size);
     }
 
+    @Override
+    public String getErrorMsg(int batchOff, String type) {
+	return getErrorMsg_(batchOff, type, new String(data));
+    }
+
+    @Override
+    public String getErrorMsg() { return getErrorMsg_(new String(data)); }
 }

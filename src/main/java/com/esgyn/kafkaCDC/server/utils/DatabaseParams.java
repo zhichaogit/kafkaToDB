@@ -13,58 +13,81 @@ import java.sql.PreparedStatement;
 
 import org.apache.log4j.Logger;
 import com.esgyn.kafkaCDC.server.utils.Constants;
-import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
+import com.esgyn.kafkaCDC.server.utils.Parameters;
+import com.esgyn.kafkaCDC.server.database.Database;
 
 import lombok.Getter;
 import lombok.Setter;
 
-public class EsgynDBParams {
-    @Setter
-    @Getter
-    private String         DBIP        = "localhost";
-    @Setter
-    @Getter
-    private String         DBPort      = "23400";
+public class DatabaseParams {
     @Setter
     @Getter 
-    private String         DBDriver    = Constants.DEFAULT_DRIVER;
+    private long            batchSize   = Constants.DEFAULT_BATCH_SIZE;
     @Setter
     @Getter 
-    private String         DBUser      = Constants.DEFAULT_USER;
+    private boolean         batchUpdate = false;
+    @Setter 
+    @Getter 
+    private long            DBConns     = Constants.DEFAULT_CONNECTIONS;
     @Setter
     @Getter
-    private String         DBPassword  = Constants.DEFAULT_PASSWORD;
+    private String          DBIP        = "localhost";
     @Setter
     @Getter
-    private String         DBSchema    = null;
+    private String          DBPort      = "23400";
     @Setter
     @Getter
-    private String         DBTenant    = null;
+    private String          DBType      = "EsgynDB";
     @Setter
     @Getter 
-    private String         defSchema   = null;
+    private String          DBDriver    = Constants.DEFAULT_DRIVER;
     @Setter
     @Getter 
-    private String         defTable    = null;
+    private String          DBUser      = Constants.DEFAULT_USER;
+    @Setter
+    @Getter
+    private String          DBPassword  = Constants.DEFAULT_PASSWORD;
+    @Setter
+    @Getter
+    private String          DBTenant    = null;
     @Setter
     @Getter 
-    private String         DBUrl       = null;
+    private String          defSchema   = null;
+    @Setter
+    @Getter 
+    private String          defTable    = null;
+    @Setter 
+    @Getter
+    private boolean         keepalive   = false;
+    @Setter
+    @Getter 
+    private String          DBUrl       = null;
     @Setter
     @Getter 
     private ArrayList<TableInfo> tables = null;
     @Setter
     @Getter 
     private Map<String, TableInfo> tableHashMap = null;
+    @Getter 
+    private Parameters      params      = null;
 
-    String                 NOTINITT1   = "SB_HISTOGRAMS";
-    String                 NOTINITT2   = "SB_HISTOGRAM_INTERVALS";
-    String                 NOTINITT3   = "SB_PERSISTENT_SAMPLES";
+    String                  NOTINITT1   = "SB_HISTOGRAMS";
+    String                  NOTINITT2   = "SB_HISTOGRAM_INTERVALS";
+    String                  NOTINITT3   = "SB_PERSISTENT_SAMPLES";
 
-    private static Logger  log         = Logger.getLogger(EsgynDBParams.class);
+    private static Logger   log         = Logger.getLogger(DatabaseParams.class);
 
-    public void init() {
+    public void init(Parameters params_) {
+        DBUrl = "jdbc:t4jdbc://" + DBIP + ":" + DBPort 
+	    + "/catelog=Trafodion;applicationName=KafkaCDC;connectionTimeout=0";
+        if (DBTenant != null)
+            DBUrl += ";tenantName=" + DBTenant;
+
+	params    = params_;
+	defSchema = Utils.getTrueName(defSchema);
+	defTable  = Utils.getTrueName(defTable);
+
         tableHashMap = new HashMap<String, TableInfo>();
-
 	log.info("start to init schemas");
 	init_schemas();
     }
@@ -74,12 +97,12 @@ public class EsgynDBParams {
     }
 
     private void init_schemas() {
-	EsgynDB   esgynDB  = new EsgynDB(this);
+	Database   database  = new Database(this);
         ResultSet schemaRS = null;
-        Connection dbConnMD = esgynDB.CreateConnection(true);
+        Connection dbConnMD = database.CreateConnection(true);
 
         if (log.isTraceEnabled()) {
-            log.trace("enter function");
+            log.trace("enter");
         }
 
         try {
@@ -107,11 +130,11 @@ public class EsgynDBParams {
         } catch (Exception e) {
             log.error("Exception has occurred when init_schemas.",e);
         } finally {
-            esgynDB.CloseConnection(dbConnMD);
+            database.CloseConnection(dbConnMD);
         }
 
         if (log.isTraceEnabled()) {
-            log.trace("exit function");
+            log.trace("exit");
         }
     }
 
@@ -119,7 +142,7 @@ public class EsgynDBParams {
         TableInfo tableInfo = null;
 
         if (log.isTraceEnabled()) {
-            log.trace("enter function [schema: " + schemaName + "]");
+            log.trace("enter [schema: " + schemaName + "]");
         }
 
         try {
@@ -152,18 +175,17 @@ public class EsgynDBParams {
         }
 
         if (log.isTraceEnabled()) {
-            log.trace("exit function [table info: " + tableInfo + "]");
+            log.trace("exit [table info: " + tableInfo + "]");
         }
 
         return tableInfo;
     }
 	
-    public void init_table(TableInfo tableInfo,Connection dbconn,String schema,String table) {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
+    public void init_table(TableInfo tableInfo, Connection dbconn, String schema, String table) {
+        if (log.isTraceEnabled()) { log.trace("enter"); }
+
         String tableName = schema + "." + table;
-        tableInfo = new TableInfo(schema, table);
+        tableInfo = new TableInfo(params, schema, table);
 
         log.info("start to init table [" + tableName + "]");
         if (init_culumns(dbconn, tableInfo) <= 0) {
@@ -172,14 +194,12 @@ public class EsgynDBParams {
             init_keys(dbconn, tableInfo);
             tableHashMap.put(tableName, tableInfo);
         }
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
+
+        if (log.isTraceEnabled()) { log.trace("exit"); }
     }
+
     public long init_culumns(Connection dbconn, TableInfo table) {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function [table info: " + table + "]");
-        }
+        if (log.isTraceEnabled()) { log.trace("enter [table info: " + table + "]"); }
 
         try {
             String getTableColumns ="SELECT ? TABLE_NAME, c.COLUMN_NAME COLUMN_NAME, "
@@ -217,7 +237,7 @@ public class EsgynDBParams {
                         + typeName.trim() + ", Type ID: " + colType + ", Size: "
                         + column.getColumnSize() + "]\n");
 
-                table.AddColumn(column);
+                table.addColumn(column);
                 colOff++;
             }
             strBuffer.append("]");
@@ -230,16 +250,14 @@ public class EsgynDBParams {
         }
 
         if (log.isTraceEnabled()) {
-            log.trace("exit function [column number:" + table.getColumnCount() + "]");
+            log.trace("exit [column number:" + table.getColumnCount() + "]");
         }
 
         return table.getColumnCount();
     }
 
     public long init_keys(Connection dbconn, TableInfo table) {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function [table info: " + table + "]");
-        }
+        if (log.isTraceEnabled()) { log.trace("enter [table info: " + table + "]"); }
 
         ColumnInfo firstColumn = table.getColumn(0);
         if (firstColumn.getColumnID() != 0) {
@@ -247,7 +265,7 @@ public class EsgynDBParams {
                     + table.getTableName() + "], use all of columns.");
 
             for (int i = 0; i < table.getColumnCount(); i++) {
-                table.AddKey(table.getColumn(i));
+                table.addKey(table.getColumn(i));
             }
 
             return table.getKeyCount();
@@ -287,7 +305,7 @@ public class EsgynDBParams {
                             + ", Type ID: " + column.getColumnType() + "]\n");
                 }
 
-                table.AddKey(column);
+                table.addKey(column);
             }
             if (log.isDebugEnabled()) {
                 strBuffer.append("]\n");
@@ -301,16 +319,14 @@ public class EsgynDBParams {
         }
 
         if (log.isTraceEnabled()) {
-            log.trace("exit function [key column number: " + table.getKeyCount() + "]");
+            log.trace("exit [key column number: " + table.getKeyCount() + "]");
         }
 
         return table.getKeyCount();
     }
 
     public void init_json_tables(){
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
+        if (log.isTraceEnabled()) { log.trace("enter"); }
 
         for (TableInfo table : tables) {
             init_json_table(table);
@@ -319,20 +335,16 @@ public class EsgynDBParams {
             log.error("init schema [" + defSchema + "] fail, cann't find any table!");
             System.exit(0);
         }
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
+        if (log.isTraceEnabled()) { log.trace("exit"); }
     }
     public void init_json_table(TableInfo table){
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
+        if (log.isTraceEnabled()) { log.trace("enter"); }
 
         String tableName = table.getSrcSchemaName() + "." + table.getSrcTableName();
         ArrayList<ColumnInfo> columns = table.getColumns();
         ArrayList<Integer>    keys    = table.getKeys();
 
-        TableInfo tableInfo = new TableInfo(table.getSrcSchemaName(), table.getSrcTableName());
+        TableInfo tableInfo = new TableInfo(params, table.getSrcSchemaName(), table.getSrcTableName());
         log.info("start to init table [" + tableName + "]");
 
         if (columns.size()<=0) {
@@ -343,14 +355,11 @@ public class EsgynDBParams {
             tableHashMap.put(tableName, tableInfo);
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
+        if (log.isTraceEnabled()) { log.trace("exit"); }
     }
     public long init_json_columns(TableInfo tableInfo, ArrayList<ColumnInfo> columns){
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
+        if (log.isTraceEnabled()) { log.trace("enter"); }
+
         StringBuffer strBuffer = null;
         if (log.isDebugEnabled()) {
             strBuffer = new StringBuffer();
@@ -370,28 +379,26 @@ public class EsgynDBParams {
 			     + "], off [" + i + "], Type [" + typeName.trim()
 			     + "], Type ID [" + colType + "], Size [" 
 			     + column.getColumnSize() + "]");
-            tableInfo.AddColumn(column);
+            tableInfo.addColumn(column);
         }
         if (log.isDebugEnabled()) {
             log.debug(strBuffer.toString());
         }
         if (log.isTraceEnabled()) {
-            log.trace("exit function [column number:" + tableInfo.getColumnCount() + "]");
+            log.trace("exit [column number:" + tableInfo.getColumnCount() + "]");
         }
         return tableInfo.getColumnCount();
     }
 
     public long init_json_keys(TableInfo tableInfo, ArrayList<Integer> keys) {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function [table info: " + tableInfo + "]");
-        }
+        if (log.isTraceEnabled()) { log.trace("enter [table info: " + tableInfo + "]"); }
         String tableName=tableInfo.getSchemaName() + "."+ tableInfo.getTableName();
         ColumnInfo firstColumn = tableInfo.getColumn(0);
         if (firstColumn.getColumnID() != 0) {
             log.warn("no primary key on table [" + tableName + "], use all of columns.");
 
             for (int i = 0; i < tableInfo.getColumnCount(); i++) {
-                tableInfo.AddKey(tableInfo.getColumn(i));
+                tableInfo.addKey(tableInfo.getColumn(i));
             }
 
             return tableInfo.getKeyCount();
@@ -411,7 +418,7 @@ public class EsgynDBParams {
                         + "], Off [" + column.getColumnOff() + "], Type [" + column.getTypeName()
                         + "], Type ID [" + column.getColumnType() + "]");
             }
-            tableInfo.AddKey(column);
+            tableInfo.addKey(column);
         }
 
         if (log.isDebugEnabled()) {
@@ -419,9 +426,29 @@ public class EsgynDBParams {
         }
 
         if (log.isTraceEnabled()) {
-            log.trace("exit function [key column number: " + tableInfo.getKeyCount() + "]");
+            log.trace("exit [key column number: " + tableInfo.getKeyCount() + "]");
         }
 
         return tableInfo.getKeyCount();
+    }
+
+    public String toString() {
+        StringBuffer strBuffer = new StringBuffer();
+
+        strBuffer.append("\nDatabase options:")
+	    .append("\n\tbatchSize     = "    + batchSize)
+	    .append("\n\tDBConns       = "    + DBConns)
+	    .append("\n\tDBIP          = "    + DBIP)
+	    .append("\n\tDBPort        = "    + DBPort)
+	    .append("\n\tDBDriver      = "    + DBDriver)
+	    .append("\n\tDBUser        = "    + DBUser)
+	    .append("\n\tDBPassword    = "    + DBPassword)
+	    .append("\n\tDBTenant      = "    + DBTenant)
+	    .append("\n\tdefSchema     = "    + defSchema)
+	    .append("\n\tdefTable      = "    + defTable)
+	    .append("\n\tkeepalive     = "    + keepalive)
+	    .append("\n\tdburl         = "    + DBUrl);
+
+	return strBuffer.toString();
     }
 }

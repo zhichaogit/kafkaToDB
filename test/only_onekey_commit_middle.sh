@@ -93,7 +93,9 @@ $KAFKA/bin/kafka-console-producer.sh --broker-list $BROKER --topic $TOPIC < $DAT
 
 KAFKA_CDC="$KAFKA_CDC"
 cd $KAFKA_CDC/bin;
-./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f Unicom --full start --sto 5 --interval 2 -c 3
+
+echo "./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f Unicom --mode start --sto 5 --interval 2 -c 3"
+./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f Unicom --mode start --sto 5 --interval 2 -c 3
 
 expect<<-EOF
   set timeout 300

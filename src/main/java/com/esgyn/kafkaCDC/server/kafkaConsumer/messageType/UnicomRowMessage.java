@@ -4,10 +4,9 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import org.apache.log4j.Logger;
 
-import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
-import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
+import com.esgyn.kafkaCDC.server.database.ColumnValue;
 import com.esgyn.kafkaCDC.server.utils.TableInfo;
-import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
+import com.esgyn.kafkaCDC.server.utils.DatabaseParams;
 
 public class UnicomRowMessage extends RowMessage<String> {
     private static Logger log               = Logger.getLogger(UnicomRowMessage.class);
@@ -27,28 +26,13 @@ public class UnicomRowMessage extends RowMessage<String> {
     String                catlogName        = null;
     String                timestamp         = null;
     String                emptystr          = "";
-    EsgynDBParams         esgynDB           = null;
+    DatabaseParams        database          = null;
 
     public UnicomRowMessage() {}
 
-    public UnicomRowMessage(MessageTypePara<String> mtpara) throws UnsupportedEncodingException {
-        super(mtpara);
-    }
-
-    @Override
-    public boolean init(MessageTypePara<String> mtpara_) throws UnsupportedEncodingException {
-        super.init(mtpara_);
-        message =
-                new String(((String) mtpara.getMessage()).getBytes(mtpara.getEncoding()), "UTF-8");
-        esgynDB = mtpara.getEsgynDB();
-        return true;
-    }
-
     @Override
     public Boolean AnalyzeMessage() {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
+        if (log.isTraceEnabled()) { log.trace("enter"); }
 
         String[] formats = message.split("");
 
@@ -78,11 +62,11 @@ public class UnicomRowMessage extends RowMessage<String> {
         operatorType = formats[2];
         timestamp = formats[3];
 
-        tableInfo = esgynDB.getTableInfo(schemaName + "." + tableName);
+        tableInfo = database.getTableInfo(schemaName + "." + tableName);
         if (tableInfo == null) {
             if (log.isDebugEnabled()) {
                 log.error("Table [" + schemaName + "." + tableName
-                        + "] is not exist in EsgynDB.");
+                        + "] is not exist in database.");
             }
 
 	    return false;
@@ -113,9 +97,7 @@ public class UnicomRowMessage extends RowMessage<String> {
             log.debug(strBuffer.toString());
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
+        if (log.isTraceEnabled()) { log.trace("exit"); }
 
         return true;
     }

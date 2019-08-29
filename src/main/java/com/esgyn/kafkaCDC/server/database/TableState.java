@@ -1,4 +1,4 @@
-package com.esgyn.kafkaCDC.server.esgynDB;
+package com.esgyn.kafkaCDC.server.database;
 
 import java.sql.Statement;
 import java.sql.Connection;
@@ -27,14 +27,22 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class TableState {
+    @Getter
+    private boolean                        commited    = false;
+    @Getter
     private String                         schemaName  = null;
+    @Getter
     private String                         tableName   = null;
-    private String                         format      = null;
     private int                            retry       = 0;
 
+    // must get it after commited
+    @Getter
     private long                           cacheInsert = 0;
+    @Getter
     private long                           cacheUpdate = 0;
+    @Getter
     private long                           cacheUpdkey = 0;
+    @Getter
     private long                           cacheDelete = 0;
 
     @Getter
@@ -43,19 +51,15 @@ public class TableState {
     private long                           errUpdate   = 0;
     @Getter
     private long                           errDelete   = 0;
-    @Getter
-    private long                           transFails  = 0;
-    @Getter
-    private long                           transTotal  = 0;
-
-    private boolean                        commited    = true;
     private boolean                        havePK      = false;
-    private boolean                        batchUpdate = false;
 
-    private Connection                     dbConn      = null;
     @Getter
     private TableInfo                      tableInfo   = null;
 
+    private String                         insertSql   = null;
+    private String                         updateSql   = null;
+    private String                         deleteSql   = null;
+    private Statement                      stmt        = null;
     private PreparedStatement              insertStmt  = null;
     private PreparedStatement              deleteStmt  = null;
     private PreparedStatement              updateStmt  = null;
@@ -73,18 +77,23 @@ public class TableState {
 
     private static Logger                  log         = Logger.getLogger(TableState.class);
 
-    public TableState(TableInfo tableInfo_, String format_, boolean batchUpdate_) {
-        tableInfo = tableInfo_;
-        schemaName = tableInfo.getSchemaName();
-        tableName = tableInfo.getTableName();
+    public long getCacheTotal () {
+	return cacheInsert + cacheUpdate + cacheDelete + cacheUpdkey;
+    }
 
-        keyColumns = tableInfo.getKeyColumns();
-        columns = tableInfo.getColumns();
-        columnMap = tableInfo.getColumnMap();
-        format = format_;
-        batchUpdate = batchUpdate_;
+    public TableState(TableInfo tableInfo_) {
+        tableInfo   = tableInfo_;
+        tableName   = tableInfo.getTableName();
+        schemaName  = tableInfo.getSchemaName();
 
-        if (tableInfo.isRepeatable() && format.equals("HongQuan")) {
+        columns     = tableInfo.getColumns();
+        columnMap   = tableInfo.getColumnMap();
+        keyColumns  = tableInfo.getKeyColumns();
+    }
+
+    public boolean init(){
+	// TODO, make sure can remove the HongQuan
+        if (tableInfo.isRepeatable()) {
             insertRows = new IdentityHashMap<String, RowMessage>(0);
         } else {
             insertRows = new HashMap<String, RowMessage>(0);
@@ -92,30 +101,23 @@ public class TableState {
         updateRows = new HashMap<String, RowMessage>(0);
         deleteRows = new HashMap<String, RowMessage>(0);
         msgs       = new ArrayList<RowMessage>();
-    }
 
-    public boolean InitStmt(Connection dbConn_,boolean skip) {
         if (columns.get(0).getColumnID() == 0)
             havePK = true;
 
-          dbConn = dbConn_;
-          init_insert_stmt(skip);
-          init_delete_stmt();
-          if (batchUpdate)
-          init_update_stmt();
+	init_insert_stmt();
+	init_delete_stmt();
+	init_update_stmt();
 
-        return true;
+	return true;
     }
 
-    public void init_insert_stmt(boolean skip) {
+    public void init_insert_stmt() {
         ColumnInfo column = columns.get(0);
         String valueSql = ") VALUES(?";
-        String insertSql = "UPSERT USING LOAD INTO \"" + schemaName + "\"." + "\"" + tableName
-                + "\"" + "(" + column.getColumnName();
-	if (skip) {
-            insertSql = "UPSERT INTO \"" + schemaName + "\"." + "\"" + tableName
-                    + "\"" + "(" + column.getColumnName();
-        }
+        
+	insertSql = "UPSERT INTO \"" + schemaName + "\"." + "\"" + tableName
+	    + "\"" + "(" + column.getColumnName();
 
         for (int i = 1; i < columns.size(); i++) {
             column = columns.get(i);
@@ -125,18 +127,9 @@ public class TableState {
 
         insertSql += valueSql + ");";
 
-        log.debug("insert prepare statement [" + insertSql + "]");
-        try {
-            insertStmt = dbConn.prepareStatement(insertSql);
-        } catch (SQLException se) {
-            if (isNotDisConnAndTOExpection(se)) {
-                log.error("errCode["+se.getErrorCode()+"],Prepare insert stmt exception, SQL:[" + insertSql + "]");
-                do {
-                    log.error("errCode["+se.getErrorCode()+"],catch SQLException in method init_insert_stmt",se);
-                    se = se.getNextException();
-                } while (se != null);
-            }
-        }
+        if (log.isDebugEnabled()) {
+	    log.debug("insert prepare statement [" + insertSql + "]");
+	}
     }
 
     public String where_condition() {
@@ -153,8 +146,8 @@ public class TableState {
     public void init_update_stmt() {
         ColumnInfo column = columns.get(0);
 
-        String updateSql = "update \"" + schemaName + "\"." + "\"" + tableName + "\"" + " SET "+
-               column.getColumnName() + "= ?";
+        updateSql = "update \"" + schemaName + "\"." + "\"" + tableName + "\"" + " SET "+
+	    column.getColumnName() + "= ?";
 
         for (int i = 1; i < columns.size(); i++) {
             column = columns.get(i);
@@ -165,40 +158,16 @@ public class TableState {
         if (log.isDebugEnabled()) {
             log.debug("update prepare statement [" + updateSql + "]");
         }
-
-        try {
-            updateStmt = dbConn.prepareStatement(updateSql);
-        } catch (SQLException e) {
-            if (isNotDisConnAndTOExpection(e)) {
-                log.error("Prepare update stmt exception, SQL [" + updateSql + "]");
-                do {
-                    log.error("catch SQLException in method init_update_stmt",e);
-                    e = e.getNextException();
-                } while (e != null);
-            }
-        }
     }
 
     public void init_delete_stmt() {
         ColumnInfo keyInfo = keyColumns.get(0);
-        String deleteSql = "DELETE FROM \"" + schemaName + "\"." + "\"" + tableName + "\"";
-
-        deleteSql += where_condition() + ";";
+        
+	deleteSql = "DELETE FROM \"" + schemaName + "\"." + "\"" + tableName + "\""
+	    + where_condition() + ";";
 
         if (log.isDebugEnabled()) {
             log.debug("delete prepare statement [" + deleteSql + "]");
-        }
-
-        try {
-            deleteStmt = dbConn.prepareStatement(deleteSql);
-        } catch (SQLException e) {
-            if (isNotDisConnAndTOExpection(e)) {
-                log.error("Prepare delete stmt exception, SQL [" + deleteSql + "]");
-                do {
-                    log.error("catch SQLException in method init_insert_stmt",e);
-                    e = e.getNextException();
-                } while (e != null);
-            }
         }
     }
 
@@ -280,10 +249,8 @@ public class TableState {
         return key;
     }
 
-    public long InsertRow(RowMessage rowMessage) {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
+    public long insertRow(RowMessage rowMessage) {
+        if (log.isTraceEnabled()) { log.trace("enter"); }
 
         Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
 
@@ -309,7 +276,7 @@ public class TableState {
         cacheInsert++;
 
         if (log.isTraceEnabled()) {
-            log.trace("exit function cache insert [rows: " + cacheInsert + ", insert: "
+            log.trace("exit cache insert [rows: " + cacheInsert + ", insert: "
                     + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
                     + deleteRows.size() + "]");
         }
@@ -343,15 +310,14 @@ public class TableState {
         return 1;
     }
 
-    public long UpdateRow(RowMessage rowMessage) {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
+    public long updateRow(RowMessage rowMessage) {
+        if (log.isTraceEnabled()) { log.trace("enter"); }
 
         Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
 
         String message = rowMessage.getMessage();
-        if (!format.equals("Protobuf") && (check_update_key(rowValues, message) == 0))
+	// TODO if target changed the primary key, we cann't check the update keys
+        if ((check_update_key(rowValues, message) == 0))
             return 0;
 
         String key = get_key_value(message, rowValues, false);
@@ -435,7 +401,7 @@ public class TableState {
         cacheUpdate++;
 
         if (log.isTraceEnabled()) {
-            log.trace("exit function cache update [rows: " + cacheUpdate + ", insert: "
+            log.trace("exit cache update [rows: " + cacheUpdate + ", insert: "
                     + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
                     + deleteRows.size() + "]");
         }
@@ -443,10 +409,9 @@ public class TableState {
         return 1;
     }
 
-    public long UpdateRowWithKey(RowMessage rowMessage) {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
+    public long updateRowWithKey(RowMessage rowMessage) {
+        if (log.isTraceEnabled()) { log.trace("enter"); }
+
         Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
         String message = rowMessage.getMessage();
         String oldkey = get_key_value(message, rowValues, false);
@@ -476,7 +441,7 @@ public class TableState {
                 return 0;
             }
         } else {
-        if (log.isTraceEnabled()) {
+	    if (log.isTraceEnabled()) {
                 log.trace("the newkey ["+newkey+"] not exist in insertRows");
             }
             RowMessage deleteRM = deleteRows.get(oldkey);
@@ -534,17 +499,15 @@ public class TableState {
         cacheUpdkey++;
 
         if (log.isTraceEnabled()) {
-            log.trace("exit function cache updateKey [rows: " + cacheUpdkey + ", insert: "
+            log.trace("exit cache updateKey [rows: " + cacheUpdkey + ", insert: "
                     + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
                     + deleteRows.size() + "]");
         }
         return 1;
     }
 
-    public long UpdateRowWithKeySplit(RowMessage rowMessage) {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
+    public long updateRowWithKeySplit(RowMessage rowMessage) {
+        if (log.isTraceEnabled()) { log.trace("enter"); }
 
         Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
         String message = rowMessage.getMessage();
@@ -645,7 +608,7 @@ public class TableState {
 
         cacheUpdkey++;
         if (log.isTraceEnabled()) {
-            log.trace("exit function cache updkey [rows: " + cacheUpdkey + ", insert: "
+            log.trace("exit cache updkey [rows: " + cacheUpdkey + ", insert: "
                     + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
                     + deleteRows.size() + "]");
         }
@@ -653,9 +616,9 @@ public class TableState {
         return 1;
     }
 
-    public long DeleteRow(RowMessage rowMessage) {
+    public long deleteRow(RowMessage rowMessage) {
         if (log.isTraceEnabled()) {
-            log.trace("exit function");
+            log.trace("exit");
         }
 
         Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
@@ -681,7 +644,7 @@ public class TableState {
         cacheDelete++;
 
         if (log.isTraceEnabled()) {
-            log.trace("exit function cache delete [rows: " + cacheDelete + ", insert: "
+            log.trace("exit cache delete [rows: " + cacheDelete + ", insert: "
                     + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
                     + deleteRows.size() + "]");
         }
@@ -689,343 +652,111 @@ public class TableState {
         return 1;
     }
 
-    public boolean CommitTable(String outPutPath,String format_ ) throws SQLException {
-        if (log.isDebugEnabled()) {
-            log.info("commit table [" + schemaName + "." + tableName + ", insert: "
-                    + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
-                    + deleteRows.size() + "] ");
-        }
-        format=format_;
-        try {
-            insert_data();
-            update_data();
-            delete_data();
-        } catch (BatchUpdateException bue) {
-            commited = false;
-            if (!(bue.getErrorCode()==0)&&!(bue.getMessage().equals("Connection does not exist"))
-                    &&!(bue.getMessage().equals("Timeout expired"))) {
-                log.error("batch update table [" + schemaName + "." + tableName
-                        + "] throw BatchUpdateException,errorCode["+bue.getErrorCode()+"]," + bue.getMessage());
-                SQLException se = bue;
- 
-                if (log.isDebugEnabled()) {
-                    do {
-                        log.error("catch BatchUpdateException in method CommitTable ",se);
-                        se = se.getNextException();
-                    } while (se != null);
-                } else {
-                    log.error("catch BatchUpdateException in method CommitTable ",se);
-                    se = se.getNextException();
-                    if (se != null) {
-                        log.error("catch BatchUpdateException in method CommitTable ",se);
-                    }
-                }
-            }
-            //throw the Exception about Statement must be recompiled to allow privileges to be re-evaluated
-            if (bue.getErrorCode()==0 || log.isDebugEnabled()) {
-                SQLException se = bue;
-                //throw the error if the ErrorCode is 8734
-                do {
-                    //ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated
-                    //ERROR[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
-                    if (se!=null && (se.getErrorCode()==-8734 || se.getErrorCode()==-8738)) {
-                        throw se;
-                    }
-                    se = se.getNextException();
-                } while (se != null);
-                //else print the error info
-                se = bue;
-                do {
-                    log.error("catch BatchUpdateException in method CommitTable ",se);
-                    se = se.getNextException();
-                } while (se != null);
-            }
+    private void prepareStmts(Connection dbConn_) throws SQLException {
+        if (log.isTraceEnabled()) {
+            log.trace("enter, conn: " + dbConn_);
+	}
 
-            return false;
-        } catch (IndexOutOfBoundsException iobe) {
-            commited = false;
-            log.error("batch update table [" + schemaName + "." + tableName
-                    + "] throw IndexOutOfBoundsException: " , iobe);
+	if (insertStmt == null) {
+	    insertStmt = dbConn_.prepareStatement(insertSql);
+	}
 
-            return false;
-        } catch (SQLException se) {
-            commited = false;
-            if (isNotDisConnAndTOExpection(se)) {
-                log.error("batch update table [" + schemaName + "." + tableName
-                        + "] throw SQLException: " + se.getMessage());
-                if (log.isDebugEnabled()) {
-                    do {
-                        log.error("catch SQLException in method CommitTable",se);
-                        se = se.getNextException();
-                    } while (se != null);
-                } else {
-                    log.error("catch SQLException in method CommitTable",se);
-                    se = se.getNextException();
-                    if (se != null) {
-                        log.error("catch SQLException in method CommitTable",se);
-                    }
-                }
-            }
+	if (updateStmt == null) {
+	    updateStmt = dbConn_.prepareStatement(updateSql);
+	}
 
-            if (log.isDebugEnabled()) {
-                log.error("catch SQLException in method CommitTable,errorCode["+se.getErrorCode()+"]",se);
-                se = se.getNextException();
-                if (se != null) {
-                    log.error("catch BatchUpdateException in method CommitTable ",se);
-                }
-            }
+	if (deleteStmt == null) {
+	    deleteStmt = dbConn_.prepareStatement(deleteSql);
+	}
 
-            return false;
-        } catch (Exception e) {
-            commited = false;
-            log.error("batch update table [" + schemaName + "." + tableName + "] throw Exception: "
-                    , e);
+	if (stmt == null) {
+	    stmt = dbConn_.createStatement();
+	}
+    }
 
-            return false;
-        } finally {
-            int disconnErrorCode=0;
-            try {
-                if (commited) {
-                    transTotal++;
-                    try {
-                      dbConn.commit();
-                    }catch(SQLException se){
-                      transFails++;
-                      int errorCode = se.getErrorCode();
-                      // retry commit table 3 times when commit table conflict
-                      // CommitConflictException
-                      if (retry<3 && (errorCode==8616 || errorCode==-8616)) {
-                        retry++;
-                        log.warn("commit table conflict, retry["+retry+"] time");
-                        dbConn.rollback();
-                        CommitTable(outPutPath,format);
-                      }
-                      throw se;
-                    }
-                } else {
-                    transTotal++;
-                    transFails++;
-                    dbConn.rollback();
-                    werrToFile(outPutPath);
-                }
-            } catch (SQLException disconnse) {
-                disconnErrorCode = disconnse.getErrorCode();
-                // retry to connection database 3 times when disconnection.
-                // Connection does not exist(-29002) || Timeout expired(-29154)
-                if (retry<3 && (disconnErrorCode==-29002 || disconnErrorCode==-29154)) {
-                    retry++;
-                    commited=true;
-                    log.warn("commit table Connection does not exist or Timeout expired when operate"
-                            + "table["+schemaName+"."+tableName+"], retry create connect ["+retry+"] time");
-                    throw disconnse;
-                }
-                // Connection does not exist(-29002) || Timeout expired(-29154)
-                if ((disconnErrorCode==-29002) || (disconnErrorCode==-29154)) {
-                    log.error("batch update table [" + schemaName + "." + tableName
-                            + "],errorcode["+disconnse.getErrorCode()+"], rollback throw SQLException after reConnect database 3 times,"
-                            + "make sure database server is alive pls." ,disconnse);
-                }else {
-                    log.error("batch update table [" + schemaName + "." + tableName
-                            + "],errorcode["+disconnse.getErrorCode()+"], rollback throw SQLException: " ,disconnse);
-                }
-            }finally{
-                msgs.clear();
+    private void closeStmts() {
+	try {
+	    if (insertStmt != null) {
+		insertStmt.close();
 	    }
-        }
 
-        return true;
-    }
-    public void werrToFile(String outPutPath) {
-        if (log.isDebugEnabled()) {
-            log.debug("commit faild,write message to file.msgs count:["
-                       +msgs.size()+"]");
-        }
-        // write to file
-        BufferedOutputStream bufferOutput = init_bufferOutput(outPutPath, schemaName, tableName);
-        for (int i = 0; i < msgs.size(); i++) {
-            RowMessage rowMessage = msgs.get(i);
-            Object message = rowMessage.mtpara.getMessage();
-            try {
-                bufferOutput.write((String.valueOf(message)+"\n").getBytes());
-            } catch (IOException e) {
-                log.error("throw IOException when write err message to file ",e);
-            }
-        }
-        flushAndClose_bufferOutput(bufferOutput);
-    }
+	    if (updateStmt != null) {
+		updateStmt.close();
+	    }
 
-     public void printBatchErrMess(int[] insertCounts, Map<Integer, 
-				   RowMessage> errRows,String operate_type) {
-        if (log.isDebugEnabled()) {
-            log.trace("enter function");
-        }
-        for (int i = 0; i < insertCounts.length; i++) {
-             if ( insertCounts[i] == Statement.EXECUTE_FAILED ) {
-                 if (log.isDebugEnabled()) {
-                     log.debug("Error on request #" + i +": Execute failed");
-                 }
-                 Object messagesource =null;
-                 RowMessage rowMessage = errRows.get(i);
-                 MessageTypePara mtpara=null;
-                 if (rowMessage!=null) {
-                     mtpara = rowMessage.mtpara;
-                     if (mtpara!=null) {
-   
-                     switch (format) {
-                        case "Protobuf":
-                            log.error("Error on request #" + i +": Execute "
-				      + "failed,\nthrow BatchUpdateException"
-				      + " when deal whith the kafka message."
-				      + "offset:[" + mtpara.getOffset()+"],"
-				      + "table:[" + rowMessage.getSchemaName()
-				      + "." + rowMessage.getTableName() 
-				      + "], operate type:[" 
-				      + rowMessage.getOperatorType()
-				      + "], source message:[" 
-				      + mtpara.getMessage() 
-				      + "]\nparsed message:[" 
-				      + rowMessage.messagePro+"]");
-                            break;
-                        case "Json":
-                        case "Unicom":
-                        case "UnicomJson":
-                            log.error("Error on request #" + i 
-				      + ": Execute failed when operate the ["
-				      + operate_type 
-				      + "]\nthrow BatchUpdateException when "
-				      + "deal whith the kafka message. offset:["
-				      + mtpara.getOffset() + "], table:["
-				      + rowMessage.getSchemaName() + "."
-				      + rowMessage.getTableName() + "],"
-				      + "operate type:[" 
-				      + rowMessage.getOperatorType() + "],"
-				      + "source message:[" + mtpara.getMessage()
-				      +"]");
-                            break;
-                        case "HongQuan":
-                            log.error("Error on request #" + i 
-				      + ": Execute failed when operate the ["
-				      + operate_type 
-				      + "]\nthrow BatchUpdateException when "
-				      + "deal whith the kafka message ."
-				      + "table:[" + rowMessage.getSchemaName() 
-				      + "." + rowMessage.getTableName() + "],"
-				      + "offset:[" + mtpara.getOffset() + "],"
-				      + "operate type:[" 
-				      + rowMessage.getOperatorType() + "],"
-				      + "source message:[" + mtpara.getMessage()
-				      + "]\nparsed message:[" 
-				      + new String((rowMessage.data)) + "]");
-                            break;
-                        default:
-                            log.error("Error on request #" + i 
-				      + ": Execute failed when operate the ["
-				      + operate_type + "]\n"
-				      + "throw BatchUpdateException when deal "
-				      + "whith the kafka message. table:["
-				      + rowMessage.getSchemaName() + "." 
-				      + rowMessage.getTableName() + "],"
-				      + "offset:[" + mtpara.getOffset() + "],"
-				      + "operate type:[" 
-				      + rowMessage.getOperatorType() + "],"
-				      + "source message:[" + mtpara.getMessage()
-				      + "]");
-                            break;
-                     }
-                    }
-                 }
-                 // add the errMess count
-                 switch (operate_type) {
-                    case I_OPERATE:
-                        errInsert ++;
-                        break;
-                    case U_OPERATE:
-                        errUpdate ++;
-                        break;
-                    case D_OPERATE:
-                        errDelete ++;
-                        break;
-                    default:
-                        log.error("not match any operate_type when add the errMess count");
-                        break;
-                }
-             }
-         }
-        if (log.isDebugEnabled()) {
-            log.trace("exit function");
-        }
-     }
+	    if (deleteStmt != null) {
+		deleteStmt.close();
+	    }
 
-    public BufferedOutputStream init_bufferOutput(String filepath,String schemaName,String tableName) {
-        BufferedOutputStream bufferedOutput =null;
-        if (log.isDebugEnabled()) {
-            log.trace("enter function, filepath:\"" + filepath 
-		      + "\", schemaName: " + schemaName + ", tableName: "
-		      + tableName);
-        }
-        if (filepath!=null) {
-            
-            // create parent path
-            if (!filepath.substring(filepath.length() - 1).equals("/")) 
-                filepath = filepath + "/";
-            String fullOutPutPath = filepath + schemaName + "/" + tableName;
-            if (log.isDebugEnabled()) {
-                log.trace("filepath: \"" + fullOutPutPath + "\"");
-            }
-            File file = new File(fullOutPutPath);
-            if (!file.getParentFile().exists()) {
-                if (!file.getParentFile().mkdirs()) {
-                   log.error("create kafka error message output path ["
-			     + schemaName +"] dir faild");
-                }
-            }
-           // new output buff
-            try {
-               bufferedOutput = new BufferedOutputStream(new FileOutputStream(fullOutPutPath,true));
-            } catch (FileNotFoundException e) {
-                log.error("file notfound when init Outputpath buffer.",e);
-            } 
-        }
-        if (log.isDebugEnabled()) {
-            log.trace("exit function");
-        }
-        return bufferedOutput;
-    }
-    
-    public void flushAndClose_bufferOutput(BufferedOutputStream bufferedOutput) {
-        if (bufferedOutput!=null) {
-            try {
-                bufferedOutput.flush();
-                bufferedOutput.close();
-            } catch (IOException e) {
-                log.error("throw IOException when flush or close output buffer.",e);
-            }
-        }
+	    if (stmt != null) {
+		stmt.close();
+	    }
+	} catch (Exception e) {
+	    log.error("there are exception generated when close stmt, the details:" + e.getMessage());
+	} finally {
+	    insertStmt = null;
+	    updateStmt = null;
+	    deleteStmt = null;
+	    stmt       = null;
+	}
     }
 
-    //make sure it's not Connection does not exist(-29002) Exception && Timeout expired(-29154) Exception
-    public boolean isNotDisConnAndTOExpection(SQLException se) {
-        if (!(se.getErrorCode()==-29002) && !(se.getErrorCode()==-29154)) {
-           return true;
+    // TODO support output error message
+    public void commitTable(Connection dbConn_) throws SQLException {
+	String outPutPath_= null;
+        if (log.isTraceEnabled()) {
+            log.trace("commit table [" + schemaName + "." + tableName + ", insert: "
+		      + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
+		      + deleteRows.size() + "] ");
         }
-        return false;
+
+	// if reconnect to database, we must prepare the stmt again
+	prepareStmts(dbConn_);
+
+	if (insertRows.size() > 0) {
+	    insert_data();
+	}
+
+        if (updateRows.size() > 0) {
+	    update_data();
+	}
+
+        if (deleteRows.size() <= 0) {
+	    delete_data();
+	}
+
+	dbConn_.commit();
+	commited = true;
     }
 
-    public void ClearCache() {
+
+    public long getInsertRows() {
+        return commited ? insertRows.size() : 0;
+    }
+
+    public long getUpdateRows() {
+        return commited ? updateRows.size() : 0;
+    }
+
+    public long getDeleteRows() {
+        return commited ? deleteRows.size() : 0;
+    }
+
+    public void clearCache() {
         if (commited) {
-            tableInfo.IncInsertRows(insertRows.size());
-            tableInfo.IncUpdateRows(updateRows.size());
-            tableInfo.IncDeleteRows(deleteRows.size());
+            tableInfo.incInsertRows(insertRows.size());
+            tableInfo.incUpdateRows(updateRows.size());
+            tableInfo.incDeleteRows(deleteRows.size());
 
-            tableInfo.IncInsMsgNum(cacheInsert);
-            tableInfo.IncUpdMsgNum(cacheUpdate);
-            tableInfo.IncKeyMsgNum(cacheUpdkey);
-            tableInfo.IncDelMsgNum(cacheDelete);
+            tableInfo.incInsMsgNum(cacheInsert);
+            tableInfo.incUpdMsgNum(cacheUpdate);
+            tableInfo.incKeyMsgNum(cacheUpdkey);
+            tableInfo.incDelMsgNum(cacheDelete);
         }
 
-	tableInfo.IncErrInsNum(errInsert);
-	tableInfo.IncErrUpdNum(errUpdate);
-	tableInfo.IncDelMsgNum(errDelete);
+	tableInfo.incErrInsNum(errInsert);
+	tableInfo.incErrUpdNum(errUpdate);
+	tableInfo.incDelMsgNum(errDelete);
 
         insertRows.clear();
         updateRows.clear();
@@ -1039,17 +770,14 @@ public class TableState {
         errInsert = 0;
         errUpdate = 0;
         errDelete = 0;
-
-        transTotal = 0;
-        transFails = 0;
     }
 
-    private long insert_row_data(Map<Integer, ColumnValue> row,int offset) throws Exception {
+    private long insert_row_data(Map<Integer, ColumnValue> row,int offset) throws SQLException {
         long result = 1;
         StringBuffer strBuffer=null;
 
         if (log.isTraceEnabled()) {
-            log.trace("enter function,offset:["+offset+ "]");
+            log.trace("enter, offset [" + offset + "]");
         }
 
         if (log.isDebugEnabled()) {
@@ -1080,7 +808,6 @@ public class TableState {
                 }catch (Exception e) {
                     log.error("\nThere is a error when set value to insertStmt, the paramInt,["
                             +(i+1)+","+columnValue.getCurValue()+"]");
-                    throw e;
                 }
             }
         }
@@ -1093,19 +820,15 @@ public class TableState {
             log.debug(strBuffer.toString());
         }
         if (log.isTraceEnabled()) {
-            log.trace("exit function,offset:[" + offset + "], insert row: [" + result + "]");
+            log.trace("exit, offset [" + offset + "], insert row: [" + result + "]");
         }
 
         return result;
     }
 
-    private void insert_data() throws Exception {
-        if (insertRows.size() <= 0)
-            return;
+    private void insert_data() throws SQLException {
+        if (log.isTraceEnabled()) { log.trace("enter"); }
 
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
         if (log.isDebugEnabled()) {
             log.debug("insert rows [cache row: " + cacheInsert + ", cache: " +
                     + insertRows.size() + "]\n");
@@ -1120,17 +843,13 @@ public class TableState {
                         +cols.get(0).getCurValue()+"\n");
             }
             try {
-                insert_row_data(cols,offset);
+                insert_row_data(cols, offset);
             }catch (SQLException se) {
                 if (isNotDisConnAndTOExpection(se)) {
                     matchErr(insertRM);
                     errInsert++;
                 }
                 throw se;
-            } catch (Exception e) {
-                matchErr(insertRM);
-                errInsert++;
-                throw e;
             }
             errRows.put(offset, insertRM);
             offset++;
@@ -1150,7 +869,7 @@ public class TableState {
             } while (se != null);
             // print the error data 
             int[] insertCounts = bue.getUpdateCounts();
-            printBatchErrMess(insertCounts,errRows,I_OPERATE);
+            printBatchErrorMsg(insertCounts,errRows,I_OPERATE);
             throw bue;
         } catch (IndexOutOfBoundsException iobe) {
            errInsert++;
@@ -1164,9 +883,7 @@ public class TableState {
             errRows.clear();
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
+        if (log.isTraceEnabled()) { log.trace("exit"); }
     }
 
     private long update_row_data(Map<Integer, ColumnValue> row,int offset) throws SQLException  {
@@ -1174,7 +891,7 @@ public class TableState {
         StringBuffer strBuffer = null;
 
         if (log.isTraceEnabled()) {
-            log.trace("enter function,offset:["+offset+"]");
+            log.trace("enter, offset [" + offset + "]");
         }
         if (log.isDebugEnabled()) {
             strBuffer = new StringBuffer();
@@ -1185,8 +902,8 @@ public class TableState {
         ColumnInfo keyInfo = null;
         ColumnValue keyValue = null;
         String whereSql = null;
-        //batch update if batchUpdate is true
-        if (batchUpdate) {
+
+        if (tableInfo.getParams().getDatabase().isBatchUpdate()) {
             //set col values
             for (int i = 0; i < columns.size(); i++) {
                 columnInfo = columns.get(i);
@@ -1195,7 +912,7 @@ public class TableState {
                     if (log.isDebugEnabled()) {
                         strBuffer.append("\tcolumn: " + i + " [null]\n");
                     }
-                  updateStmt.setNull(i + 1, columnInfo.getColumnType());
+		    updateStmt.setNull(i + 1, columnInfo.getColumnType());
                 } else {
                     if (log.isDebugEnabled()) {
                         strBuffer.append("\tcolumn: " + i + ", value [" + columnValue.getCurValue()
@@ -1254,13 +971,13 @@ public class TableState {
                 log.debug(strBuffer.toString());
             }
             if (log.isTraceEnabled()) {
-                log.trace("exit function,offset:[" + offset + "], insert row: [" + result + "]");
+                log.trace("exit,offset:[" + offset + "], insert row: [" + result + "]");
             }
 
             return result;
         }
 
-       //one by one update if  format is not protobuf
+	//one by one update if  format is not protobuf
         for (int i = 0; i < keyColumns.size(); i++) {
             keyInfo = keyColumns.get(i);
             keyValue = row.get(keyInfo.getColumnOff());
@@ -1295,37 +1012,30 @@ public class TableState {
             log.debug(strBuffer.toString());
         }
 
-        Statement st = dbConn.createStatement();
         try {
-            st.executeUpdate(updateSql);
+            stmt.executeUpdate(updateSql);
         } catch (SQLException se) {
             log.error("\nthere is a error when execute the update sql,the execute sql:["+updateSql+"]"
                     + ",the coltype is ["+columnInfo.getTypeName()+"]");
             throw se;
         }
-        st.close();
 
         result = 1;
 
         if (log.isTraceEnabled()) {
-            log.trace("exit function,["+offset+"], insert row: [" + result + "]");
+            log.trace("exit, offset [" + offset + "], insert row: [" + result + "]");
         }
 
         return result;
     }
 
     public void update_data() throws SQLException  {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
+        if (log.isTraceEnabled()) { log.trace("enter"); }
 
         if (log.isDebugEnabled()) {
             log.debug("update rows [cache update row: " + cacheUpdate + ", cache updkey row: "
                     + cacheUpdkey + ", cache: " + updateRows.size() + "]");
         }
-
-        if (updateRows.size() <= 0)
-            return;
 
         int offset = 0;
         Map<Integer, RowMessage> errRows = new HashMap<Integer, RowMessage>(0);
@@ -1348,47 +1058,42 @@ public class TableState {
             }
         }
 
-        if (batchUpdate) {
-            try {
-                updateStmt.executeBatch();
-            } catch (BatchUpdateException bue) {
-              //throw the ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated
-              //throw the ERROR[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
-                SQLException se = bue;
-                do {
-                    if (se !=null && (se.getErrorCode()==-8734 || se.getErrorCode()==-8738)) {
-                        throw bue;
-                    }
-                    se = se.getNextException();
-                } while (se != null);
-                // print the error data
-                int[] updateCounts = bue.getUpdateCounts();
-                printBatchErrMess(updateCounts,errRows,U_OPERATE);
-                throw bue;
-            } catch (IndexOutOfBoundsException iobe) {
-                errUpdate++;
-               throw iobe;
-            }catch (SQLException se) {
-                if (isNotDisConnAndTOExpection(se)) {
-                    errUpdate++;
-                }
-                throw se;
-            }finally {
-                errRows.clear();
-            }
-        }
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
+	try {
+	    updateStmt.executeBatch();
+	} catch (BatchUpdateException bue) {
+	    //throw the ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated
+	    //throw the ERROR[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
+	    SQLException se = bue;
+	    do {
+		if (se !=null && (se.getErrorCode()==-8734 || se.getErrorCode()==-8738)) {
+		    throw bue;
+		}
+		se = se.getNextException();
+	    } while (se != null);
+	    // print the error data
+	    int[] updateCounts = bue.getUpdateCounts();
+	    printBatchErrorMsg(updateCounts, errRows, U_OPERATE);
+	    throw bue;
+	} catch (IndexOutOfBoundsException iobe) {
+	    errUpdate++;
+	    throw iobe;
+	}catch (SQLException se) {
+	    if (isNotDisConnAndTOExpection(se)) {
+		errUpdate++;
+	    }
+	    throw se;
+	}finally {
+	    errRows.clear();
+	}
+
+        if (log.isTraceEnabled()) { log.trace("exit"); }
     }
 
     private long delete_row_data(Map<Integer, ColumnValue> row,int offset) throws SQLException {
         long result = 1;
         StringBuffer strBuffer = null;
 
-        if (log.isTraceEnabled()) {
-            log.trace("enter function ,offset:["+offset +"]");
-        }
+        if (log.isTraceEnabled()) { log.trace("enter, offset:[" + offset +"]"); }
 
         if (log.isDebugEnabled()) {
             strBuffer = new StringBuffer();
@@ -1431,24 +1136,19 @@ public class TableState {
             log.debug(strBuffer.toString());
         }
         if (log.isTraceEnabled()) {
-            log.trace("enter function,offset:["+ offset +"], delete row [" + result + "]");
+            log.trace("enter, offset:["+ offset +"], delete row [" + result + "]");
         }
 
         return result;
     }
 
-    private void delete_data() throws Exception {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
+    private void delete_data() throws SQLException {
+        if (log.isTraceEnabled()) { log.trace("enter"); }
 
         if (log.isDebugEnabled()) {
             log.debug("delete rows [cache row: " + cacheDelete + ", cache: " + deleteRows.size()
                     + "]");
         }
-
-        if (deleteRows.size() <= 0)
-            return;
 
         int offset = 0;
         Map<Integer, RowMessage> errRows = new HashMap<Integer, RowMessage>(0);
@@ -1464,10 +1164,6 @@ public class TableState {
                     matchErr(deleteRow);
                     errDelete++;
                 }
-            } catch (Exception e) {
-                matchErr(deleteRow);
-                errDelete++;
-                throw e;
             }
             offset++;
         }
@@ -1486,7 +1182,7 @@ public class TableState {
             } while (se != null);
             // print the error data 
             int[] deleteCounts = bue.getUpdateCounts();
-            printBatchErrMess(deleteCounts,errRows,D_OPERATE);
+            printBatchErrorMsg(deleteCounts,errRows,D_OPERATE);
             throw bue;
         }catch (IndexOutOfBoundsException iobe) {
              errDelete++;
@@ -1500,56 +1196,13 @@ public class TableState {
             errRows.clear();
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
+        if (log.isTraceEnabled()) { log.trace("exit"); }
     }
+
     public void matchErr(RowMessage operateRM) {
-        if (operateRM.mtpara!=null) {
-            switch (format) {
-                case "Protobuf":
-                    log.error("kafka offset:[" + operateRM.mtpara.getOffset() 
-			      + "], table:[" + operateRM.getSchemaName() + "." 
-			      + operateRM.getTableName() + "], operate type:["
-			      + operateRM.getOperatorType() + "], source message:[" 
-			      + operateRM.mtpara.getMessage() +"]\nparsed message:["
-			      + operateRM.messagePro + "]");
-                    break;
-                case "Json":
-                case "Unicom":
-                case "UnicomJson":
-                    log.error("kafka offset:[" + operateRM.mtpara.getOffset() 
-			      + "], table:[" + operateRM.getSchemaName() + "."
-			      + operateRM.getTableName() + "], operate type:["
-			      + operateRM.getOperatorType() + "], source message:[" 
-			      + operateRM.mtpara.getMessage() + "]\n");
-                    break;
-                case "HongQuan":
-                    log.error("kafka offset:[" + operateRM.mtpara.getOffset()
-			      + "], table:[" + operateRM.getSchemaName() + "."
-			      + operateRM.getTableName() + "], operate type:["
-			      + operateRM.getOperatorType() + "], source message:["
-			      + operateRM.mtpara.getMessage() +"]\nparsed message:["
-			      + new String((operateRM.data)) + "]");
-                    break;
-
-                default:
-                    log.error("kafka offset:[" + operateRM.mtpara.getOffset() 
-			      + "], table:[" + operateRM.getSchemaName() + "."
-			      + operateRM.getTableName() + "], operate type:["
-			      + operateRM.getOperatorType() + "], source message:["
-			      +operateRM.mtpara.getMessage() +"]");
-                    break;
-            }
-            }
-    }
-
-    public String GetTableName() {
-        return tableName;
-    }
-
-    public String GetSchemaName() {
-        return schemaName;
+        if (operateRM != null) {
+	    log.error(operateRM.getErrorMsg());
+	}
     }
 
     public void AddColumn(ColumnInfo column) {
@@ -1557,80 +1210,34 @@ public class TableState {
         columnMap.put(column.getColumnID(), column);
     }
 
-    public ColumnInfo GetColumn(int index) {
-        return columns.get(index);
-    }
+    public ColumnInfo getColumn(int index) { return columns.get(index); }
+    public ColumnInfo getColumnFromMap(int colid) { return columnMap.get(colid); }
+    public long getColumnCount() { return columns.size(); }
 
-    public ColumnInfo GetColumnFromMap(int colid) {
-        return columnMap.get(colid);
-    }
+    public void addKey(ColumnInfo column) { keyColumns.add(column); }
+    public ColumnInfo getKey(int index) { return keyColumns.get(index); }
+    public long getKeyCount() { return keyColumns.size(); }
 
-    public long GetColumnCount() {
-        return columns.size();
-    }
+    public long insertMessageToTable(RowMessage urm) {
+        if (log.isTraceEnabled()) { log.trace("enter"); }
 
-    public void AddKey(ColumnInfo column) {
-        keyColumns.add(column);
-    }
-
-    public ColumnInfo getKey(int index) {
-        return keyColumns.get(index);
-    }
-
-    public long getKeyCount() {
-        return keyColumns.size();
-    }
-
-    public long getCacheInsert() {
-        return commited ? cacheInsert : 0;
-    }
-
-    public long getCacheUpdate() {
-        return commited ? cacheUpdate : 0;
-    }
-
-    public long getCacheUpdkey() {
-        return commited ? cacheUpdkey : 0;
-    }
-
-    public long getCacheDelete() {
-        return commited ? cacheDelete : 0;
-    }
-
-    public long getInsertRows() {
-        return commited ? insertRows.size() : 0;
-    }
-
-    public long getUpdateRows() {
-        return commited ? updateRows.size() : 0;
-    }
-
-    public long getDeleteRows() {
-        return commited ? deleteRows.size() : 0;
-    }
-
-    public long InsertMessageToTable(RowMessage urm) {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
         msgs.add(urm);
-
         switch (urm.getOperatorType()) {
             case "I":
-                InsertRow(urm);
+                insertRow(urm);
                 break;
             case "U":
-                UpdateRow(urm);
+                updateRow(urm);
                 break;
             case "K":
-                if (batchUpdate) {
-                    UpdateRowWithKeySplit(urm);
+                if (tableInfo.getParams().getDatabase().isBatchUpdate()) {
+                    updateRowWithKeySplit(urm);
                 }else {
-                    UpdateRowWithKey(urm);
+                    updateRowWithKey(urm);
                 }
                 break;
             case "D":
-                DeleteRow(urm);
+                deleteRow(urm);
                 break;
 
             default:
@@ -1638,9 +1245,116 @@ public class TableState {
                 return 0;
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
+        if (log.isTraceEnabled()) { log.trace("exit"); }
+
         return 1;
+    }
+
+    public void werrToFile(String outPutPath_) {
+        if (log.isDebugEnabled()) {
+            log.debug("commit faild,write message to file.msgs count:["
+                       +msgs.size()+"]");
+        }
+        // write to file
+        BufferedOutputStream bufferOutput = init_bufferOutput(outPutPath_, schemaName, tableName);
+        for (int i = 0; i < msgs.size(); i++) {
+            RowMessage rowMessage = msgs.get(i);
+            Object message = rowMessage.getMessage();
+            try {
+                bufferOutput.write((String.valueOf(message)+"\n").getBytes());
+            } catch (IOException e) {
+                log.error("throw IOException when write err message to file ",e);
+            }
+        }
+        flushAndClose_bufferOutput(bufferOutput);
+    }
+
+    public void printBatchErrorMsg(int[] insertCounts, Map<Integer, 
+				    RowMessage> errRows, String operateType) {
+        if (log.isDebugEnabled()) { log.trace("enter"); }
+        for (int i = 0; i < insertCounts.length; i++) {
+             if ( insertCounts[i] == Statement.EXECUTE_FAILED ) {
+                 if (log.isDebugEnabled()) {
+                     log.debug("Error on request #" + i +": Execute failed");
+                 }
+
+                 RowMessage rowMessage = errRows.get(i);
+                 if (rowMessage != null) {
+		     log.error(rowMessage.getErrorMsg(i, operateType));
+                 }
+                 // add the errMess count
+                 switch (operateType) {
+                    case I_OPERATE:
+                        errInsert ++;
+                        break;
+                    case U_OPERATE:
+                        errUpdate ++;
+                        break;
+                    case D_OPERATE:
+                        errDelete ++;
+                        break;
+                    default:
+                        log.error("not match any operate type when add the error message count");
+                        break;
+		 }
+             }
+	}
+
+        if (log.isDebugEnabled()) { log.trace("exit"); }
+     }
+
+    public BufferedOutputStream init_bufferOutput(String filepath,String schemaName,String tableName) {
+        BufferedOutputStream bufferedOutput =null;
+        if (log.isDebugEnabled()) {
+            log.trace("enter, filepath:\"" + filepath 
+		      + "\", schemaName: " + schemaName + ", tableName: "
+		      + tableName);
+        }
+        if (filepath!=null) {
+            
+            // create parent path
+            if (!filepath.substring(filepath.length() - 1).equals("/")) 
+                filepath = filepath + "/";
+            String fullOutPutPath = filepath + schemaName + "/" + tableName;
+            if (log.isDebugEnabled()) {
+                log.trace("filepath: \"" + fullOutPutPath + "\"");
+            }
+            File file = new File(fullOutPutPath);
+            if (!file.getParentFile().exists()) {
+                if (!file.getParentFile().mkdirs()) {
+                   log.error("create kafka error message output path ["
+			     + schemaName +"] dir faild");
+                }
+            }
+           // new output buff
+            try {
+               bufferedOutput = new BufferedOutputStream(new FileOutputStream(fullOutPutPath,true));
+            } catch (FileNotFoundException e) {
+                log.error("file notfound when init Outputpath buffer.",e);
+            } 
+        }
+
+        if (log.isDebugEnabled()) { log.trace("exit"); }
+
+        return bufferedOutput;
+    }
+    
+    public void flushAndClose_bufferOutput(BufferedOutputStream bufferedOutput) {
+        if (bufferedOutput!=null) {
+            try {
+                bufferedOutput.flush();
+                bufferedOutput.close();
+            } catch (IOException e) {
+                log.error("throw IOException when flush or close output buffer.",e);
+            }
+        }
+    }
+
+    //make sure it's not Connection does not exist(-29002) Exception && Timeout expired(-29154) Exception
+    public boolean isNotDisConnAndTOExpection(SQLException se) {
+        if (!(se.getErrorCode()==-29002) && !(se.getErrorCode()==-29154)) {
+           return true;
+        }
+        return false;
     }
 }

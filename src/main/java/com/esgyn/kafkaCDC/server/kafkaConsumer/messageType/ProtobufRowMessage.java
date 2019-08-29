@@ -9,8 +9,8 @@ import java.util.HashMap;
 
 import com.esgyn.kafkaCDC.server.utils.Utils;
 import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
-import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
-import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
+import com.esgyn.kafkaCDC.server.utils.DatabaseParams;
+import com.esgyn.kafkaCDC.server.database.ColumnValue;
 
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb;
@@ -19,7 +19,6 @@ import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
 import com.esgyn.kafkaCDC.server.utils.TableInfo;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -34,10 +33,12 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     private static Logger log                      = Logger.getLogger(ProtobufRowMessage.class);
 
     private int           offset                   = 0;
+    private Record        messagePro               = null;
+
 
     String                catlogName               = null;
     String                emptystr                 = "";
-    EsgynDBParams         esgynDB                  = null;
+    DatabaseParams        database                  = null;
     private final int     INSERT_DRDS              = 0;
     private final int     UPDATE_DRDS              = 1;
     private final int     DELETE_DRDS              = 2;
@@ -51,33 +52,24 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     private final int     SQL_DDL_VAL              = 160;
     private final int     SOURCEORACLE             = 1;
     private final int     SOURCEDRDS               = 2;
-    private       Utils   utils                    = null;
     public ProtobufRowMessage() {}
 
-    public ProtobufRowMessage(MessageTypePara<byte[]> mtpara) throws UnsupportedEncodingException {
-        super(mtpara);
-    }
-
     @Override
-    public boolean init(MessageTypePara<byte[]> mtpara_) throws UnsupportedEncodingException {
-        super.init(mtpara_);
+    protected boolean init_() {
 	 try {
-	    byte[] rec = mtpara_.getMessage();
+	    byte[] rec = message;
             messagePro = MessageDb.Record.parseFrom(rec);
-        } catch (InvalidProtocolBufferException e) {
-            log.error("parseFrom Record has error ,make sure you data pls",e);
-            return false;
-	}
-        esgynDB = mtpara.getEsgynDB();
-        utils = new Utils();
-        return true;
+	 } catch (InvalidProtocolBufferException e) {
+	     log.error("parseFrom Record has error ,make sure you data pls", e);
+	     return false;
+	 }
+
+	 return true;
     }
 
     @Override
     public Boolean AnalyzeMessage() {
-        if (log.isTraceEnabled()) {
-            log.trace("enter function");
-        }
+        if (log.isTraceEnabled()) { log.trace("enter"); }
         
         // transaction information
         String tableNamePro = messagePro.getTableName();
@@ -99,17 +91,17 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }
 
         if (schemaName==null) 
-          schemaName = esgynDB.getDefSchema();
+          schemaName = database.getDefSchema();
 
         if (tableName==null) 
-          tableName = esgynDB.getDefTable();
-          tableInfo = esgynDB.getTableInfo(schemaName + "." + tableName);        
+          tableName = database.getDefTable();
+          tableInfo = database.getTableInfo(schemaName + "." + tableName);        
           int operationType = messagePro.getOperationType();
 
         if (tableInfo == null) {
             if (log.isDebugEnabled()) {
                 log.error("Table [" + schemaName + "." + tableName
-                        + "] is not exist in EsgynDB.");
+                        + "] is not exist in Database.");
             }
 
                 return false;
@@ -135,9 +127,9 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 String oldValue = null;
                 String newValue = null;
                 try {
-                    oldValue = bytesToString(column.getOldValue(), mtpara.getEncoding(),
+                    oldValue = bytesToString(column.getOldValue(), getEncoding(),
                             messagePro,column.getIndex(),column.getName());
-                    newValue = bytesToString(column.getNewValue(), mtpara.getEncoding(),
+                    newValue = bytesToString(column.getNewValue(), getEncoding(),
                             messagePro,column.getIndex(),column.getName());
                 } catch (Exception e) {
                     return false;
@@ -205,9 +197,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             log.debug(strBuffer.toString());
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
+        if (log.isTraceEnabled()) { log.trace("exit"); }
 
         return true;
     }
@@ -246,7 +236,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 ColumnInfo colInfo = tableInfo.getColumn("\"" + colname.toString() + "\"");
                 if (colInfo==null) {
                     log.error("columnname from kafka is["+colname+"],"
-                            + "it not exist esgyndb ["+schemaName+"."+tableName+"]\n"
+                            + "it not exist database ["+schemaName+"."+tableName+"]\n"
                             + "the kafka message:"+messagePro);
                 }else {
                     colTypeName = colInfo.getTypeName().trim();
@@ -282,13 +272,13 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }else if(valueNull && Valuebs.size()==0){
 	    if(insertEmptyStr(colTypeName.toUpperCase())){
               value = "";
-            }else if (utils.isNumType(colTypeName)){
+            }else if (Utils.isNumType(colTypeName)){
               value = "0";
             }
         }else {
-	        if(!mtpara.getEncoding().equals("UTF8")){
-                encode = mtpara.getEncoding();
-                if(!mtpara.getEncoding().equals("GBK"))
+	        if(!getEncoding().equals("UTF8")){
+                encode = getEncoding();
+                if(!getEncoding().equals("GBK"))
                 log.warn("the data from oracle  default encode is GBK,but you set: " +encode);
             }
             value = bytesToString(Valuebs, encode,messagePro,index,colname);
@@ -310,12 +300,12 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }else if(Valuebs.size()==0){
             if(colTypeName!=null && insertEmptyStr(colTypeName.toUpperCase())){
               value = "";
-            }else if (colTypeName!=null && utils.isNumType(colTypeName)){
+            }else if (colTypeName!=null && Utils.isNumType(colTypeName)){
               value = "0";
             }
         }else{
-            if(!mtpara.getEncoding().equals("UTF8")){
-                encode = mtpara.getEncoding();
+            if(!getEncoding().equals("UTF8")){
+                encode = getEncoding();
                 log.warn("the data from drds(mysql)  default encode is UTF8,but you set: " +encode);
             }
             value = bytesToString(Valuebs, encode,messagePro ,index,colname);
@@ -366,22 +356,22 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                     charBuffer_Utf8 = decoder_Utf8.decode(buffer_Utf8.asReadOnlyBuffer());
                     if (log.isDebugEnabled()) {
                         log.debug("data from oracle decode by UTF8 is success:"+charBuffer_Utf8.toString()+
-                                ",the kafka offset["+mtpara.getOffset()+"],the colindex ["+index+"],"
+                                ",the kafka offset["+getOffset()+"],the colindex ["+index+"],"
                                 + "the colname["+colname+"],charset["+"UTF8"+"],the source message:"
                                 +messagePro.toString());
                     }
                     return charBuffer_Utf8.toString();
                 }catch (Exception e) {
                     log.error("data from oracle decode by UTF8 is faild when bytesToString.the kafka"
-                            + " offset["+mtpara.getOffset()+"],the colindex"+index+"],the colname["
+                            + " offset["+getOffset()+"],the colindex"+index+"],the colname["
                             +colname+"],charset["+charSet+"],the source message:"
                             +messagePro.toString(),e);
                     throw e;
                 }
             }
             log.error("an exception has occured when bytesToString.the kafka offset["
-                    +mtpara.getOffset()+"],the colindex ["+index+"],the colname["+colname
-                    +mtpara.getOffset()+"],the colindex ["+index+"],the colname["+colname
+                    +getOffset()+"],the colindex ["+index+"],the colname["+colname
+                    +getOffset()+"],the colindex ["+index+"],the colname["+colname
                     +"],charset["+charSet+"],the source message:"+messagePro.toString(),ex);
             throw ex;
         }
@@ -401,4 +391,12 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }
         
     }
+
+    @Override
+    public String getErrorMsg(int batchOff, String type) {
+	return getErrorMsg_(batchOff, type, messagePro.toString());
+    }
+
+    @Override
+    public String getErrorMsg() { return getErrorMsg_(messagePro.toString()); }
 }

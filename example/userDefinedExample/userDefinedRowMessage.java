@@ -10,9 +10,8 @@ import java.util.Iterator;
 import com.esgyn.kafkaCDC.server.utils.TableInfo;
 import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
 
-import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
-import com.esgyn.kafkaCDC.server.esgynDB.EsgynDB;
-import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
+import com.esgyn.kafkaCDC.server.dbConsumer.ColumnValue;
+import com.esgyn.kafkaCDC.server.dbConsumer.Database;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,20 +31,16 @@ public class userDefinedRowMessage extends RowMessage<String>{
     String position = null;
     JsonNode dataJsonNode = null;
     JsonNode oldJsonNode = null;
-    EsgynDB  esgynDB = null;
+    Database  database = null;
     String   message = null;
+
     public userDefinedRowMessage() {}
-    public userDefinedRowMessage(MessageTypePara<String> mtpara) throws UnsupportedEncodingException {
-        init(mtpara);
-       
-    }
     
     @Override
-    public boolean init(MessageTypePara<String> mtpara) throws UnsupportedEncodingException {
-        super.init(mtpara);
+    public boolean init() throws UnsupportedEncodingException {
         log.info("enter custorm format [init]" );
-        message = new String(((String) mtpara.getMessage()).getBytes(mtpara.getEncoding()), "UTF-8");
-        esgynDB = mtpara.getEsgynDB();
+        message = new String(((String) getMessage()).getBytes(getEncoding()), "UTF-8");
+        database = getDatabase();
         return true;
     }
     @Override
@@ -74,12 +69,12 @@ public class userDefinedRowMessage extends RowMessage<String>{
            + "]\n");
            log.debug(strBuffer);
         }
-        tableInfo = esgynDB.GetTableInfo( schemaName + "." + tableName);
+        tableInfo = database.GetTableInfo( schemaName + "." + tableName);
 
         if(tableInfo == null){
         if (log.isDebugEnabled()) {
             log.error("Table [" + schemaName + "." + tableName 
-                  + "] is not exist in EsgynDB.");
+                  + "] is not exist in database.");
         }
            
            return false;

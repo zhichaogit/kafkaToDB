@@ -6,9 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
-import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
-import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
-import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
+import com.esgyn.kafkaCDC.server.database.ColumnValue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map.Entry;
@@ -25,23 +23,8 @@ public class JsonRowMessage extends RowMessage<String> {
     String                position           = null;
     JsonNode              dataJsonNode       = null;
     JsonNode              oldJsonNode        = null;
-    EsgynDBParams         esgynDB            = null;
 
     public JsonRowMessage() {}
-
-    public JsonRowMessage(MessageTypePara<String> mtpara) throws UnsupportedEncodingException {
-        init(mtpara);
-
-    }
-
-    @Override
-    public boolean init(MessageTypePara<String> mtpara) throws UnsupportedEncodingException {
-        super.init(mtpara);
-        message =
-                new String(((String) mtpara.getMessage()).getBytes(mtpara.getEncoding()), "UTF-8");
-        esgynDB = mtpara.getEsgynDB();
-        return true;
-    }
 
     @Override
     public Boolean AnalyzeMessage() {
@@ -64,12 +47,12 @@ public class JsonRowMessage extends RowMessage<String> {
                     strBuffer.append("oldJsonNode:[" + oldJsonNode.toString() + "]\n");
                 log.debug(strBuffer);
             }
-            tableInfo = esgynDB.getTableInfo(schemaName + "." + tableName);
+            tableInfo = getTableInfo(schemaName + "." + tableName);
 
             if (tableInfo == null) {
                 if (log.isDebugEnabled()) {
                     log.error("Table [" + schemaName + "." + tableName
-                            + "] is not exist in EsgynDB.");
+                            + "] is not exist in database.");
                 }
 
                 return false;

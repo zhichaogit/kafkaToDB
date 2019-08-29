@@ -1,29 +1,22 @@
 package com.esgyn.kafkaCDC.server.utils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.util.Date;
+import java.util.Arrays;
+import java.util.ArrayList;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
+import java.text.SimpleDateFormat;
 
 import org.apache.log4j.Logger;
 
-import com.google.gson.Gson;
-
 public class Utils {
     private static Logger      log     =  Logger.getLogger(Utils.class);
-    ArrayList<String> dateFormats = null;
-
-    public Utils() {
-        dateFormats = new ArrayList<>();
-        dateFormats.add("yyyy-MM-dd HH:mm:ss");
-        dateFormats.add("yyyy-MM-dd");
-        dateFormats.add("yyyy/MM/dd HH:mm:ss");
-        dateFormats.add("yyyy/MM/dd");
-    }
+    private static ArrayList<String> dateFormats 
+	= new ArrayList<String>(Arrays.asList("yyyy-MM-dd HH:mm:ss",
+					      "yyyy-MM-dd",
+					      "yyyy/MM/dd HH:mm:ss",
+					      "yyyy/MM/dd"));
 
     /**
      *
@@ -32,8 +25,7 @@ public class Utils {
      * @return
      */
 
-    public long dateToStamp(String str, String dateFormat) {
-
+    public static long dateToStamp(String str, String dateFormat) {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat);
         Date date = null;
         try {
@@ -49,7 +41,7 @@ public class Utils {
      * @param datevalue
      * @return 
      */
-    public boolean isDateStr(String datevalue) {
+    public static boolean isDateStr(String datevalue) {
         datevalue = datevalue.trim();
         for (String dateFormat : dateFormats) {
             try {
@@ -67,7 +59,7 @@ public class Utils {
      * @param intStr
      * @return if input string is integer, otherwise false
      */
-    public boolean isInteger(String intStr) {
+    public static boolean isInteger(String intStr) {
         try{
             int i = Integer.parseInt(intStr);
             return true;
@@ -80,7 +72,7 @@ public class Utils {
      * @return string 
      */
 
-    public String whichDateFormat(String datevalue) {
+    public static String whichDateFormat(String datevalue) {
         for (String dateFormat : dateFormats) {
             try {
                 SimpleDateFormat fmt = new SimpleDateFormat(dateFormat);
@@ -98,7 +90,7 @@ public class Utils {
      * @param colTypeName
      * @return
      */
-    public boolean isNumType(String colTypeName) {
+    public static boolean isNumType(String colTypeName) {
         colTypeName=colTypeName.trim().toUpperCase();
         switch (colTypeName) {
             case "SIGNED SMALLINT":
@@ -119,49 +111,28 @@ public class Utils {
                 return false;
         }
     }
-    /**
-     *  read paras from json file
-     * @param inputPath
-     * @return jsonString
-     */
-    public String readJsonConf(String inputPath) {
-        File jsonFile = new File(inputPath);
-        if (jsonFile.exists() && jsonFile.isFile()) {
-            FileInputStream fileInputStream;
-            try {
-                fileInputStream = new FileInputStream(jsonFile);
-                InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
-                int ch=0;
-                StringBuffer sb = new StringBuffer();
-                while ((ch=inputStreamReader.read())!=-1) {
-                    sb.append((char)ch);
-                }
-                inputStreamReader.close();
-                return sb.toString();
-            } catch (IOException e) {
-                log.error("read jsonFile from conf/  cause an error",e);
-            }
-        }else{
-            log.error("["+inputPath+"],not exists or not a file");
-        }
-        return null;
+
+    public static String getCurrentTime(){
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date curTime = new Date();
+        return sdf.format(curTime);
     }
-    /**
-     * Parse json formatted data via Gson
-     * @param confPath
-     * @return  Parameters
-     */
 
-    public Parameters jsonParse(String confPath) throws Exception{
-        Parameters params = null;
-	String     jsonString = readJsonConf(confPath);
+    public static long getTime(){
+	return new Date().getTime();
+    }
 
-        try {
-            Gson gson = new Gson();
-	    params = gson.fromJson(jsonString, Parameters.class);
-        } catch (Exception e) {
-           throw e;
+    public static String getTrueName(String name)
+    {
+        if (name != null) {
+            if (name.startsWith("[") && name.endsWith("]")) {
+                name = name.substring(1, name.length() - 1);
+                log.warn("The schema name is lowercase");
+            } else {
+                name = name.toUpperCase();
+            }
         }
-        return params;
+
+	return name;
     }
 }

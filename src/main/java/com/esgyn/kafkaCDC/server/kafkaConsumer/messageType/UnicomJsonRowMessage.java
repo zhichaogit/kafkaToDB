@@ -8,9 +8,8 @@ import java.util.Map.Entry;
 
 import com.esgyn.kafkaCDC.server.utils.TableInfo;
 import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
-import com.esgyn.kafkaCDC.server.utils.EsgynDBParams;
-import com.esgyn.kafkaCDC.server.esgynDB.ColumnValue;
-import com.esgyn.kafkaCDC.server.esgynDB.MessageTypePara;
+import com.esgyn.kafkaCDC.server.utils.DatabaseParams;
+import com.esgyn.kafkaCDC.server.database.ColumnValue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,26 +27,11 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
     String                operatorTypeSource = null;
     JsonNode              columnJsonNode     = null;
     JsonNode              keyColJsonNode     = null;
-    EsgynDBParams         esgynDB            = null;
+    DatabaseParams        database           = null;
     String                colNewData         = null;
     String                colOldData         = null;
 
     public UnicomJsonRowMessage() {}
-
-    public UnicomJsonRowMessage(MessageTypePara<String> mtpara)
-            throws UnsupportedEncodingException {
-        init(mtpara);
-
-    }
-
-    @Override
-    public boolean init(MessageTypePara<String> mtpara) throws UnsupportedEncodingException {
-        super.init(mtpara);
-        message =
-                new String(((String) mtpara.getMessage()).getBytes(mtpara.getEncoding()), "UTF-8");
-        esgynDB = mtpara.getEsgynDB();
-        return true;
-    }
 
     @Override
     public Boolean AnalyzeMessage() {
@@ -85,11 +69,11 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
                         strBuffer.append("operatorTypeSource: [" + operatorTypeSource + "]\n");
                     // log.debug(strBuffer);
                 }
-		tableInfo = esgynDB.getTableInfo(schemaName + "." + tableName);
+		tableInfo = database.getTableInfo(schemaName + "." + tableName);
                 if (tableInfo == null) {
                     if (log.isDebugEnabled()) {
                         log.error("Table [" + schemaName + "." + tableName
-                                + "] is not exist in EsgynDB.");
+                                + "] is not exist in database.");
                     }
 
                     return false;
@@ -150,9 +134,8 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
             strBuffer.append("\noperatorType:[" + operatorType + "]\n");
             log.debug(strBuffer.toString());
         }
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
+
+        if (log.isTraceEnabled()) { log.trace("exit"); }
 
         return true;
     }
@@ -201,8 +184,7 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
     private boolean get_column(Entry<String, JsonNode> entry, TableInfo tableInfo,
             StringBuffer strBuffer) {
         if (log.isTraceEnabled()) {
-            log.trace("enter function");
-            log.trace("get column json:[" + entry + "]");
+            log.trace("enter get column json:[" + entry + "]");
         }
         String colName = "\"" + entry.getKey().toString() + "\"";
         String colNewData = null;
@@ -232,9 +214,8 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
             strBuffer.append("column name :[" + colName + "], colID:[" + colId
                     + "], columnNewdate :[" + colNewData + "],  colOldData [" + colOldData + "]\n");
         }
-        if (log.isTraceEnabled()) {
-            log.trace("exit function");
-        }
+
+        if (log.isTraceEnabled()) { log.trace("exit"); }
 
         return true;
     }
@@ -293,5 +274,4 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
             return false;
         }
     }
-
 }

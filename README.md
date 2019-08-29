@@ -30,7 +30,7 @@ jdbcT4-2.4.7.jar couldn't download it by maven ,so you should move it to
 
 # KafkaCDC
 usage: Consumer Server
-*    --aconn <arg>       specify one connection for esgyndb,not need arg.default: multiple connections
+*    --aconn <arg>       specify one connection for database,not need arg.default: multiple connections
 * -b,--broker <arg>      bootstrap.servers setting, ex: <node>:9092,default: "localhost:9092"
 *    --bigendian         the data format is big endian, default: little endian
 *    --batchUpdate       batchUpdate means update operate will batch execute,default: one by one excute
@@ -68,29 +68,40 @@ usage: Consumer Server
 * -s,--schema <arg>      default database schema, use the schema from data without this option, <br>
                          you should write like this [schemaName] if schemaName is lowerCase. default:null<>
 *    --seto <arg>        session.timeout.ms, default: 30s
+*    --showConsumers     show the consumers details information, defaults:true
+*    --showLoader        show the loader details information, defaults:true
+*    --showTasks         show the consume thread tasks details information, defaults:false
+*    --showTables        show the table details information, defaults:true
+*    --showSpeed         print the tables run speed info,not need arg,default:false
 *    --skip              skip all errors of data, default: false
 *    --sto <arg>         kafka poll time-out limit, default: 60s
 * -t,--topic <arg>       REQUIRED. topic of subscription
 *    --table <arg>       table name, default: null,you should write like this [tablename]  if tablename is lowerCase
 *    --tenant <arg>      tanent user name, default: null
-*    --tablespeed <arg>  print the tables run speed info,not need arg,default:false
 * -v,--version           print the version of KafkaCDC
 *    --value <arg>       value deserializer, default is:<br>
                          org.apache.kafka.common.serialization.StringDeserializer
 * -z,--zook <arg>        zookeeper connection list, ex:<node>:port[/kafka],...
 *    --zkto <arg>        zookeeper time-out limit, default: 10s
 
+# KafkaCDC Dataflow
+* the dataflow of KafkaCDC as following:<br/>
+<p align="center">
+<a href="https://github.com/esgyn/kafkaCDC/blob/new_design/design/dataflow.jpg" target="_blank">
+<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/new_design/design/dataflow.jpg" alt="Geolife data at block scale"></a><br/><br/>
+</p>
+
 # KafkaCDC Design
 * the architecture of KafkaCDC as following:<br/>
 <p align="center">
-<a href="https://github.com/esgyn/kafkaCDC/blob/master/design/architecture.jpg" target="_blank">
-<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/master/design/architecture.jpg" alt="Geolife data at block scale"></a><br/><br/>
+<a href="https://github.com/esgyn/kafkaCDC/blob/master/new_design/architecture.jpg" target="_blank">
+<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/new_design/design/architecture.jpg" alt="Geolife data at block scale"></a><br/><br/>
 </p>
 
 * the classes of KafkaCDC as following:<br/>
 <p align="center">
-<a href="https://github.com/esgyn/kafkaCDC/blob/master/design/classes.jpg" target="_blank">
-<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/master/design/classes.jpg" alt="Geolife data at block scale"></a><br/><br/>
+<a href="https://github.com/esgyn/kafkaCDC/blob/new_design/design/classes.jpg" target="_blank">
+<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/new_design/design/classes.jpg" alt="Geolife data at block scale"></a><br/><br/>
 </p>
 
 # example:
