@@ -88,20 +88,20 @@ usage: Consumer Server
 * the dataflow of KafkaCDC as following:<br/>
 <p align="center">
 <a href="https://github.com/esgyn/kafkaCDC/blob/new_design/design/dataflow.jpg" target="_blank">
-<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/new_design/design/dataflow.jpg" alt="Geolife data at block scale"></a><br/><br/>
+<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/master/design/dataflow.jpg" alt="Geolife data at block scale"></a><br/><br/>
 </p>
 
 # KafkaCDC Design
 * the architecture of KafkaCDC as following:<br/>
 <p align="center">
 <a href="https://github.com/esgyn/kafkaCDC/blob/master/new_design/architecture.jpg" target="_blank">
-<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/new_design/design/architecture.jpg" alt="Geolife data at block scale"></a><br/><br/>
+<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/master/design/architecture.jpg" alt="Geolife data at block scale"></a><br/><br/>
 </p>
 
 * the classes of KafkaCDC as following:<br/>
 <p align="center">
 <a href="https://github.com/esgyn/kafkaCDC/blob/new_design/design/classes.jpg" target="_blank">
-<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/new_design/design/classes.jpg" alt="Geolife data at block scale"></a><br/><br/>
+<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/master/design/classes.jpg" alt="Geolife data at block scale"></a><br/><br/>
 </p>
 
 # example:
