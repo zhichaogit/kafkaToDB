@@ -281,7 +281,8 @@ public class Parameters {
         kafkaCDC.setFormat(getStringParam("format", ""));
         kafkaCDC.setInterval(getLongParam("interval", Constants.DEFAULT_INTERVAL_S));
 	kafkaCDC.setSkip(getBoolParam("skip", false));
-	kafkaCDC.setKafkaDir(getStringParam("kafkaDir", null));
+	kafkaCDC.setLoadDir(getStringParam("loadDir", "database"));
+	kafkaCDC.setKafkaDir(getStringParam("kafkaDir", "kafka"));
 	kafkaCDC.setShowConsumers(getBoolParam("showConsumers", true));
 	kafkaCDC.setShowLoaders(getBoolParam("showLoaders", true));
 	kafkaCDC.setShowTasks(getBoolParam("showTasks", true));

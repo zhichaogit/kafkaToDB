@@ -89,6 +89,8 @@ public class RowMessage<T> implements Cloneable{
 		      + encoding + "], message [" + message + "]");
         }
 
+        columns = new HashMap<Integer, ColumnValue>(0);
+
 	retValue = init_();
         if (log.isTraceEnabled()) { log.trace("exit"); }
 
@@ -122,7 +124,6 @@ public class RowMessage<T> implements Cloneable{
 			     + ", Type: " + operatorType + "]");
         }
 
-        columns = new HashMap<Integer, ColumnValue>(0);
         for (int i = 0; i < cols.length; i++) {
             if (log.isDebugEnabled()) {
                 strBuffer.append("\n\tColumn: " + cols[i]);
@@ -211,24 +212,28 @@ public class RowMessage<T> implements Cloneable{
     public String toString() { 
 	String sql;
 
-	switch(operatorType) {
-	case "I":
-	    sql = getInsertString();
-	    break;
+	if (columns.size() > 0) {
+	    switch(operatorType) {
+	    case "I":
+		sql = getInsertString();
+		break;
 	    
-	case "U":
-	case "K":
-	    sql = getUpdateString();
+	    case "U":
+	    case "K":
+		sql = getUpdateString();
 	    break;
 
 
-	case "D":
-	    sql = getDeleteString();
-	    break;
+	    case "D":
+		sql = getDeleteString();
+		break;
 
-	default:
-	    log.error("the row message type [" + operatorType + "] error");
-	    return null;
+	    default:
+		log.error("the row message type [" + operatorType + "] error");
+		return null;
+	    }
+	} else {
+	    sql = "-- data format error, check the kafka data please!";
 	}
 
 	sql += "--" + offset + "\r\n";

@@ -27,6 +27,9 @@ public class TableInfo {
     private boolean          multiable     = false;;
     @Setter
     @Getter
+    private String           tableDir      = null;
+    @Setter
+    @Getter
     private ArrayList<ColumnInfo> columns  = null;
     @Setter
     @Getter

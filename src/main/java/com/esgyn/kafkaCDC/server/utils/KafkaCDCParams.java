@@ -73,7 +73,7 @@ public class KafkaCDCParams {
 	if (curDir == null)
 	    return null;
 
-	return Constants.DEFAULT_LOG_PATH + "/" + startTime + "/" + curDir + "/";
+	return Constants.DEFAULT_LOG_PATH + startTime + "/" + curDir + "/";
     }
 
     public String toString() {

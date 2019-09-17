@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import com.esgyn.kafkaCDC.server.utils.Utils;
+
 import com.esgyn.kafkaCDC.server.database.Database;
 import com.esgyn.kafkaCDC.server.database.TableState;
 
@@ -60,34 +62,59 @@ public class LoaderThread extends Thread {
 	    // remove the task from the queue
 	    loaderTask = loaderHandle.poll();
 	    if (loaderTask != null){
-		try {
-		    if (dbConn == null) {
-			dbConn = database.CreateConnection(false);
+		while (loaderTask != null) {
+		    try {
+			if (dbConn == null) {
+			    dbConn = database.CreateConnection(false);
+			}
+
+			if (dbConn != null) {
+			    long loadNumber = loaderTask.work(loaderHandle.getLoaderID(), 
+							      dbConn, tables);
+			    if (loadNumber < 0) {
+				log.error("loader thread load data to database fail! "
+					  + "fix the database error as soon as possable please, "
+					  + "loader thread will wait 1000ms and continue");
+
+				Utils.waitMillisecond(1000);
+
+				database.CloseConnection(dbConn);
+				dbConn = null;
+				loaderTask.clean();
+				continue;
+			    }
+				
+			    loadedNumber += loadNumber;
+			    // reset the task null
+			    loaderTask = null;
+			} else {
+			    log.error("loader thread create connection fail! "
+				      + "fix the database error as soon as possable please, "
+				      + "loader thread will wait 1000ms and continue");
+			    loaderTask.clean();
+			    Utils.waitMillisecond(1000);
+			}
+		    } catch (SQLException se) {
+			log.error("loader thread throw exception when execute work:", se);
+			// if the disconnect, reconnect in next loop
+			if (Database.isAccepableSQLExpection(se)) {
+			    database.CloseConnection(dbConn);
+			    dbConn = null;
+			}
+
+			log.error("throw unhandled exception! "
+				  + "fix the database error as soon as possable please, "
+				  + "loader thread will wait 1000ms and continue");
+			loaderTask.clean();
+			Utils.waitMillisecond(1000);
 		    }
-
-		    long loadNumber = loaderTask.work(loaderHandle.getLoaderID(), dbConn, tables);
-		    // update the statistics
-
-		    // TODO add statistics
-		    // loaderTasks.incTotalLoaded(loadNumber);
-		    // TODO try catch the SQLException and try again.
-		    loadedNumber += loadNumber;
-		} catch (SQLException e) {
-		    // TODO handle retry
-		} finally {
-		    // reset the task null
-		    loaderTask = null;
 		}
 	    } else if (looping.get()) {
 		// there are no work to do, go to sleep a while
 		if (log.isDebugEnabled()) {
-		    log.info("loader thread haven't task to do, loader goto sleep 1s");
+		    log.debug("loader thread haven't task to do, loader goto sleep 1000ms");
 		}
-		try {
-		    Thread.sleep(1000);
-		} catch (Exception e) {
-		    log.error("throw exception when call Thread.sleep");
-		}
+		Utils.waitMillisecond(1000);
 	    } else {
 		log.info("loader thread stoped via close.");
 		break;
@@ -98,7 +125,9 @@ public class LoaderThread extends Thread {
 	    database.CloseConnection(dbConn);
 	    dbConn = null;
 	}
+
 	loaderTasks.decrease();
+	running = false;
 
         if (log.isTraceEnabled()) { log.trace("exit");}
     }

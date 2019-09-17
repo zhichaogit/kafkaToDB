@@ -258,6 +258,11 @@ public class ConsumerTask<T> {
 	long   keyMsgs       = 0;
 	long   delMsgs       = 0;
 
+	long   insErrs       = 0;
+	long   updErrs       = 0;
+	long   keyErrs       = 0;
+	long   delErrs       = 0;
+
 	if (log.isTraceEnabled()) { log.trace("enter"); }
 
 	for (ConsumerRecord<?, ?> record : records) {
@@ -281,27 +286,55 @@ public class ConsumerTask<T> {
 	    }
 
 	    RowMessage row = (RowMessage)urm.clone();
-	    row.AnalyzeMessage();
-	    switch(row.getOperatorType()) {
-	    case "I":
-		insMsgs++;
-		break;
+	    if (row.AnalyzeMessage()) {
+		switch(row.getOperatorType()) {
+		case "I":
+		    insMsgs++;
+		    break;
 	    
-	    case "U":
-		updMsgs++;
-		break;
+		case "U":
+		    updMsgs++;
+		    break;
 
-	    case "K":
-		keyMsgs++;
-		break;
+		case "K":
+		    keyMsgs++;
+		    break;
 
-	    case "D":
-		delMsgs++;
-		break;
+		case "D":
+		    delMsgs++;
+		    break;
 
-	    default:
-		log.error("the row message type [" + row.getOperatorType() 
-			  + "] error");
+		default:
+		    log.error("the row message type [" + row.getOperatorType() 
+			      + "] error");
+		    return false;
+		}
+	    } else if (params.getKafkaCDC().isSkip()) {
+		switch(row.getOperatorType()) {
+		case "I":
+		    insErrs++;
+		    break;
+	    
+		case "U":
+		    updErrs++;
+		    break;
+
+		case "K":
+		    keyErrs++;
+		    break;
+
+		case "D":
+		    delErrs++;
+		    break;
+
+		default:
+		    log.error("the row message type [" + row.getOperatorType() 
+			      + "] error");
+		    return false;
+		}
+	    } else {
+		log.error("message format error, if you want to continue, "
+			  + "add skip parameter please!");
 		return false;
 	    }
 
@@ -315,7 +348,14 @@ public class ConsumerTask<T> {
 	consumeStates.addUpdMsgNum(updMsgs);
 	consumeStates.addKeyMsgNum(keyMsgs);
 	consumeStates.addDelMsgNum(delMsgs);
-	consumeStates.addKafkaMsgNum(insMsgs + updMsgs + keyMsgs + delMsgs);
+
+	consumeStates.addInsErrNum(insErrs);
+	consumeStates.addUpdErrNum(updErrs);
+	consumeStates.addKeyErrNum(keyErrs);
+	consumeStates.addDelErrNum(delErrs);
+
+	consumeStates.addKafkaMsgNum(records.count());
+	consumeStates.addKafkaErrNum(insErrs + updErrs + keyErrs + delErrs);
 
 	if (log.isTraceEnabled()) { log.trace("exit"); }
 

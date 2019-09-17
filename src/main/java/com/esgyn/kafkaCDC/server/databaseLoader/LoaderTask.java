@@ -56,21 +56,26 @@ public class LoaderTask {
         if (log.isTraceEnabled()) { log.trace("exit"); }
     }
 
-    private void process_records() throws SQLException {
+    private boolean process_records() throws SQLException {
 	if (log.isTraceEnabled()) { log.trace("enter"); }
 	long existTable = 0;
 
 	for (RowMessage row : rows) {
 	    if (row.getOperatorType().equals("K")) {
-		commit_tables();
+		if (!commit_tables())
+		    return false;
 	    } 
 
 	    existTable += process_record(row);
 	}
 
-	commit_tables();
+	if (!commit_tables())
+	    return false;
+
 	loadStates.addExistTable(existTable);
 	if (log.isTraceEnabled()) { log.trace("exit"); }
+
+	return true;
     }
 
     private long process_record(RowMessage row) {
@@ -118,10 +123,9 @@ public class LoaderTask {
 	dbConn    = dbConn_;
 	tables    = tables_;
 
-	process_records();
-
-	dump_data_to_file();
-
+	if (!process_records())
+	    return -1;
+	
 	loadStates.addDoneTasks(1);
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
@@ -129,23 +133,6 @@ public class LoaderTask {
 	return rows.size();
     }
 
-    private boolean dump_data_to_file() {
-	if (log.isTraceEnabled()) { log.trace("enter"); }
-
-	String rootPath = params.getKafkaCDC().getLoadDir();
-	if (rootPath != null) {
-	    String fileName = topic + "_" + partitionID + "_" + curOffset;
-	    String filePath = rootPath + fileName + ".sql";
-	    if (!FileUtils.dumpDataToFile(rows, filePath, FileUtils.SQL_STRING)) {
-		log.error("dump sql data to file fail.");
-		return false;
-	    }
-	}
-
-	if (log.isTraceEnabled()) { log.trace("exit"); }
-
-	return true;
-    }
 
     private boolean commit_tables() throws SQLException {
         if (log.isTraceEnabled()) { log.trace("enter"); }
@@ -160,7 +147,9 @@ public class LoaderTask {
 		log.debug("there are [" + tableState.getCacheTotal() + "] rows in cache"); 
 	    }
 
-            tableState.commitTable(dbConn);
+	    if (!tableState.commitTable(dbConn))
+		return false;
+
 	    transactions++;
 
 	    loadStates.addErrInsertNum(tableState.getErrInsert());
@@ -178,5 +167,13 @@ public class LoaderTask {
         if (log.isTraceEnabled()) { log.trace("exit"); }
 
         return true;
+    }
+
+    public void clean() {
+        if (log.isTraceEnabled()) { log.trace("enter"); }
+
+        for (TableState tableState : tables.values()) {
+	    tableState.closeStmts();
+	}
     }
 }

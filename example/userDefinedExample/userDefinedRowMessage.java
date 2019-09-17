@@ -134,8 +134,6 @@ public class userDefinedRowMessage extends RowMessage<String>{
                  + ", Timestamp: " + ts + "]\n"); 
     }
         
-        columns = new HashMap<Integer, ColumnValue>(0);
-
     // analysis jsondata
         if (dataJsonNode != null && dataJsonNode.isObject()) {
             Iterator<Entry<String, JsonNode>> it = dataJsonNode.fields();

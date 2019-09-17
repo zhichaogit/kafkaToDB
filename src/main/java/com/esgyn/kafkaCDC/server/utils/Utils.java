@@ -135,4 +135,12 @@ public class Utils {
 
 	return name;
     }
+
+    public static void waitMillisecond(int milliseconds) {
+	try {
+	    Thread.sleep(milliseconds);
+	} catch (Exception e) {
+	    log.error("throw exception when call Thread.sleep.");
+	}
+    }
 }

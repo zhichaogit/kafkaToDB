@@ -98,7 +98,9 @@ public class FileUtils {
 
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
-	log.info("dump messages to file path [" + filePath + "]");
+        if (log.isDebugEnabled()) { 
+	    log.debug("dump messages to file path [" + filePath + "]");
+	}
 		    
 	try {
 	    File file = new File(filePath);
@@ -139,15 +141,15 @@ public class FileUtils {
 	    }
 	} catch (FileNotFoundException fnfe) {
 	    log.error("file [" + filePath + "] is not found  when dump, "
-		      + "the message: " + fnfe.getMessage());
+		      + "the message: ", fnfe);
 	    dumped = false;
 	} catch (IOException ioe) {
 	    log.error("there are IOException when dump data to file [" 
-		      + filePath + "], the message: " + ioe.getMessage());
+		      + filePath + "], the message: ", ioe);
 	    dumped = false;
 	} catch (Exception e) {
 	    log.error("there are Exception when dump data to file [" + filePath
-		      + "], the message: " + e.getMessage());
+		      + "], the message: ", e);
 	    dumped = false;
 	} finally {
 	    if (buffer != null) {
@@ -155,8 +157,7 @@ public class FileUtils {
 		    buffer.flush();
 		    buffer.close();
 		} catch (Exception e) {
-		    log.error("flush and close BufferedOutputStream exception: "
-			      + e.getMessage());
+		    log.error("flush and close BufferedOutputStream exception: ", e);
 		} finally {
 		    buffer = null;
 		}
@@ -166,8 +167,7 @@ public class FileUtils {
 		try {
 		    output.close();
 		} catch (Exception e) {
-		    log.error("close FileOutputStream exception: " 
-			      + e.getMessage());
+		    log.error("close FileOutputStream exception: ", e);
 		} finally {
 		    output = null;
 		}

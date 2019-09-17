@@ -58,8 +58,8 @@ javac -d bin -cp example/:libs/* -Xlint:deprecation example/ProducerTest.java
 java -cp bin:bin/*:libs/* ProducerTest
 cd $KAFKA_CDC/bin
 
-echo "./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f HongQuan --mode start --sto 5 --interval 2 --key org.apache.kafka.common.serialization.LongDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer"
-./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f HongQuan --mode start --sto 5 --interval 2 --key org.apache.kafka.common.serialization.LongDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
+echo "./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f HongQuan --mode start --sto 5 --interval 2 --key org.apache.kafka.common.serialization.LongDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer --skip"
+./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f HongQuan --mode start --sto 5 --interval 2 --key org.apache.kafka.common.serialization.LongDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer --skip
 
 #get result file from $DBUSER
 expect <<-EOF
@@ -96,11 +96,11 @@ CUREXPECTDIR="/tmp"
 mkdir -p $CUREXPECTDIR
 if [ -f /tmp/${TOPIC}_result.log ];then
  rm -f /tmp/${TOPIC}_result.log
-echo "file exist ,delete /tmp/${TOPIC}_result.log"
+echo "file exist, delete /tmp/${TOPIC}_result.log"
 fi
 if [ -f /tmp/${TOPIC}_expect.log ];then
  rm -f /tmp/${TOPIC}_expect.log
-echo "file exist , delete /tmp/${TOPIC}_expect.log"
+echo "file exist, delete /tmp/${TOPIC}_expect.log"
 fi
 
 # copy result file to current host

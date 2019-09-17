@@ -84,7 +84,6 @@ public class UnicomRowMessage extends RowMessage<String> {
                     + ", Timestamp: " + timestamp + "]");
         }
 
-        columns = new HashMap<Integer, ColumnValue>(0);
         for (int i = 4; i < formats.length; i++) {
             if (log.isDebugEnabled()) {
                 strBuffer.append("\n\tColumn: " + formats[i]);

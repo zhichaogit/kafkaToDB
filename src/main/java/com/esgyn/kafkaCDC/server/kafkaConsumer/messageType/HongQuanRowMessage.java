@@ -112,7 +112,6 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
                     "Operator Info: [Table Name: " + tableName + ", Type: " + operatorType + "]");
         }
 
-        columns = new HashMap<Integer, ColumnValue>(0);
         for (int i = 0; i < fieldSizes.length; i++) {
             log.debug("i: " + i + ", offset: " + offset + ", field: " + fieldSizes[i]);
             ColumnValue columnValue = null;

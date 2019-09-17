@@ -115,7 +115,6 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                     "Operator Info: [Table Name: " + tableName + ", Type: " + operationType + "]\n");
         }
 
-        columns = new HashMap<Integer, ColumnValue>(0);
         // get keycolumn
         for (int i = 0; i < keyColNum; i++) {
             Column column = messagePro.getKeyColumnList().get(i);

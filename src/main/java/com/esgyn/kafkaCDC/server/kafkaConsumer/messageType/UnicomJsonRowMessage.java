@@ -79,7 +79,6 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
                     return false;
                 }
 
-                columns = new HashMap<Integer, ColumnValue>(0);
                 // analysis columnjsondata
                 if (columnJsonNode != null) {
                     if (log.isDebugEnabled()) {

@@ -38,18 +38,20 @@ public class Database {
             log.trace("enter [autocommit: " + autocommit + "]");
         }
 
+	// TODO retry to connect database
         try {
             Class.forName(database.getDBDriver());
             dbConn = DriverManager.getConnection(database.getDBUrl(), database.getDBUser(), 
 						 database.getDBPassword());
             dbConn.setAutoCommit(autocommit);
         } catch (SQLException se) {
-            log.error("SQLException has occurred when CreateConnection:",se);
+            log.error("SQLException has occurred when CreateConnection:", se);
+	    dbConn = null;
         } catch (ClassNotFoundException ce) {
-            log.error("driver class not found when CreateConnection:: " ,ce);
+            log.error("driver class not found when CreateConnection:", ce);
             System.exit(1);
         } catch (Exception e) {
-            log.error("create connect error when CreateConnection:: " , e);
+            log.error("create connect error when CreateConnection:", e);
             System.exit(1);
         }
 
@@ -73,5 +75,24 @@ public class Database {
         }
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
+    }
+
+    public static boolean isAccepableSQLExpection(SQLException se) {
+	/*
+	 * make sure it's not Connection does not exist(-29002) Exception 
+	 * && Timeout expired(-29154) Exception
+	 * ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated
+	 * ERROR[8738] Statement must be recompiled due to redefinition of the object(s) accessed
+	 */
+	switch (se.getErrorCode()) {
+	case -19002:
+	case -29154:
+	case -8734:
+	case -8738:
+	    return true;
+
+	default:
+	    return false;
+	}
     }
 }
