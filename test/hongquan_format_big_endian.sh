@@ -99,11 +99,11 @@ CUREXPECTDIR="/tmp"
 mkdir -p $CUREXPECTDIR
 if [ -f /tmp/${TOPIC}_result.log ];then
  rm -f /tmp/${TOPIC}_result.log
-echo "file exist ,delete /tmp/${TOPIC}_result.log"
+echo "file exist, delete /tmp/${TOPIC}_result.log"
 fi
 if [ -f /tmp/${TOPIC}_expect.log ];then
  rm -f /tmp/${TOPIC}_expect.log
-echo "file exist , delete /tmp/${TOPIC}_expect.log"
+echo "file exist, delete /tmp/${TOPIC}_expect.log"
 fi
 
 # copy result file to current host

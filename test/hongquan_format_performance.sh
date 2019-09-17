@@ -49,7 +49,7 @@ $KAFKA/bin/kafka-topics.sh --list --zookeeper $ZOOKEEPER
 KAFKA_CDC="$KAFKA_CDC"
 cd $KAFKA_CDC
 javac -d bin -cp example/:libs/* -Xlint:deprecation example/ProducerTest.java
-java -cp bin:bin/*:libs/* ProducerTest 1000000
+java -cp bin:bin/*:libs/* ProducerTest 100000
 
 cd $KAFKA_CDC/bin
 
@@ -85,7 +85,7 @@ EOF
 CUREXPECTDIR="$SCRIPTSDIR/logs"
 if [ -f /tmp/hongquan_format_performance_result.log ];then
  rm -f /tmp/hongquan_format_performance_result.log
-echo "file exist ,delete /tmp/${TOPIC}_result.log"
+echo "file exist, delete /tmp/${TOPIC}_result.log"
 fi
 
 # copy result file to current host

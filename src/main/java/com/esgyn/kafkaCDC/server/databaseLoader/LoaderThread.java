@@ -134,8 +134,9 @@ public class LoaderThread extends Thread {
 
     public void show(StringBuffer strBuffer) {
 	String loaderThreadStr =
-	    String.format("  -> loader   [id:%3d, loaded:%12d, state:%5b]\n", 
-			  loaderHandle.getLoaderID(), loadedNumber, running);
+	    String.format("  -> loader   [id:%3d, loaded:%12d, state:%s]\n", 
+			  loaderHandle.getLoaderID(), loadedNumber, 
+			  running ? "running" : "stoped");
 
 	strBuffer.append(loaderThreadStr);
     }

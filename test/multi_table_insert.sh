@@ -125,19 +125,19 @@ CUREXPECTDIR="/tmp"
 mkdir -p $CUREXPECTDIR
 if [ -f /tmp/${TABLE1}_result.log ];then
  rm -f /tmp/${TABLE1}_result.log
-echo "file exist ,delete /tmp/${TABLE1}_result.log"
+echo "file exist, delete /tmp/${TABLE1}_result.log"
 fi
 if [ -f /tmp/${TABLE2}_result.log ];then
  rm -f /tmp/${TABLE2}_result.log
-echo "file exist ,delete /tmp/${TABLE2}_result.log"
+echo "file exist, delete /tmp/${TABLE2}_result.log"
 fi
 if [ -f /tmp/${TABLEEXP1}_expect.log ];then
  rm -f /tmp/${TABLEEXP1}_expect.log
-echo "file exist , delete /tmp/${TABLEEXP1}_expect.log"
+echo "file exist, delete /tmp/${TABLEEXP1}_expect.log"
 fi
 if [ -f /tmp/${TABLEEXP2}_expect.log ];then
  rm -f /tmp/${TABLEEXP2}_expect.log
-echo "file exist , delete /tmp/${TABLEEXP2}_expect.log"
+echo "file exist, delete /tmp/${TABLEEXP2}_expect.log"
 fi
 # copy result file to current host
 expect <<-EOF

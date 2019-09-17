@@ -185,7 +185,7 @@ public class RowMessage<T> implements Cloneable{
         ColumnInfo  columnInfo  = tableInfo.getColumn(0);
 	ColumnValue columnValue = columns.get(0);
 
-        String sql = "update \"" + schemaName + "\"." + "\"" + tableName + "\""
+        String sql = "UPDATE \"" + schemaName + "\"." + "\"" + tableName + "\""
 	    + " SET " + columnInfo.getColumnName() + " = " 
 	    + columnValue.getCurValueStr();
 

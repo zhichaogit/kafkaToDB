@@ -150,7 +150,7 @@ public class TableState {
     public void init_update_stmt() {
         ColumnInfo column = columns.get(0);
 
-        updateSql = "update \"" + schemaName + "\"." + "\"" + tableName + "\"" + " SET "+
+        updateSql = "UPDATE \"" + schemaName + "\"." + "\"" + tableName + "\"" + " SET "+
 	    column.getColumnName() + "= ?";
 
         for (int i = 1; i < columns.size(); i++) {
@@ -438,8 +438,8 @@ public class TableState {
              * memory
              */
             if (insertRow != null) {
-                if (log.isDebugEnabled()) {
-                    log.error("updkey row key is exist in insert cache,newkey [" + newkey + "],"
+                if (!tableInfo.getParams().getKafkaCDC().isSkip()) {
+                    log.error("updkey row key is exist in insert cache, newkey [" + newkey + "],"
                         +"the message ["+ message + "]");
                 }
                 return 0;
@@ -448,14 +448,15 @@ public class TableState {
 	    if (log.isTraceEnabled()) {
                 log.trace("the newkey ["+newkey+"] not exist in insertRows");
             }
+	    deleteRows.remove(newkey);
             RowMessage deleteRM = deleteRows.get(oldkey);
 
             if (deleteRM != null) {
                 Map<Integer, ColumnValue> deleterow = deleteRM.getColumns();
                 if (deleterow != null) {
-                    if (log.isDebugEnabled()) {
+		    if (!tableInfo.getParams().getKafkaCDC().isSkip()) {
                         log.error("update row key is exist in delete cache [" + oldkey + "]," 
-                            +"the message ["+ message + "]");
+				  + "the message ["+ message + "]");
                     }
                     return 0;
                 }
@@ -527,7 +528,7 @@ public class TableState {
             return 0;
 
         RowMessage insertRM = insertRows.get(oldkey);
-        if (insertRM !=null) {
+        if (insertRM != null) {
             Map<Integer, ColumnValue> insertRow = insertRM.getColumns();
             if (insertRow != null) {
                 /*
@@ -551,15 +552,17 @@ public class TableState {
 
                 // delete the old key on disk
                 if (!oldkey.equals(newkey))
-                deleteRows.put(oldkey, rowMessage);
+		    deleteRows.put(oldkey, rowMessage);
             }
         } else {
+	    deleteRows.remove(newkey);
+
             RowMessage deleteRM = deleteRows.get(oldkey);
             RowMessage updateRM = updateRows.get(oldkey);
-            if (deleteRM != null && updateRM==null) {
-            Map<Integer, ColumnValue> deleterow = deleteRM.getColumns();
+            if (deleteRM != null && updateRM == null) {
+		Map<Integer, ColumnValue> deleterow = deleteRM.getColumns();
                 if (deleterow != null) {
-                    if (log.isDebugEnabled()) {
+		    if (!tableInfo.getParams().getKafkaCDC().isSkip()) {
                         log.error("update row key is exist in delete cache [" + oldkey
                                 + "], the message [" + message + "]");
                     }
@@ -727,7 +730,7 @@ public class TableState {
 	    return false;
 	}
 
-        if (deleteRows.size() <= 0 && !delete_data()) {
+        if (deleteRows.size() > 0 && !delete_data()) {
 	    return false;
 	}
 

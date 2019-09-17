@@ -96,8 +96,8 @@ public class ConsumerThread extends Thread {
 	Long  freeTime = Utils.getTime() - preConsumeTime;
 	String consumerThreadStr =
 	    String.format("  -> consumer [id:%3d, msgs:%12d, free:%8ds"
-			  + ", state:%5b]\n", 
-			  consumerID, consumedNumber, freeTime/1000, running);
+			  + ", state:%s]\n", consumerID, consumedNumber, 
+			  freeTime/1000, running ? "running" : "stoped");
 
 	strBuffer.append(consumerThreadStr);
     }

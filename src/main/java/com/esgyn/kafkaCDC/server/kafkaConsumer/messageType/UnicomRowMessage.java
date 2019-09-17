@@ -6,7 +6,6 @@ import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.database.ColumnValue;
 import com.esgyn.kafkaCDC.server.utils.TableInfo;
-import com.esgyn.kafkaCDC.server.utils.DatabaseParams;
 
 public class UnicomRowMessage extends RowMessage<String> {
     private static Logger log               = Logger.getLogger(UnicomRowMessage.class);
@@ -26,7 +25,6 @@ public class UnicomRowMessage extends RowMessage<String> {
     String                catlogName        = null;
     String                timestamp         = null;
     String                emptystr          = "";
-    DatabaseParams        database          = null;
 
     public UnicomRowMessage() {}
 
@@ -62,7 +60,7 @@ public class UnicomRowMessage extends RowMessage<String> {
         operatorType = formats[2];
         timestamp = formats[3];
 
-        tableInfo = database.getTableInfo(schemaName + "." + tableName);
+        tableInfo = params.getDatabase().getTableInfo(schemaName + "." + tableName);
         if (tableInfo == null) {
             if (log.isDebugEnabled()) {
                 log.error("Table [" + schemaName + "." + tableName
