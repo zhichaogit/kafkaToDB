@@ -37,6 +37,7 @@ public class RowMessage<T> implements Cloneable{
     protected String               delimiter    = null;
     @Getter
     protected String               encoding     = null;
+    @Setter
     @Getter
     protected String               operatorType = "I";
     @Setter

@@ -61,10 +61,11 @@ public class LoaderTask {
 	long existTable = 0;
 
 	for (RowMessage row : rows) {
-	    if (row.getOperatorType().equals("K")) {
-		if (!commit_tables())
-		    return false;
-	    } 
+	    // TODO 
+	    // if (row.getOperatorType().equals("K")) {
+	    // 	if (!commit_tables())
+	    // 	    return false;
+	    // } 
 
 	    existTable += process_record(row);
 	}

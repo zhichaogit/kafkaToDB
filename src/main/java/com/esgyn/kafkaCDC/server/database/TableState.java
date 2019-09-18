@@ -96,7 +96,6 @@ public class TableState {
     }
 
     public boolean init(){
-	// TODO, make sure can remove the HongQuan
         if (tableInfo.isRepeatable()) {
             insertRows = new IdentityHashMap<String, RowMessage>(0);
         } else {
@@ -288,7 +287,11 @@ public class TableState {
         return 1;
     }
 
-    public long check_update_key(Map<Integer, ColumnValue> rowValues, String message) {
+    public boolean is_update_key(RowMessage rowMessage) {
+        if (log.isTraceEnabled()) { log.trace("enter"); }
+
+        Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
+
         ColumnValue cacheValue = null;
 
         for (int i = 0; i < keyColumns.size(); i++) {
@@ -304,14 +307,17 @@ public class TableState {
             }
 
             if (havePK && !curValue.equals(oldValue)) {
-                log.error("U message cann't update the keys,"
-                        + "tablename ["+schemaName+"."+tableName+"],curValue ["+curValue+"],oldValue "
-                        + "["+oldValue+"] ,keyCol:"+keyInfo.getColumnName()+"message [" + message + "]\n");
-                return 0;
+		if (log.isDebugEnabled()) {
+		    log.error("U message cann't update the keys," + "tablename [" + schemaName 
+			      + "." + tableName + "],curValue [" + curValue + "],oldValue "
+			      + "[" + oldValue + "] ,keyCol:" + keyInfo.getColumnName()
+			      + "message [" + rowMessage.getMessage() + "]\n");
+		}
+                return true;
             }
         }
 
-        return 1;
+        return false;
     }
 
     public long updateRow(RowMessage rowMessage) {
@@ -320,9 +326,6 @@ public class TableState {
         Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
 
         String message = rowMessage.getMessage();
-	// TODO if target changed the primary key, we cann't check the update keys
-        if ((check_update_key(rowValues, message) == 0))
-            return 0;
 
         String key = get_key_value(message, rowValues, false);
 
@@ -1241,8 +1244,12 @@ public class TableState {
                 insertRow(urm);
                 break;
             case "U":
-                updateRow(urm);
-                break;
+		if (!is_update_key(urm)) {
+		    updateRow(urm);
+		    break;
+		} else {
+		    urm.setOperatorType("K");
+		}
             case "K":
                 if (tableInfo.getParams().getDatabase().isBatchUpdate()) {
                     updateRowWithKeySplit(urm);
