@@ -58,7 +58,7 @@ public class Constants {
 	// database information
         {"",   "batchSize",   false,  true, "batch means update operate will batch execute,"
 	 + " default: 5000 "},
-	{"",   "batchUpdate", false,  true, "update operate will use batch, default: false"},
+	{"",   "batchUpdate", false, false, "update operate will use batch, default: false"},
         {"",   "conns",       false,  true, "database connection number to database, default: 4"},
 	{"",   "conf",        false,  true, "specified configuration parameter file"},
         {"d",  "dbip",        false,  true, "database server ip, default: \"localhost\""},

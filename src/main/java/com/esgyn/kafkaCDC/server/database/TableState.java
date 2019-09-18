@@ -252,13 +252,13 @@ public class TableState {
         return key;
     }
 
-    public long insertRow(RowMessage rowMessage) {
+    private long insert_row(RowMessage rowMessage) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
-        Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
+        Map<Integer, ColumnValue> rowColumns = rowMessage.getColumns();
 
         String message = rowMessage.getMessage();
-        String key = get_key_value(message, rowValues, true);
+        String key = get_key_value(message, rowColumns, true);
 
         if (log.isDebugEnabled()) {
             log.debug("insert row key [" + key + "], message [" + message + "]");
@@ -267,21 +267,16 @@ public class TableState {
         if (key == null)
             return 0;
 
+	merge_offsets(key, rowMessage);
         // new row is inserted
         insertRows.put(key, rowMessage);
-
-        // remove the update messages
-        updateRows.remove(key);
-
-        // remove the delete messages
-        deleteRows.remove(key);
 
         cacheInsert++;
 
         if (log.isTraceEnabled()) {
             log.trace("exit cache insert [rows: " + cacheInsert + ", insert: "
-                    + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
-                    + deleteRows.size() + "]");
+		      + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
+		      + deleteRows.size() + "]");
         }
 
         return 1;
@@ -290,13 +285,13 @@ public class TableState {
     public boolean is_update_key(RowMessage rowMessage) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
-        Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
+        Map<Integer, ColumnValue> rowColumns = rowMessage.getColumns();
 
         ColumnValue cacheValue = null;
 
         for (int i = 0; i < keyColumns.size(); i++) {
             ColumnInfo keyInfo = keyColumns.get(i);
-            cacheValue = rowValues.get(keyInfo.getColumnOff());
+            cacheValue = rowColumns.get(keyInfo.getColumnOff());
             if (cacheValue == null)
                 continue;
 
@@ -320,14 +315,14 @@ public class TableState {
         return false;
     }
 
-    public long updateRow(RowMessage rowMessage) {
+    private long update_row(RowMessage rowMessage) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
-        Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
+        Map<Integer, ColumnValue> rowColumns = rowMessage.getColumns();
 
         String message = rowMessage.getMessage();
 
-        String key = get_key_value(message, rowValues, false);
+        String key = get_key_value(message, rowColumns, false);
 
         if (log.isDebugEnabled()) {
             log.debug("update row key [" + key + "], message [" + message + "]");
@@ -339,19 +334,20 @@ public class TableState {
         RowMessage insertRM = insertRows.get(key);
 
         if (insertRM != null) {
-            Map<Integer, ColumnValue> insertRow = insertRM.getColumns();
-            if (insertRow != null) {
+            Map<Integer, ColumnValue> insertedColumns = insertRM.getColumns();
+            if (insertedColumns != null) {
             /*
              * exist in insert map, must be not exist in update and delete update the insert row in
              * memory
              */
-                for (ColumnValue value : rowValues.values()) {
-                    insertRow.put(value.getColumnID(), value);
+                for (ColumnValue value : rowColumns.values()) {
+                    insertedColumns.put(value.getColumnID(), value);
                 }
                 if (log.isDebugEnabled()) {
                     log.debug("update row key [" + key + "] is exist in insert cache");
                 }
-                insertRM.setColumns(insertRow);
+                insertRM.setColumns(insertedColumns);
+		insertRM.add(rowMessage.getOffset());
                 insertRows.put(key, insertRM);
             }
         } else {
@@ -361,14 +357,14 @@ public class TableState {
             RowMessage deleteRM = deleteRows.get(key);
             
             if (deleteRM != null) {
-                Map<Integer, ColumnValue> deleterow = deleteRM.getColumns();
-                if (deleterow != null) {
-                    if (log.isDebugEnabled()) {
+                Map<Integer, ColumnValue> deleteColumns = deleteRM.getColumns();
+                if (deleteColumns != null) {
+		    if (!tableInfo.getParams().getKafkaCDC().isSkip()) {
                         log.error("update row key is exist in delete cache [" + key + "]," 
                             +"the message ["+ message + "]");
                     }
                     return 0;
-              }
+		}
             } else {
                 if (log.isDebugEnabled()) {
                     log.trace("update row key is not exist in delete cache ");
@@ -378,8 +374,8 @@ public class TableState {
                     if (log.isDebugEnabled()) {
                         log.trace("the key ["+key+"] exist in updateRows");
                     }
-                    Map<Integer, ColumnValue> updateRow = updateRM.getColumns();
-                    if (updateRow != null) {
+                    Map<Integer, ColumnValue> updateColumns = updateRM.getColumns();
+                    if (updateColumns != null) {
                         if (log.isDebugEnabled()) {
                              log.debug("update row key is exist in update cache [" + key + "],"
                                     +" the message ["+ message + "]");
@@ -387,17 +383,26 @@ public class TableState {
 
                         ColumnValue cacheValue;
 
-                        for (ColumnValue value : updateRow.values()) {
-                            cacheValue = rowValues.get(value.getColumnID());
+                        for (ColumnValue value : updateColumns.values()) {
+                            cacheValue = rowColumns.get(value.getColumnID());
+			    /* 
+			     * multi updates must merge the old value and cur value 
+			     * to a new ColumnValue:
+			     * update t1 set c1 = 2 where c1 = 1;
+			     * update t1 set c1 = 3 where c1 = 2;
+			     * the merge result should be:
+			     * update t1 set c1 = 3 where c1 = 1;
+			     */
                             if (cacheValue != null) {
                                 value = new ColumnValue(cacheValue.getColumnID(),
                                         cacheValue.getCurValue(), value.getOldValue(),
                                         tableInfo.getColumn(cacheValue.getColumnID()).getTypeName());
                             }
 
-                            rowValues.put(value.getColumnID(), value);
+                            rowColumns.put(value.getColumnID(), value);
                         }
-			rowMessage.setColumns(rowValues);
+			rowMessage.merge(updateRM.getOffsets());
+			rowMessage.setColumns(rowColumns);
                     }
                 }
 
@@ -409,137 +414,55 @@ public class TableState {
 
         if (log.isTraceEnabled()) {
             log.trace("exit cache update [rows: " + cacheUpdate + ", insert: "
-                    + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
-                    + deleteRows.size() + "]");
+                    + insertRows.size() + ", update: " + updateRows.size() 
+		      + ", delete: " + deleteRows.size() + "]");
         }
 
         return 1;
     }
 
-    public long updateRowWithKey(RowMessage rowMessage) {
+    private long update_row_with_key(RowMessage rowMessage) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
-        Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
+        Map<Integer, ColumnValue> rowColumns = rowMessage.getColumns();
         String message = rowMessage.getMessage();
-        String oldkey = get_key_value(message, rowValues, false);
-        String newkey = get_key_value(message, rowValues, true);
+        String oldkey = get_key_value(message, rowColumns, false);
+        String newkey = get_key_value(message, rowColumns, true);
 
         if (log.isDebugEnabled()) {
-            log.debug("updkey row key [old key: " + oldkey + ", new key: " + newkey + "], "
-                    + "message [" + message + "]");
+            log.debug("updkey row key [old key: " + oldkey + ", new key: "
+		      + newkey + "], " + "message [" + message + "]");
         }
 
         if (oldkey == null || newkey == null)
             return 0;
 
-        RowMessage insertRM = insertRows.get(newkey);
+	if (oldkey.equals(newkey)){
+            log.error("updkey row key are same [old key: " + oldkey
+		      + ", new key: " + newkey + "]");
+	    return 0;
+	}
 
-        if (insertRM != null) {
-            Map<Integer, ColumnValue> insertRow = insertRM.getColumns();
-            /*
-             * exist in insert map, must be not exist in update and delete update the insert row in
-             * memory
-             */
-            if (insertRow != null) {
-                if (!tableInfo.getParams().getKafkaCDC().isSkip()) {
-                    log.error("updkey row key is exist in insert cache, newkey [" + newkey + "],"
-                        +"the message ["+ message + "]");
-                }
-                return 0;
-            }
-        } else {
-	    if (log.isTraceEnabled()) {
-                log.trace("the newkey ["+newkey+"] not exist in insertRows");
-            }
-	    deleteRows.remove(newkey);
-            RowMessage deleteRM = deleteRows.get(oldkey);
+        RowMessage insertOldRM = insertRows.get(oldkey);
+        if (insertOldRM != null) {
+	    RowMessage insertNewRM = insertRows.get(newkey);
+	    if (insertNewRM != null) {
+		// new value have exist
+		if (!tableInfo.getParams().getKafkaCDC().isSkip()) {
+		    log.error("update row key is exist in insert cache [" + newkey + "],"
+			      + "the message [" + rowMessage.getMessage() + "]");
+		}
+		return 0;
+	    }
 
-            if (deleteRM != null) {
-                Map<Integer, ColumnValue> deleterow = deleteRM.getColumns();
-                if (deleterow != null) {
-		    if (!tableInfo.getParams().getKafkaCDC().isSkip()) {
-                        log.error("update row key is exist in delete cache [" + oldkey + "]," 
-				  + "the message ["+ message + "]");
-                    }
-                    return 0;
-                }
-            } else {
-                if (log.isTraceEnabled()) {
-                    log.trace("update row key is not exist in delete cache ");
-                }
-                RowMessage updateRM = updateRows.get(oldkey);
-                Map<Integer, ColumnValue> updateRow = null;
-                if (updateRM != null) {
-                    updateRow = updateRM.getColumns();
-                    if (log.isDebugEnabled()) {
-                        log.debug("updkey row [key: " + oldkey + "] in update cache [" + updateRow + "]");
-                    }
-                    if (updateRow != null) {
-                        ColumnValue cacheValue;
-
-                        for (ColumnValue value : rowValues.values()) {
-                            cacheValue = updateRow.get(value.getColumnID());
-                            if (cacheValue != null) {
-                                value = new ColumnValue(value.getColumnID(), value.getCurValue(),
-                                        cacheValue.getOldValue(),
-                                        tableInfo.getColumn(cacheValue.getColumnID()).getTypeName());
-                                updateRow.put(value.getColumnID(), value);
-                            } else {
-                                updateRow.put(value.getColumnID(), new ColumnValue(value));
-                            }
-                        }
-                        updateRM.setColumns(updateRow);
-                        // delete the old update message
-                        updateRows.remove(oldkey);
-                    }
-                }else {
-                    updateRow = new HashMap<Integer, ColumnValue>(0);
-                    for (ColumnValue value : rowValues.values()) {
-                        updateRow.put(value.getColumnID(), new ColumnValue(value));
-                    }
-                    updateRM = rowMessage;
-                    updateRM.setColumns(updateRow);
-                }
-                // add new insert message
-                updateRows.put(newkey, updateRM);
-            }
-        }
-        cacheUpdkey++;
-
-        if (log.isTraceEnabled()) {
-            log.trace("exit cache updateKey [rows: " + cacheUpdkey + ", insert: "
-                    + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
-                    + deleteRows.size() + "]");
-        }
-        return 1;
-    }
-
-    public long updateRowWithKeySplit(RowMessage rowMessage) {
-        if (log.isTraceEnabled()) { log.trace("enter"); }
-
-        Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
-        String message = rowMessage.getMessage();
-        String oldkey = get_key_value(message, rowValues, false);
-        String newkey = get_key_value(message, rowValues, true);
-
-        if (log.isDebugEnabled()) {
-            log.debug("updkey row key [old key: " + oldkey + ", new key: " + newkey + "], "
-                    + "message [" + message + "]");
-        }
-
-        if (oldkey == null || newkey == null)
-            return 0;
-
-        RowMessage insertRM = insertRows.get(oldkey);
-        if (insertRM != null) {
-            Map<Integer, ColumnValue> insertRow = insertRM.getColumns();
-            if (insertRow != null) {
+            Map<Integer, ColumnValue> insertColumns = insertOldRM.getColumns();
+            if (insertColumns != null) {
                 /*
                  * exist in insert map, must be not exist in update and delete update the 
                  * insert row in memory
                  */
-                for (ColumnValue value : rowValues.values()) {
-                    insertRow.put(value.getColumnID(), new ColumnValue(value));
+                for (ColumnValue value : rowColumns.values()) {
+                    insertColumns.put(value.getColumnID(), new ColumnValue(value));
                 }
 
                 if (log.isDebugEnabled()) {
@@ -550,21 +473,18 @@ public class TableState {
                 insertRows.remove(oldkey);
 
                 // insert the new key
-                insertRM.setColumns(insertRow);
-                insertRows.put(newkey, insertRM);
+                insertOldRM.setColumns(insertColumns);
+		insertOldRM.add(rowMessage.getOffset());
+                insertRows.put(newkey, insertOldRM);
 
                 // delete the old key on disk
-                if (!oldkey.equals(newkey))
-		    deleteRows.put(oldkey, rowMessage);
+		deleteRows.put(oldkey, rowMessage);
             }
         } else {
-	    deleteRows.remove(newkey);
-
-            RowMessage deleteRM = deleteRows.get(oldkey);
-            RowMessage updateRM = updateRows.get(oldkey);
-            if (deleteRM != null && updateRM == null) {
-		Map<Integer, ColumnValue> deleterow = deleteRM.getColumns();
-                if (deleterow != null) {
+            RowMessage deleteOldRM = deleteRows.get(oldkey);
+            if (deleteOldRM != null) {
+		Map<Integer, ColumnValue> deleteColumns = deleteOldRM.getColumns();
+                if (deleteColumns != null) {
 		    if (!tableInfo.getParams().getKafkaCDC().isSkip()) {
                         log.error("update row key is exist in delete cache [" + oldkey
                                 + "], the message [" + message + "]");
@@ -572,47 +492,64 @@ public class TableState {
                     return 0;
                 }
             } else {
-                Map<Integer, ColumnValue> updateRow = null;
-                if (updateRM != null) {
-                    updateRow = updateRM.getColumns();
+		RowMessage updateOldRM = updateRows.get(oldkey);
+                Map<Integer, ColumnValue> updateColumns = null;
+                if (updateOldRM != null) {
+                    updateColumns = updateOldRM.getColumns();
                     if (log.isDebugEnabled()) {
                         log.debug(
-                            "updkey row [key: " + oldkey + "] in update cache [" + updateRow + "]");
+                            "updkey row [key: " + oldkey + "] in update cache [" + updateColumns + "]");
                     }
-                    if (updateRow != null) {
+
+                    if (updateColumns != null) {
                         ColumnValue cacheValue;
 
-                        for (ColumnValue value : rowValues.values()) {
-                            cacheValue = updateRow.get(value.getColumnID());
+			/* 
+			 * multi updates must merge the old value and cur value 
+			 * to a new ColumnValue:
+			 * update t1 set c1 = 2 where c1 = 1;
+			 * update t1 set c1 = 3 where c1 = 2;
+			 * the merge result should be:
+			 * update t1 set c1 = 3 where c1 = 1;
+			 */
+                        for (ColumnValue value : rowColumns.values()) {
+                            cacheValue = updateColumns.get(value.getColumnID());
                             if (cacheValue != null) {
                                 value = new ColumnValue(value.getColumnID(), value.getCurValue(),
                                         cacheValue.getOldValue(),
                                         tableInfo.getColumn(cacheValue.getColumnID()).getTypeName());
-                                updateRow.put(value.getColumnID(), value);
+                                updateColumns.put(value.getColumnID(), value);
                             } else {
-                                updateRow.put(value.getColumnID(), new ColumnValue(value));
+                                updateColumns.put(value.getColumnID(), new ColumnValue(value));
                             }
                         }
+
                         // delete the old update message
                         updateRows.remove(oldkey);
+			updateOldRM.add(rowMessage.getOffset());
                     }
                 } else {
-                    updateRow = new HashMap<Integer, ColumnValue>(0);
-                    for (ColumnValue value : rowValues.values()) {
-                        updateRow.put(value.getColumnID(), new ColumnValue(value));
+                    updateColumns = new HashMap<Integer, ColumnValue>(0);
+                    for (ColumnValue value : rowColumns.values()) {
+                        updateColumns.put(value.getColumnID(), new ColumnValue(value));
                     }
-                    updateRM = rowMessage;
-                    updateRM.setColumns(updateRow);
+                    updateOldRM = rowMessage;
+                    updateOldRM.setColumns(updateColumns);
                 }
 
+		RowMessage deleteNewRM = deleteRows.get(newkey);
+		if (deleteNewRM != null) {
+		    // remove the delete operator and merge the offset to cur row
+		    updateOldRM.merge(deleteNewRM.getOffsets());
+		    deleteRows.remove(newkey);
+		}
+		
                 // add new insert message
-                updateRows.put(newkey, updateRM);
+                updateRows.put(newkey, updateOldRM);
 
                 // delete the data on the disk
-                if (!oldkey.equals(newkey)){
-                    rowMessage.setColumns(rowValues);
-                    deleteRows.put(oldkey, rowMessage);
-                }
+		rowMessage.setColumns(rowColumns);
+		deleteRows.put(oldkey, rowMessage);
             }
         }
 
@@ -626,16 +563,15 @@ public class TableState {
         return 1;
     }
 
-    public long deleteRow(RowMessage rowMessage) {
+    private long delete_row(RowMessage rowMessage) {
         if (log.isTraceEnabled()) {
             log.trace("exit");
         }
 
-        Map<Integer, ColumnValue> rowValues = rowMessage.getColumns();
+        Map<Integer, ColumnValue> rowColumns = rowMessage.getColumns();
         String message = rowMessage.getMessage();
-        String key = get_key_value(message, rowValues, false);
+        String key = get_key_value(message, rowColumns, false);
 
-        // delete cur row
         if (log.isDebugEnabled()) {
             log.debug("delete row key [" + key + "], message [" + message + "]");
         }
@@ -643,13 +579,9 @@ public class TableState {
         if (key == null)
             return 0;
 
+	merge_offsets(key, rowMessage);
+        // delete cur row
         deleteRows.put(key, rowMessage);
-
-        // remove the insert messages
-        insertRows.remove(key);
-
-        // remove the update messages
-        updateRows.remove(key);
 
         cacheDelete++;
 
@@ -660,6 +592,32 @@ public class TableState {
         }
 
         return 1;
+    }
+
+    private void merge_offsets(String key, RowMessage rowMessage) {
+        RowMessage insertRM = insertRows.get(key);
+	RowMessage updateRM = updateRows.get(key);
+	RowMessage deleteRM = deleteRows.get(key);
+
+	if (insertRM != null) {
+	    // merge history to current message
+	    rowMessage.merge(insertRM.getOffsets());
+
+	    // remove the old insert messages
+	    insertRows.remove(key);
+	} else if (updateRM != null) {
+	    // record the merge history
+	    rowMessage.merge(updateRM.getOffsets());
+
+	    // remove the update messages
+	    updateRows.remove(key);
+	} else if  (deleteRM != null) {
+	    // record the merge history
+	    rowMessage.merge(deleteRM.getOffsets());
+	    
+	    // remove the delete messages
+	    deleteRows.remove(key);
+	}
     }
 
     private void prepareStmts(Connection dbConn_) throws SQLException {
@@ -1241,24 +1199,27 @@ public class TableState {
 
         switch (urm.getOperatorType()) {
             case "I":
-                insertRow(urm);
+                insert_row(urm);
                 break;
             case "U":
 		if (!is_update_key(urm)) {
-		    updateRow(urm);
-		    break;
+		    update_row(urm);
 		} else {
 		    urm.setOperatorType("K");
+		    update_row_with_key(urm);
 		}
+		break;
+
             case "K":
-                if (tableInfo.getParams().getDatabase().isBatchUpdate()) {
-                    updateRowWithKeySplit(urm);
-                }else {
-                    updateRowWithKey(urm);
-                }
+		if (is_update_key(urm)) {
+		    update_row_with_key(urm);
+		} else {
+		    urm.setOperatorType("U");
+		    update_row(urm);
+		}
                 break;
             case "D":
-                deleteRow(urm);
+                delete_row(urm);
                 break;
 
             default:

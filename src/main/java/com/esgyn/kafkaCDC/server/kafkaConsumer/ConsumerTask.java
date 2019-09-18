@@ -286,7 +286,7 @@ public class ConsumerTask<T> {
 	    }
 
 	    RowMessage row = (RowMessage)urm.clone();
-	    if (row.AnalyzeMessage()) {
+	    if (row.analyzeMessage()) {
 		switch(row.getOperatorType()) {
 		case "I":
 		    insMsgs++;

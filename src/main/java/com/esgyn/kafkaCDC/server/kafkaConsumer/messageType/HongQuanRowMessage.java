@@ -94,7 +94,7 @@ public class HongQuanRowMessage extends RowMessage<byte[]> {
 
 
     @Override
-    public Boolean AnalyzeMessage() {
+    public Boolean analyzeMessage() {
         if (allFixTypes && length != data.length) {
             log.error("message error [" + data + "] message length: " + data.length + ", length: "
                     + length);

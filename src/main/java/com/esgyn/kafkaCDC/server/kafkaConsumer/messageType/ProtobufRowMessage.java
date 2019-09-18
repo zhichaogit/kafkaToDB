@@ -38,7 +38,6 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 
     String                catlogName               = null;
     String                emptystr                 = "";
-    DatabaseParams        database                  = null;
     private final int     INSERT_DRDS              = 0;
     private final int     UPDATE_DRDS              = 1;
     private final int     DELETE_DRDS              = 2;
@@ -68,10 +67,9 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     }
 
     @Override
-    public Boolean AnalyzeMessage() {
+    public Boolean analyzeMessage() {
         if (log.isTraceEnabled()) { log.trace("enter"); }
         
-        database = params.getDatabase();
         // transaction information
         String tableNamePro = messagePro.getTableName();
         int keyColNum = messagePro.getKeyColumnList().size(); // keycol size
@@ -92,12 +90,12 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }
 
         if (schemaName==null) 
-          schemaName = database.getDefSchema();
+	    schemaName = params.getDatabase().getDefSchema();
 
         if (tableName==null) 
-          tableName = database.getDefTable();
-          tableInfo = getTableInfo(schemaName + "." + tableName);   
-          int operationType = messagePro.getOperationType();
+	    tableName = params.getDatabase().getDefTable();
+	tableInfo = getTableInfo(schemaName + "." + tableName);   
+	int operationType = messagePro.getOperationType();
 
         if (tableInfo == null) {
             if (log.isDebugEnabled()) {
@@ -105,7 +103,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                         + "] is not exist in Database.");
             }
 
-                return false;
+	    return false;
         }
         StringBuffer strBuffer = null;
         if (log.isDebugEnabled()) {

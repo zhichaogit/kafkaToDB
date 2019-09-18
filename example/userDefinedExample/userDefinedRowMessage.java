@@ -44,7 +44,7 @@ public class userDefinedRowMessage extends RowMessage<String>{
         return true;
     }
     @Override
-    public Boolean AnalyzeMessage() {
+    public Boolean analyzeMessage() {
         log.info("enter custorm format [analyzeMeaage]");
         ObjectMapper mapper = new ObjectMapper();
         TableInfo    tableInfo = null;

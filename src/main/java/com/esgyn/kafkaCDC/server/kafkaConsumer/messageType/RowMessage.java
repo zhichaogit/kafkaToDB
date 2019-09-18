@@ -1,5 +1,7 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.io.UnsupportedEncodingException;
@@ -43,6 +45,8 @@ public class RowMessage<T> implements Cloneable{
     @Setter
     @Getter
     protected Map<Integer, ColumnValue> columns = null;
+    @Getter
+    protected List<Long>           offsets       = new ArrayList();
 
     @Getter
     protected int                  thread       = -1;
@@ -59,6 +63,7 @@ public class RowMessage<T> implements Cloneable{
     }
 
     public RowMessage() {}
+
 
     public boolean init(Parameters params_, int thread_, Long offset_,
 			long latestTime_, long partitionID_, String topic_, 
@@ -90,9 +95,11 @@ public class RowMessage<T> implements Cloneable{
 		      + encoding + "], message [" + message + "]");
         }
 
-        columns = new HashMap<Integer, ColumnValue>(0);
-
+        columns  = new HashMap<Integer, ColumnValue>(0);
+	offsets  = new ArrayList();
 	retValue = init_();
+	offsets.add(offset);
+
         if (log.isTraceEnabled()) { log.trace("exit"); }
 
         return retValue;
@@ -110,7 +117,14 @@ public class RowMessage<T> implements Cloneable{
 	return true;
     }
 
-    public Boolean AnalyzeMessage() {
+    public void add(Long offset_) { offsets.add(offset_); }
+    // public void add(List<Long> offsets_) { offsets.addAll(offsets_); }
+    public void merge(List<Long> offsets_) { 
+	offsets_.addAll(offsets); 
+	offsets = offsets_;
+    }
+
+    public Boolean analyzeMessage() {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
         String[]     cols = msgString.split(delimiter);
@@ -146,7 +160,7 @@ public class RowMessage<T> implements Cloneable{
 
     public String getMessage() { return msgString; }
 
-    private String getInsertString() {
+    private String get_insert_string() {
         ColumnInfo  columnInfo  = tableInfo.getColumn(0);
 	ColumnValue columnValue = columns.get(columnInfo.getColumnOff());
 	String      value = ") VALUES(" + columnValue.getCurValueStr();
@@ -176,13 +190,16 @@ public class RowMessage<T> implements Cloneable{
             keyInfo = tableInfo.getKey(i);
 	    keyValue = columns.get(keyInfo.getColumnOff());
 
+	    if (keyValue == null)
+		continue;
+
             where += " AND " + keyInfo.getColumnName() + keyValue.getOldCondStr();
         }
 
         return where;
     }
 
-    private String getUpdateString() {
+    private String get_update_string() {
         ColumnInfo  columnInfo  = tableInfo.getColumn(0);
 	ColumnValue columnValue = columns.get(0);
 
@@ -193,8 +210,10 @@ public class RowMessage<T> implements Cloneable{
         for (int i = 1; i < columns.size(); i++) {
 	    columnInfo  = tableInfo.getColumn(i);
 	    columnValue = columns.get(i);
-            sql += ", " + columnInfo.getColumnName() + " = " 
-		+ columnValue.getCurValueStr();
+	    if (columnValue != null) {
+		sql += ", " + columnInfo.getColumnName() + " = " 
+		    + columnValue.getCurValueStr();
+	    }
         }
 
         sql += getWhereCondition() + ";";
@@ -202,7 +221,7 @@ public class RowMessage<T> implements Cloneable{
 	return sql;
     } 
 
-    private String getDeleteString() {
+    private String get_delete_string() {
         String sql = "DELETE FROM \"" + schemaName + "\"." + "\"" + tableName + "\"";
 
         sql += getWhereCondition() + ";";
@@ -216,17 +235,17 @@ public class RowMessage<T> implements Cloneable{
 	if (columns.size() > 0) {
 	    switch(operatorType) {
 	    case "I":
-		sql = getInsertString();
+		sql = get_insert_string();
 		break;
 	    
 	    case "U":
 	    case "K":
-		sql = getUpdateString();
-	    break;
+		sql = get_update_string();
+	        break;
 
 
 	    case "D":
-		sql = getDeleteString();
+		sql = get_delete_string();
 		break;
 
 	    default:
@@ -237,9 +256,20 @@ public class RowMessage<T> implements Cloneable{
 	    sql = "-- data format error, check the kafka data please!";
 	}
 
-	sql += "--" + offset + "\r\n";
+	sql += "-- " + get_offsets_string() + "\r\n";
 
 	return sql; 
+    }
+
+    private String get_offsets_string() {
+	String str = null;
+	for (Long off : offsets) {
+	    if (str != null)
+		str += ",";
+	    str += off;
+	}
+
+	return str;
     }
 
     public String getErrorMsg(int batchOff, String type) {

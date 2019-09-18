@@ -33,7 +33,7 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
     public UnicomJsonRowMessage() {}
 
     @Override
-    public Boolean AnalyzeMessage() {
+    public Boolean analyzeMessage() {
         ObjectMapper mapper = new ObjectMapper();
 
         StringBuffer strBuffer = null;
@@ -124,7 +124,7 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
 
             }
         } catch (IOException e) {
-            log.error("an exception has occured when AnalyzeMessage ",e);
+            log.error("an exception has occured when analyzeMessage ", e);
         }
 
 

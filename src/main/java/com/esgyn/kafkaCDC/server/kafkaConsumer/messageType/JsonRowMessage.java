@@ -27,7 +27,7 @@ public class JsonRowMessage extends RowMessage<String> {
     public JsonRowMessage() {}
 
     @Override
-    public Boolean AnalyzeMessage() {
+    public Boolean analyzeMessage() {
         ObjectMapper mapper = new ObjectMapper();
 
         try {
@@ -96,7 +96,7 @@ public class JsonRowMessage extends RowMessage<String> {
                 log.warn("\"position\" not exist in json data");
             }
         } catch (IOException e) {
-            log.error("an exception has occured when AnalyzeMessage",e);
+            log.error("an exception has occured when analyzeMessage",e);
         }
 
         StringBuffer strBuffer = null;

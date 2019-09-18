@@ -29,7 +29,7 @@ public class UnicomRowMessage extends RowMessage<String> {
     public UnicomRowMessage() {}
 
     @Override
-    public Boolean AnalyzeMessage() {
+    public Boolean analyzeMessage() {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
         String[] formats = message.split("");

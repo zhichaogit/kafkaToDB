@@ -127,7 +127,7 @@ public class Parameters {
 	try{
 	    cmdLine = parser.parse(exeOptions, args);
 	} catch (Exception e) {
-	    log.error("KafkaCDC init parameters error.",e);
+	    log.error("KafkaCDC init parameters error.", e);
             System.exit(0);
 	}
 
