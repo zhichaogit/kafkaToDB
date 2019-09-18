@@ -1076,6 +1076,7 @@ public class TableState {
 
         if (log.isDebugEnabled()) {
             strBuffer = new StringBuffer();
+	    strBuffer.append("delete one row, key count [" + keyColumns.size() + "]");
         }
 
 	int         i        = 0;
@@ -1085,6 +1086,11 @@ public class TableState {
 	    for (i = 0; i < keyColumns.size(); i++) {
 		keyInfo = keyColumns.get(i);
 		keyValue = row.get(keyInfo.getColumnOff());
+
+		if (log.isDebugEnabled()) {
+		    strBuffer.append("\n\tkey id:" + i + ", column id:" + keyInfo.getColumnOff() 
+				     + ", key [" + keyValue.getOldValue() + "]");
+		}
 
 		if (keyValue == null || keyValue.oldValueIsNull()) {
 		    if (havePK) {
@@ -1096,10 +1102,6 @@ public class TableState {
 		    }
 		    deleteStmt.setNull(i + 1, keyInfo.getColumnType());
 		} else {
-		    if (log.isDebugEnabled()) {
-			strBuffer.append("\tkey id:" + i + ", column id:" + keyInfo.getColumnOff() 
-					 + ", key [" + keyValue.getOldValue() + "]");
-		    }
 		    deleteStmt.setString(i + 1, keyValue.getOldValue());
                 }
             }
