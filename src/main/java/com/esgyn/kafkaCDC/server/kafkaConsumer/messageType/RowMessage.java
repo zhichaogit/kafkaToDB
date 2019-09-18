@@ -265,7 +265,7 @@ public class RowMessage<T> implements Cloneable{
 	String str = null;
 	for (Long off : offsets) {
 	    if (str == null)
-		str = off;
+		str = "" + off;
 	    else
 		str += "," + off;
 	}
