@@ -113,7 +113,7 @@ fi
 # copy result file to current host
 expect <<-EOF
   set timeout 300
-  spawn ssh $USER@$DBIP
+  spawn ssh $DBUSER@$DBIP
   expect {
   "yes/no" { send "yes\r";exp_continue }
   "password:" { send "$DBPW\r";exp_continue }
