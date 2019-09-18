@@ -13,4 +13,4 @@ user-defined data format as follow:(It would be easy if to use eclipse/IDEA)
   5. move this jar file(target/user-definedFormat.jar) to $KafkaCDC/libs/
      
   6.run the kafkaCDC as follow (the class name shloud be "[format] +RowMessage")
-   KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -s [schemaName] -t topicName -f "userDefined" --full --sto 3 --interval 5  --dbuser db__root --dbpw traf123  -c 50
+   KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -s [schemaName] -t topicName -f "userDefined" --mode --sto 3 --interval 5  --dbuser db__root --dbpw traf123  -c 50

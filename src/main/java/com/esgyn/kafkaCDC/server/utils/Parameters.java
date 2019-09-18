@@ -92,12 +92,12 @@ public class Parameters {
      *    --dbpw   <arg> database server password 
      *    --delim <arg> field delimiter, default: ','(comma) 
      *    --bigendian the data format is bigendian, default is little endian 
-     *    --full    pull data from beginning or End or specify the
+     *    --mode    pull data from beginning or End or specify the
      *              offset, default: offset submitted last time.
-     *               a. --full start : means pull the all data from the beginning(earliest)
-     *               b. --full end   : means pull the data from the end(latest)
-     *               c. --full 1547  : means pull the data from offset 1547
-     *               d. --full "yyyy-MM-dd HH:mm:ss"  : means pull the data from this date
+     *               a. --mode start : means pull the all data from the beginning(earliest)
+     *               b. --mode end   : means pull the data from the end(latest)
+     *               c. --mode 1547  : means pull the data from offset 1547
+     *               d. --mode "yyyy-MM-dd HH:mm:ss"  : means pull the data from this date
      *    --interval <arg> the print state time interval 
      *    --key <arg> key deserializer, default is:
      *                org.apache.kafka.common.serialization.StringDeserializer 
