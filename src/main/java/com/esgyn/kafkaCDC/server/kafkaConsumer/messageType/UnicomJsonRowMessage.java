@@ -27,7 +27,6 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
     String                operatorTypeSource = null;
     JsonNode              columnJsonNode     = null;
     JsonNode              keyColJsonNode     = null;
-    DatabaseParams        database           = null;
     String                colNewData         = null;
     String                colOldData         = null;
 
@@ -69,7 +68,7 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
                         strBuffer.append("operatorTypeSource: [" + operatorTypeSource + "]\n");
                     // log.debug(strBuffer);
                 }
-		tableInfo = database.getTableInfo(schemaName + "." + tableName);
+		tableInfo = getTableInfo(schemaName + "." + tableName);
                 if (tableInfo == null) {
                     if (log.isDebugEnabled()) {
                         log.error("Table [" + schemaName + "." + tableName

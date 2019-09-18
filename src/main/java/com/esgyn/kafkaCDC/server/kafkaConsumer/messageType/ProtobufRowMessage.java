@@ -71,6 +71,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     public Boolean AnalyzeMessage() {
         if (log.isTraceEnabled()) { log.trace("enter"); }
         
+        database = params.getDatabase();
         // transaction information
         String tableNamePro = messagePro.getTableName();
         int keyColNum = messagePro.getKeyColumnList().size(); // keycol size
@@ -95,7 +96,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 
         if (tableName==null) 
           tableName = database.getDefTable();
-          tableInfo = database.getTableInfo(schemaName + "." + tableName);        
+          tableInfo = getTableInfo(schemaName + "." + tableName);   
           int operationType = messagePro.getOperationType();
 
         if (tableInfo == null) {

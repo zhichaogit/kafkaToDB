@@ -117,7 +117,7 @@ public class LoaderTask {
 	throws SQLException {
         if (log.isTraceEnabled()) { 
 	    log.trace("enter, loader [" + loaderID_ + ", conn [" + dbConn_ 
-		      + "], tables [" + tables + "]"); 
+		      + "], tables [" + tables_ + "]");
 	}
 
 	loaderID  = loaderID_;
