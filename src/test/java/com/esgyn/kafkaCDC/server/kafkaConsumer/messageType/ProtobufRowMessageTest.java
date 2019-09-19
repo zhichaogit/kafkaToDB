@@ -1,4 +1,4 @@
-package server.kafkaConsumer.messageType;
+package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
 
 import static org.junit.Assert.*;
 
