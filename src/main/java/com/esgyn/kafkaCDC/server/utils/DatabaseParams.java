@@ -97,9 +97,9 @@ public class DatabaseParams {
     }
 
     private void init_schemas() {
-	Database   database  = new Database(this);
-        ResultSet schemaRS = null;
-        Connection dbConnMD = database.CreateConnection(true);
+	boolean    result   = true;
+        ResultSet  schemaRS = null;
+        Connection dbConnMD = Database.CreateConnection(this);
 
         if (log.isTraceEnabled()) {
             log.trace("enter");
@@ -126,11 +126,21 @@ public class DatabaseParams {
                 }
             }
         } catch (SQLException sqle) {
-            log.error("SQLException has occurred when init_schemas.",sqle);
+            log.error("SQLException has occurred when init_schemas.", sqle);
+	    result = false;
         } catch (Exception e) {
-            log.error("Exception has occurred when init_schemas.",e);
+            log.error("Exception has occurred when init_schemas.", e);
+	    result = false;
         } finally {
-            database.CloseConnection(dbConnMD);
+	    try {
+		if (result)
+		    dbConnMD.commit();
+		else
+		    dbConnMD.rollback();
+	    } catch (Exception e) {
+	    }
+
+            Database.CloseConnection(dbConnMD);
         }
 
         if (log.isTraceEnabled()) {

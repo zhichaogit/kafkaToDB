@@ -15,9 +15,10 @@ import lombok.Setter;
 
 public class LoaderHandle {
     private ConcurrentLinkedQueue<LoaderTask> tasks   = null;
-    private Parameters                 params         = null;
     private LoadStates                 loadStates     = null;
 
+    @Getter
+    private Parameters                 params         = null;
     @Getter
     private LoaderTasks                loaderTasks    = null;
     @Getter

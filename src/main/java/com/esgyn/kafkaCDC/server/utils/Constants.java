@@ -6,7 +6,7 @@ public class Constants {
     public final static String       DEFAULT_LOG_PATH      = "logs/";
     public final static String       DEFAULT_KAFKA_PATH    = "kafka/";
     public final static String       DEFAULT_LOAD_PATH     = "database/";
-    public final static String       KafkaCDC_VERSION      = "KafkaCDC-1.0.2-release";
+    public final static String       KafkaCDC_VERSION      = "KafkaCDC-2.0.0";
 
     // the unit is second
     public final static long         DEFAULT_STREAM_TO_S   = 60;

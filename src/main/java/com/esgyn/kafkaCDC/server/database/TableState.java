@@ -642,7 +642,7 @@ public class TableState {
 	}
     }
 
-    public void closeStmts() {
+    public void clean() {
 	try {
 	    if (insertStmt != null) {
 		insertStmt.close();
@@ -667,6 +667,20 @@ public class TableState {
 	    deleteStmt = null;
 	    stmt       = null;
 	}
+
+        insertRows.clear();
+        updateRows.clear();
+        deleteRows.clear();
+	msgs.clear();
+
+        cacheInsert = 0;
+        cacheUpdate = 0;
+        cacheUpdkey = 0;
+        cacheDelete = 0;
+
+        errInsert = 0;
+        errUpdate = 0;
+        errDelete = 0;
     }
 
     public boolean commitTable(Connection dbConn_) throws SQLException {
@@ -682,7 +696,6 @@ public class TableState {
 
 	// if reconnect to database, we must prepare the stmt again
 	prepareStmts(dbConn_);
-
 	if (insertRows.size() > 0 && !insert_data()) {
 	    return false;
 	}
@@ -736,6 +749,7 @@ public class TableState {
         insertRows.clear();
         updateRows.clear();
         deleteRows.clear();
+	msgs.clear();
 
         cacheInsert = 0;
         cacheUpdate = 0;
@@ -871,10 +885,9 @@ public class TableState {
         }
         if (log.isDebugEnabled()) {
             strBuffer = new StringBuffer();
+	    strBuffer.append("update one row, key count [" + keyColumns.size() + "]");
         }
 
-        String      whereSql   = null;
-        String      updateSql  = "UPDATE \"" + schemaName + "\"." + "\"" + tableName + "\"" + " SET ";
         ColumnInfo  keyInfo    = null;
         ColumnInfo  columnInfo = null;
         ColumnValue keyValue   = null;
@@ -906,20 +919,29 @@ public class TableState {
 		for (i = 0; i < keyColumns.size(); i++) {
 		    keyInfo = keyColumns.get(i);
 		    keyValue = row.get(keyInfo.getColumnOff());
+		    if (log.isDebugEnabled()) {
+			strBuffer.append("\n\tkey id:" + i + ", column id:" 
+					 + keyInfo.getColumnOff());
+		    }
 
 		    if (keyValue == null || keyValue.oldValueIsNull()) {
 			if (havePK) {
 			    String key = get_key_value(null, row, false);
-			    log.error("the primary key value is null [table:" + schemaName + "." + tableName
-				      + ", column:" + keyInfo.getColumnName() + "]");
+			    log.error("the primary key value is null [table:" 
+				      + schemaName + "." + tableName + ", column:"
+				      + keyInfo.getColumnName() + "]");
 			    result = false;
 			    break;
 			}
+			
+			if (log.isDebugEnabled()) {
+			    strBuffer.append(", key is [null]");
+			}
+
 			updateStmt.setNull(columns.size()+ (i + 1), keyInfo.getColumnType());
 		    } else {
 			if (log.isDebugEnabled()) {
-			    strBuffer.append("\tkey id:" + i + ", column id:" + keyInfo.getColumnOff()
-					     + ", key [" + keyValue.getOldValue() + "]");
+			    strBuffer.append(", key is [" + keyValue.getOldValue() + "]");
 			}
 			updateStmt.setString(columns.size()+ (i + 1), keyValue.getOldValue());
 		    }
@@ -959,6 +981,9 @@ public class TableState {
 
             return result;
         }
+
+        String      whereSql   = null;
+        String      updateSql  = "UPDATE \"" + schemaName + "\"." + "\"" + tableName + "\"" + " SET ";
 
 	// one by one update if  format is not protobuf
         for (int i = 0; i < keyColumns.size(); i++) {
@@ -1088,20 +1113,29 @@ public class TableState {
 		keyValue = row.get(keyInfo.getColumnOff());
 
 		if (log.isDebugEnabled()) {
-		    strBuffer.append("\n\tkey id:" + i + ", column id:" + keyInfo.getColumnOff() 
-				     + ", key [" + keyValue.getOldValue() + "]");
+		    strBuffer.append("\n\tkey id:" + i + ", column id:" 
+				     + keyInfo.getColumnOff());
 		}
 
 		if (keyValue == null || keyValue.oldValueIsNull()) {
 		    if (havePK) {
 			String key = get_key_value(null, row, false);
-			log.error("the primary key value is null [table:" + schemaName + "." + tableName
-				  + ", column:" + keyInfo.getColumnName() + "]");
+			log.error("the primary key value is null [table:" 
+				  + schemaName + "." + tableName + ", column:"
+				  + keyInfo.getColumnName() + "]");
 			result = false;
 			break;
 		    }
+
+		    if (log.isDebugEnabled()) {
+			strBuffer.append(", key is [null]");
+		    }
+		    
 		    deleteStmt.setNull(i + 1, keyInfo.getColumnType());
 		} else {
+		    if (log.isDebugEnabled()) {
+			strBuffer.append(", key is [" + keyValue.getOldValue() + "]");
+		    }
 		    deleteStmt.setString(i + 1, keyValue.getOldValue());
                 }
             }

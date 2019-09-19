@@ -22,16 +22,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
 
 public class LoaderThread extends Thread {
-    @Getter
     private long                loadedNumber   = 0;
+    private long                waitTime       = 0;
+    private boolean             running        = true;
 
     private LoaderHandle        loaderHandle   = null;
     private LoaderTasks         loaderTasks    = null;
-    private Database            database       = null;
     private Map<String, TableState> tables     = null;
 
     private Connection          dbConn         = null;
-    private boolean             running        = true;
 
     private final AtomicBoolean looping = new AtomicBoolean(true);
 
@@ -43,7 +42,6 @@ public class LoaderThread extends Thread {
 	loaderHandle   = loaderHandle_;
 
 	loaderTasks    = loaderHandle.getLoaderTasks();
-	database       = loaderTasks.getDatabase();
         loadedNumber   = 0;
 
 	tables         = new HashMap<String, TableState>(0);
@@ -65,7 +63,7 @@ public class LoaderThread extends Thread {
 		while (loaderTask != null) {
 		    try {
 			if (dbConn == null) {
-			    dbConn = database.CreateConnection(false);
+			    dbConn = Database.CreateConnection(loaderHandle.getParams().getDatabase());
 			}
 
 			if (dbConn != null) {
@@ -78,7 +76,7 @@ public class LoaderThread extends Thread {
 
 				Utils.waitMillisecond(1000);
 
-				database.CloseConnection(dbConn);
+				Database.CloseConnection(dbConn);
 				dbConn = null;
 				loaderTask.clean();
 				continue;
@@ -96,9 +94,13 @@ public class LoaderThread extends Thread {
 			}
 		    } catch (SQLException se) {
 			log.error("loader thread throw exception when execute work:", se);
+			try {
+			    dbConn.rollback();
+			} catch (Exception e) {
+			}
 			// if the disconnect, reconnect in next loop
 			if (Database.isAccepableSQLExpection(se)) {
-			    database.CloseConnection(dbConn);
+			    Database.CloseConnection(dbConn);
 			    dbConn = null;
 			}
 
@@ -114,6 +116,15 @@ public class LoaderThread extends Thread {
 		if (log.isDebugEnabled()) {
 		    log.debug("loader thread haven't task to do, loader goto sleep 1000ms");
 		}
+
+		if ((waitTime % 10000) == 0) {
+		    try {
+			dbConn.commit();
+		    } catch (Exception e) {
+		    }
+		}
+
+		waitTime += 1000;
 		Utils.waitMillisecond(1000);
 	    } else {
 		log.info("loader thread stoped via close.");
@@ -122,7 +133,7 @@ public class LoaderThread extends Thread {
 	} // while true
 
 	if (dbConn != null) {
-	    database.CloseConnection(dbConn);
+	    Database.CloseConnection(dbConn);
 	    dbConn = null;
 	}
 
@@ -134,8 +145,8 @@ public class LoaderThread extends Thread {
 
     public void show(StringBuffer strBuffer) {
 	String loaderThreadStr =
-	    String.format("  -> loader   [id:%3d, loaded:%12d, state:%s]\n", 
-			  loaderHandle.getLoaderID(), loadedNumber, 
+	    String.format("  -> loader   [id:%3d, loaded:%12d, wait:%12d, state:%s]\n", 
+			  loaderHandle.getLoaderID(), loadedNumber, waitTime,
 			  running ? "running" : "stoped");
 
 	strBuffer.append(loaderThreadStr);

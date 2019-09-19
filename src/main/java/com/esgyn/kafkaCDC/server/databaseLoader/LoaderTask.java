@@ -173,7 +173,7 @@ public class LoaderTask {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
         for (TableState tableState : tables.values()) {
-	    tableState.closeStmts();
+	    tableState.clean();
 	}
     }
 }

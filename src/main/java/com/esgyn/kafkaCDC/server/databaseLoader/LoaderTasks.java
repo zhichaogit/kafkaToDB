@@ -16,8 +16,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import com.esgyn.kafkaCDC.server.utils.TableInfo;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
 
-import com.esgyn.kafkaCDC.server.database.Database;
-
 import com.esgyn.kafkaCDC.server.databaseLoader.LoadStates;
 import com.esgyn.kafkaCDC.server.databaseLoader.LoaderTask;
 import com.esgyn.kafkaCDC.server.databaseLoader.LoaderHandle;
@@ -30,8 +28,6 @@ public class LoaderTasks<T> {
     private static Logger log = Logger.getLogger(LoaderTasks.class);
     private List<LoaderThread>          loaders       = null;
 
-    @Getter
-    private Database                    database      = null;
     @Getter
     private long                        running       = 0;
     @Getter
@@ -53,7 +49,6 @@ public class LoaderTasks<T> {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
 	loadStates = new LoadStates(params);
-        database   = new Database(params.getDatabase());
 
 	loaders = new ArrayList<LoaderThread>(0);
         loaderHandles = new ArrayList<LoaderHandle>(0);

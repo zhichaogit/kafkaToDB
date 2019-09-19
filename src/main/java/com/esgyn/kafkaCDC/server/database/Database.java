@@ -12,38 +12,18 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class Database {
-    @Setter
-    @Getter
-    private DatabaseParams database    = null;
+    private static Logger log = Logger.getLogger(Database.class);
 
-    private static Logger  log         = Logger.getLogger(Database.class);
-
-    public Database(DatabaseParams database_) {
-        if (log.isTraceEnabled()) {
-            log.trace("enter [table: " 
-		      + database_.getDefSchema() + "." + database_.getDefTable() 
-		      + ", db url: " + database_.getDBUrl()
-		      + ", db driver:" + database_.getDBDriver() 
-		      + ", db user: " + database_.getDBUser() + "]");
-        }
-
-	database  = database_;
-
-        if (log.isTraceEnabled()) { log.trace("exit"); }
-    }
-
-    public Connection CreateConnection(boolean autocommit) {
-        Connection dbConn = null;
-        if (log.isTraceEnabled()) {
-            log.trace("enter [autocommit: " + autocommit + "]");
-        }
+    public static Connection CreateConnection(DatabaseParams database_) {
+        if (log.isTraceEnabled()) { log.trace("enter"); }
 
 	// TODO retry to connect database
+        Connection dbConn = null;
         try {
-            Class.forName(database.getDBDriver());
-            dbConn = DriverManager.getConnection(database.getDBUrl(), database.getDBUser(), 
-						 database.getDBPassword());
-            dbConn.setAutoCommit(autocommit);
+            Class.forName(database_.getDBDriver());
+            dbConn = DriverManager.getConnection(database_.getDBUrl(), database_.getDBUser(), 
+						 database_.getDBPassword());
+            dbConn.setAutoCommit(false);
         } catch (SQLException se) {
             log.error("SQLException has occurred when CreateConnection:", se);
 	    dbConn = null;
@@ -60,7 +40,7 @@ public class Database {
         return dbConn;
     }
 
-    public void CloseConnection(Connection dbConn_) {
+    public static void CloseConnection(Connection dbConn_) {
         if (dbConn_ == null)
             return;
 
