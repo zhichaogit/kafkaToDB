@@ -518,7 +518,7 @@ public class Parameters {
 	return partitions;
     }
 
-    private List getNotExistParts(int[] partsArr, int[] existPartsArr) {
+    public List getNotExistParts(int[] partsArr, int[] existPartsArr) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
         List existPartitions = new ArrayList<Integer>();
@@ -578,7 +578,7 @@ public class Parameters {
         return partitions;
     }
 
-    private boolean isValidLong(String str){
+    public boolean isValidLong(String str){
         try{
             long _v = Long.parseLong(str);
             return true;

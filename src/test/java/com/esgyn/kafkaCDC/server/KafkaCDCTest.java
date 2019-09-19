@@ -1,4 +1,4 @@
-package server;
+package com.esgyn.kafkaCDC.server;
 
 import static org.junit.Assert.*;
 

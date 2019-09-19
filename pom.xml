@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.esgyn</groupId>
@@ -16,10 +17,10 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-                        <groupId>org.apache.commons</groupId>
-                        <artifactId>commons-lang3</artifactId>
-                        <version>3.4</version>
-    	        </dependency>		
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.4</version>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.trafodion.jdbc.t4</groupId>
 			<artifactId>jdbcT4</artifactId>
@@ -30,7 +31,7 @@
 			<groupId>commons-cli</groupId>
 			<artifactId>commons-cli</artifactId>
 			<version>1.4</version>
-	        </dependency>		
+		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients -->
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
@@ -42,8 +43,8 @@
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka_2.11</artifactId>
 			<version>1.1.0</version>
-		</dependency>	
-	
+		</dependency>
+
 		<!-- https://mvnrepository.com/artifact/log4j/log4j -->
 		<dependency>
 			<groupId>log4j</groupId>
@@ -71,27 +72,27 @@
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
 		<dependency>
-		    <groupId>com.fasterxml.jackson.core</groupId>
-		      <artifactId>jackson-databind</artifactId>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
 			<version>2.9.0</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
-        	<dependency>
-            		<groupId>com.google.protobuf</groupId>
-            		<artifactId>protobuf-java</artifactId>
-            		<version>3.6.0</version>
-        	</dependency>
 		<dependency>
-		  <groupId>org.projectlombok</groupId>
-		  <artifactId>lombok</artifactId>
-		  <version>1.12.2</version>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+			<version>3.6.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.12.2</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
-	    <dependency>
-	      <groupId>com.google.code.gson</groupId>
-	        <artifactId>gson</artifactId>
-	      <version>2.8.5</version>
-	    </dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.8.5</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -107,7 +108,7 @@
 					<archive>
 						<manifest>
 							<mainClass>com.esgyn.kafkaCDC.server.KafkaCDC</mainClass>
-						</manifest> 
+						</manifest>
 					</archive>
 					<classesDirectory>
 					</classesDirectory>
@@ -128,9 +129,9 @@
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>2.5.3</version>
 				<configuration>
-				    <appendAssemblyId>false</appendAssemblyId>
+					<appendAssemblyId>false</appendAssemblyId>
 					<descriptors>
-						<!-- describe filepath-->
+						<!-- describe filepath -->
 						<descriptor>assembly.xml</descriptor>
 					</descriptors>
 				</configuration>
@@ -146,9 +147,19 @@
 					</execution>
 				</executions>
 			</plugin>
-
+			<!--junit test -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.19.1</version>
+				<configuration>
+					<includes>
+						<include> **/Test*.java</include>
+						<include> **/*Test.java</include>
+						<include> **/*TestCase.java</include>
+					</includes>
+				</configuration>
+			</plugin>
 		</plugins>
-
-
 	</build>
 </project>
