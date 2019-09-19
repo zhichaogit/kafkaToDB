@@ -1002,14 +1002,16 @@ public class TableState {
         }
 
         for (ColumnValue columnValue : row.values()) {
+            if (columnValue.getCurValue().equals(columnValue.getOldValue()))
+                continue;
             if (columnInfo != null)
                 updateSql += ", ";
 
             columnInfo = columns.get(columnValue.getColumnID());
             updateSql += columnInfo.getColumnName() + " = " + columnValue.getCurValueStr();
             if (log.isDebugEnabled()) {
-                strBuffer.append("\tcolumn: " + columnInfo.getColumnOff() + ", value ["
-                        + columnValue.getCurValue() + "]\n");
+                strBuffer.append("\tcolumn: " + columnInfo.getColumnOff() + ", curValue ["
+                        + columnValue.getCurValue() + "],oldValue["+columnValue.getOldValue()+"]\n");
             }
         }
 
