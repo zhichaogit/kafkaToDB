@@ -54,6 +54,7 @@ public class TableState {
     private long                           errUpdate   = 0;
     @Getter
     private long                           errDelete   = 0;
+    private long                           updateNoExec= 0;
     private boolean                        havePK      = false;
 
     @Getter
@@ -723,7 +724,7 @@ public class TableState {
     }
 
     public long getUpdateRows() {
-        return updateRows.size();
+        return updateRows.size()-updateNoExec;
     }
 
     public long getDeleteRows() {
@@ -733,7 +734,7 @@ public class TableState {
     public void clearCache() {
         if (state == EMPTY) {
             tableInfo.incInsertRows(insertRows.size());
-            tableInfo.incUpdateRows(updateRows.size());
+            tableInfo.incUpdateRows(updateRows.size()-updateNoExec);
             tableInfo.incDeleteRows(deleteRows.size());
 
             tableInfo.incInsMsgNum(cacheInsert);
@@ -755,6 +756,8 @@ public class TableState {
         cacheUpdate = 0;
         cacheUpdkey = 0;
         cacheDelete = 0;
+
+        updateNoExec= 0;
 
         errInsert = 0;
         errUpdate = 0;
@@ -1002,7 +1005,7 @@ public class TableState {
         }
 
         for (ColumnValue columnValue : row.values()) {
-            if (columnValue.getCurValue().equals(columnValue.getOldValue()))
+            if (columnValue.getCurValue()!=null && columnValue.getCurValue().equals(columnValue.getOldValue()))
                 continue;
             if (columnInfo != null)
                 updateSql += ", ";
@@ -1013,6 +1016,11 @@ public class TableState {
                 strBuffer.append("\tcolumn: " + columnInfo.getColumnOff() + ", curValue ["
                         + columnValue.getCurValue() + "],oldValue["+columnValue.getOldValue()+"]\n");
             }
+        }
+        //not executeUpdate if all columns not change
+        if (columnInfo==null) {
+            updateNoExec++;
+            return true;
         }
 
         updateSql += whereSql + ";";
