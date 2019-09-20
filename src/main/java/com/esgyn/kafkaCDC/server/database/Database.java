@@ -3,6 +3,7 @@ package com.esgyn.kafkaCDC.server.database;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import org.apache.log4j.Logger;
 
@@ -12,7 +13,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class Database {
-    private static Logger log = Logger.getLogger(Database.class);
+    private static Logger log    = Logger.getLogger(Database.class);
+    private static String CQDSQL = "cqd pcode_opt_level 'OFF';";
 
     public static Connection CreateConnection(DatabaseParams database_) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
@@ -23,6 +25,10 @@ public class Database {
             dbConn = DriverManager.getConnection(database_.getDBUrl(), database_.getDBUser(), 
 						 database_.getDBPassword());
             dbConn.setAutoCommit(false);
+            Statement cqdStmt = dbConn.createStatement();
+            cqdStmt.execute(CQDSQL);
+            dbConn.commit();
+            cqdStmt.close();
         } catch (SQLException se) {
             log.error("SQLException has occurred when CreateConnection:", se);
 	    dbConn = null;
