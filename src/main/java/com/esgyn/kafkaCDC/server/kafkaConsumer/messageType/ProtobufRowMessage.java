@@ -58,6 +58,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 	 try {
 	    byte[] rec = message;
             messagePro = MessageDb.Record.parseFrom(rec);
+	    msgString = new String(message);
 	 } catch (InvalidProtocolBufferException e) {
 	     log.error("parseFrom Record has error ,make sure you data pls", e);
 	     return false;

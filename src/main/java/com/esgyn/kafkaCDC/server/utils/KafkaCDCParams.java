@@ -19,7 +19,7 @@ public class KafkaCDCParams {
     private String          delimiter   = Constants.DEFAULT_DELIMITER;
     @Setter 
     @Getter
-    private boolean         dumpBinary  = false;
+    private boolean         dumpBinary  = true;
     @Setter 
     @Getter
     private String          encoding    = Constants.DEFAULT_ENCODING;
@@ -49,13 +49,13 @@ public class KafkaCDCParams {
     private boolean         showLoaders = true;
     @Setter 
     @Getter
-    private boolean         showTasks   = false;
+    private boolean         showTasks   = true;
     @Setter 
     @Getter
     private boolean         showTables  = true;
     @Setter 
     @Getter
-    private boolean         showSpeed   = false;
+    private boolean         showSpeed   = true;
     @Setter 
     @Getter
     private String          msgClass    = null;

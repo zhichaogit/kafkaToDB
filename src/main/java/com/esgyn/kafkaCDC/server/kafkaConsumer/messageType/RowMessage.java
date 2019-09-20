@@ -118,7 +118,6 @@ public class RowMessage<T> implements Cloneable{
     }
 
     public void add(Long offset_) { offsets.add(offset_); }
-    // public void add(List<Long> offsets_) { offsets.addAll(offsets_); }
     public void merge(List<Long> offsets_) { 
 	offsets_.addAll(offsets); 
 	offsets = offsets_;
