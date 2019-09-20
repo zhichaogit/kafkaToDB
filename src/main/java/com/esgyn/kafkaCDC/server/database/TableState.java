@@ -1002,15 +1002,24 @@ public class TableState {
         }
 
         for (ColumnValue columnValue : row.values()) {
+            if (columnValue.getCurValue()!=null && columnValue.getCurValue().equals(columnValue.getOldValue()))
+                continue;
             if (columnInfo != null)
                 updateSql += ", ";
 
             columnInfo = columns.get(columnValue.getColumnID());
             updateSql += columnInfo.getColumnName() + " = " + columnValue.getCurValueStr();
             if (log.isDebugEnabled()) {
-                strBuffer.append("\tcolumn: " + columnInfo.getColumnOff() + ", value ["
-                        + columnValue.getCurValue() + "]\n");
+                strBuffer.append("\tcolumn: " + columnInfo.getColumnOff() + ", curValue ["
+                        + columnValue.getCurValue() + "],oldValue["+columnValue.getOldValue()+"]\n");
             }
+        }
+        //not executeUpdate if all columns not change
+        if (columnInfo==null) {
+            if (log.isDebugEnabled()) {
+                strBuffer.append("all columns not change,not execute this udpdate sql.\n");
+            }
+            return true;
         }
 
         updateSql += whereSql + ";";
@@ -1238,18 +1247,14 @@ public class TableState {
                 insert_row(urm);
                 break;
             case "U":
-		if (!is_update_key(urm)) {
-		    update_row(urm);
-		} else {
-		    urm.setOperatorType("K");
-		    update_row_with_key(urm);
-		}
-		break;
-
             case "K":
 		if (is_update_key(urm)) {
+		    urm.setOperatorType("K");
 		    update_row_with_key(urm);
-		} else {
+		} else if (havePK&&tableInfo.getParams().getDatabase().isBatchUpdate()) {
+		    urm.setOperatorType("I");
+                    insert_row(urm);
+                } else {
 		    urm.setOperatorType("U");
 		    update_row(urm);
 		}
