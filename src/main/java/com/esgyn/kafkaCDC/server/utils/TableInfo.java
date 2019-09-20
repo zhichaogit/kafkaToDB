@@ -27,9 +27,6 @@ public class TableInfo {
     private boolean          multiable     = false;;
     @Setter
     @Getter
-    private String           tableDir      = null;
-    @Setter
-    @Getter
     private ArrayList<ColumnInfo> columns  = null;
     @Setter
     @Getter
@@ -81,14 +78,17 @@ public class TableInfo {
         startTime  = new Date();
     }
 
-    public void addColumn(ColumnInfo column) {
-        columns.add(column);
-        columnMap.put(column.getColumnID(), column);
-        columnNameMap.put(column.getColumnName(), column);
+    public void addColumn(ColumnInfo columnInfo) {
+        columns.add(columnInfo);
+        columnMap.put(columnInfo.getColumnID(), columnInfo);
+        columnNameMap.put(columnInfo.getColumnName(), columnInfo);
     }
 
     public ColumnInfo getColumn(int index) { return columns.get(index); }
     public ColumnInfo getColumn(String colName) { return columnNameMap.get(colName);}
+    public void putColumn(String colName, ColumnInfo colomnInfo) { 
+	columnNameMap.put(colName, colomnInfo);
+    }
     public ColumnInfo getColumnFromMap(int colid) { return columnMap.get(colid); }
 
     public long getColumnCount() { return columns.size(); }

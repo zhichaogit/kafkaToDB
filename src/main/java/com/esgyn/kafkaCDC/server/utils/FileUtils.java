@@ -45,7 +45,7 @@ public class FileUtils {
                 log.error("read jsonFile from conf/  cause an error",e);
             }
         }else{
-            log.error("["+inputPath+"],not exists or not a file");
+            log.error("[" + inputPath + "] is not exists or not a file");
         }
         return null;
     }

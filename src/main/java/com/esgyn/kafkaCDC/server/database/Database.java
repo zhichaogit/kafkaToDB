@@ -17,7 +17,6 @@ public class Database {
     public static Connection CreateConnection(DatabaseParams database_) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
-	// TODO retry to connect database
         Connection dbConn = null;
         try {
             Class.forName(database_.getDBDriver());

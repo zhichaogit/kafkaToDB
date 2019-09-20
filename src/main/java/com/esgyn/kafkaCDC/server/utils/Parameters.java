@@ -150,7 +150,7 @@ public class Parameters {
             try {
 		params = FileUtils.jsonParse(confPath);
             } catch (Exception e) {
-                log.error("parse jsonConf has an error.make sure your json file is right.",e);
+                log.error("parse jsonConf has an error.make sure your json file is right.", e);
                 System.exit(0);
             }
 
@@ -227,7 +227,6 @@ public class Parameters {
 
 	database.setBatchSize(getLongParam("batchSize", Constants.DEFAULT_BATCH_SIZE));
 	database.setBatchUpdate(getBoolParam("batchUpdate", false));
-	database.setDBConns(getLongParam("conns", Constants.DEFAULT_CONNECTIONS));
 	database.setDBIP(getStringParam("dbip", Constants.DEFAULT_IPADDR));
 	database.setDBPort(getStringParam("dbport", Constants.DEFAULT_PORT));
 	database.setDBType(getStringParam("type", Constants.DEFAULT_DATABASE));
@@ -281,6 +280,7 @@ public class Parameters {
         kafkaCDC.setFormat(getStringParam("format", ""));
         kafkaCDC.setInterval(getLongParam("interval", Constants.DEFAULT_INTERVAL_S));
 	kafkaCDC.setSkip(getBoolParam("skip", false));
+	kafkaCDC.setLoaders(getLongParam("loader", Constants.DEFAULT_LOADERS));
 	kafkaCDC.setLoadDir(getStringParam("loadDir", "load"));
 	kafkaCDC.setKafkaDir(getStringParam("kafkaDir", "kafka"));
 	kafkaCDC.setShowConsumers(getBoolParam("showConsumers", true));

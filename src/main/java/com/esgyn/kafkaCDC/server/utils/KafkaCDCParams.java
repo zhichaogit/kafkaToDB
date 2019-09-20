@@ -34,7 +34,7 @@ public class KafkaCDCParams {
     private boolean         skip        = false;
     @Setter 
     @Getter 
-    private long            loaders     = Constants.DEFAULT_LEADER;
+    private long            loaders     = Constants.DEFAULT_LOADERS;
     @Setter 
     @Getter
     private String          loadDir     = null;

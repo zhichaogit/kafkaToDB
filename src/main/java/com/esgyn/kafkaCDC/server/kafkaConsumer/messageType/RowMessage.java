@@ -82,7 +82,10 @@ public class RowMessage<T> implements Cloneable{
 	
         schemaName = params.getDatabase().getDefSchema();
         tableName  = params.getDatabase().getDefTable();
-        tableInfo  = params.getDatabase().getTableInfo(schemaName + "." + tableName);
+	if (schemaName != null && !schemaName.isEmpty()
+	    && tableName != null && !tableName.isEmpty()) {
+	    tableInfo  = params.getDatabase().getTableInfo(schemaName + "." + tableName);
+	}
 
         KafkaCDCParams kafkaCDC = params.getKafkaCDC();
 	delimiter = "[" + kafkaCDC.getDelimiter() + "]";

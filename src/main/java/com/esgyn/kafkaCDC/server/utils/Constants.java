@@ -36,8 +36,7 @@ public class Constants {
 
     // Kafka information
     public final static String       DEFAULT_BROKER        = "localhost:9092";
-    public final static long         DEFAULT_CONNECTIONS   = 4;
-    public final static long         DEFAULT_LEADER        = 4;
+    public final static long         DEFAULT_LOADERS       = 4;
     public final static long         DEFAULT_CONSUMERS     = 4;
     public final static String       DEFAULT_KEY           =
 	"org.apache.kafka.common.serialization.StringDeserializer";

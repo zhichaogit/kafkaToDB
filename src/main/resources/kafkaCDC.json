@@ -1,7 +1,6 @@
 {
 	"database": {
 		"batchSize": 5000,
-		"DBConns": 4,
 		"DBIP": "localhost",
 		"DBPort": "23400",
 		"DBType": "EsgynDB",
@@ -54,38 +53,24 @@
 		"showSpeed": true
 	},
 	"mappings": [{
+		"srcSchemaName": "T1SRC",
+		"srcTableName": "SEABASESRC",
 		"schemaName": "SEABASE",
-		"tableName": "T001",
+		"tableName": "T1"
+	}, {
 		"srcSchemaName": "",
 		"srcTableName": "",
-		"columns": [{
-			"columnName": "t001_c1",
-			"typeName": "int",
-			"columnSet": "utf8"
-		}, {
-			"columnName": "t001_c2",
-			"typeName": "varchar",
-			"columnSet": "utf8"
-		}],
-		"keys": [1]
-	}, {
 		"schemaName": "SEABSE",
-		"tableName": "tab_001",
-		"srcSchemaName": "S1",
-		"srcTableName": "T1",
+		"tableName": "T2",
 		"columns": [{
-			"columnName": "t001_c1",
-			"typeName": "int",
-			"columnSet": "utf8"
+			"srcColumnName": "t2_c1",
+			"columnName": "c1",
 		}, {
-			"columnName": "t001_c2",
-			"typeName": "varchar",
-			"columnSet": "utf8"
+			"srcColumnName": "t2_c2",
+			"columnName": "c2",
 		}, {
-			"columNname": "t001_c3",
-			"typeName": "varchar",
-			"columnSet": "utf8"
-		}],
-		"keys": [3, 1]
+			"srcColumnName": "t2_c3",
+			"columNname": "c3"
+		}]
 	}]
 }

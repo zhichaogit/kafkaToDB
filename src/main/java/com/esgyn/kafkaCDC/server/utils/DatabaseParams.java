@@ -1,6 +1,7 @@
 package com.esgyn.kafkaCDC.server.utils;
 
 import java.util.Map;
+import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.lang.StringBuffer;
@@ -26,9 +27,6 @@ public class DatabaseParams {
     @Setter
     @Getter 
     private boolean         batchUpdate = false;
-    @Setter 
-    @Getter 
-    private long            DBConns     = Constants.DEFAULT_CONNECTIONS;
     @Setter
     @Getter
     private String          DBIP        = "localhost";
@@ -64,9 +62,6 @@ public class DatabaseParams {
     private String          DBUrl       = null;
     @Setter
     @Getter 
-    private ArrayList<TableInfo> tables = null;
-    @Setter
-    @Getter 
     private Map<String, TableInfo> tableHashMap = null;
     @Getter 
     private Parameters      params      = null;
@@ -90,6 +85,7 @@ public class DatabaseParams {
         tableHashMap = new HashMap<String, TableInfo>();
 	log.info("start to init schemas");
 	init_schemas();
+	init_json_tables();
     }
 
     public TableInfo getTableInfo(String tableName_) {
@@ -113,6 +109,12 @@ public class DatabaseParams {
                 schemaRS = dbmd.getSchemas();
                 while (schemaRS.next()) {
                     schemaName = schemaRS.getString("TABLE_SCHEM");
+		    // skip the system schema
+		    if (schemaName.equals("_LIBMGR_") || schemaName.equals("_MD_") 
+			|| schemaName.equals("_PRIVMGR_MD_") || schemaName.equals("_REPOS_")
+			|| schemaName.equals("_TENANT_MD_"))
+			continue;
+
                     log.info("start to init schema [" + schemaName + "]");
                     init_schema(dbConnMD, schemaName);
                 }
@@ -336,110 +338,88 @@ public class DatabaseParams {
     }
 
     public void init_json_tables(){
+	List<TableInfo> tables = params.getMappings();
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
-        for (TableInfo table : tables) {
+        for (TableInfo table : params.getMappings()) {
             init_json_table(table);
-        }
-        if (tables.size() <= 0) {
-            log.error("init schema [" + defSchema + "] fail, cann't find any table!");
-            System.exit(0);
-        }
-        if (log.isTraceEnabled()) { log.trace("exit"); }
-    }
-    public void init_json_table(TableInfo table){
-        if (log.isTraceEnabled()) { log.trace("enter"); }
-
-        String tableName = table.getSrcSchemaName() + "." + table.getSrcTableName();
-        ArrayList<ColumnInfo> columns = table.getColumns();
-        ArrayList<Integer>    keys    = table.getKeys();
-
-        TableInfo tableInfo = new TableInfo(params, table.getSrcSchemaName(), table.getSrcTableName());
-        log.info("start to init table [" + tableName + "]");
-
-        if (columns.size()<=0) {
-            log.error("init table [" + tableName + "] is not exist!");
-        }else {
-            init_json_columns(tableInfo,columns);
-            init_json_keys(tableInfo,keys);
-            tableHashMap.put(tableName, tableInfo);
-        }
+	}
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
     }
-    public long init_json_columns(TableInfo tableInfo, ArrayList<ColumnInfo> columns){
+
+    public void init_json_table(TableInfo tableInfo){
         if (log.isTraceEnabled()) { log.trace("enter"); }
+
+        String    tableName    = tableInfo.getSchemaName() + "."
+	    + tableInfo.getTableName();
+        String    srcSchemaName = tableInfo.getSrcSchemaName();
+	TableInfo tableInfoMap = tableHashMap.get(tableName);
+
+	if (srcSchemaName == null || srcSchemaName.isEmpty()) {
+	    srcSchemaName = tableInfoMap.getSchemaName();
+	} 
+	tableInfoMap.setSrcSchemaName(srcSchemaName);
+	
+	String    srcTableName = tableInfo.getSrcTableName();
+	if (srcTableName == null || srcTableName.isEmpty()) {
+	    srcTableName = tableInfoMap.getTableName();
+	}
+
+	tableInfoMap.setSrcTableName(srcTableName);
+	srcTableName = srcSchemaName + "." + srcTableName;
+
+        log.info("start to init table [" + tableName 
+		 + "] the source table name is [" + srcTableName + "]");
+
+	// TODO map the columns
+	// init_json_columns(tableInfo, tableInfoMap);
+
+	tableHashMap.put(srcTableName, tableInfoMap);
+
+        if (log.isTraceEnabled()) { log.trace("exit"); }
+    }
+
+    public void init_json_columns(TableInfo tableInfo, TableInfo tableInfoMap){
+        if (log.isTraceEnabled()) { log.trace("enter"); }
+        ArrayList<ColumnInfo> columns = tableInfo.getColumns();
+	if (columns != null || columns.size() <= 0)
+	    return;
 
         StringBuffer strBuffer = null;
         if (log.isDebugEnabled()) {
             strBuffer = new StringBuffer();
             strBuffer.append("\n\tget table [" + tableInfo.getSchemaName() 
-			     + "." + tableInfo.getTableName() + "],");
+			     + "." + tableInfo.getTableName() + "], target ["
+			     + tableInfoMap.getSchemaName() + "." 
+			     + tableInfoMap.getTableName());
         }
+
+	
         for (int i = 0; i < columns.size(); i++) {
-            String colName   = columns.get(i).getColumnName();
-            String typeName  = columns.get(i).getTypeName();
-            int    colType   = columns.get(i).getColumnType();
-            String colSet    = columns.get(i).getColumnSet();
-            int    colSize   = columns.get(i).getColumnSize();
-            int    colId     = columns.get(i).getColumnID();
-            ColumnInfo column = new ColumnInfo(colId, i, colSize, colSet, 
-					       colType, typeName, colName);
-            strBuffer.append("\n\tcolName [ " + colName + "], id [" + colId 
-			     + "], off [" + i + "], Type [" + typeName.trim()
-			     + "], Type ID [" + colType + "], Size [" 
-			     + column.getColumnSize() + "]");
-            tableInfo.addColumn(column);
+            String srcColName = columns.get(i).getSrcColumnName();
+            String colName    = columns.get(i).getColumnName();
+
+            strBuffer.append("\n\tsource column name [ " + srcColName 
+			     + "], column name [" + colName 
+			     + "], off [" + i + "]");
+	    
+	    if (srcColName == null || colName == null)
+		continue;
+
+	    if (srcColName.isEmpty() || colName.isEmpty())
+		continue;
+
+            tableInfo.putColumn(srcColName, tableInfoMap.getColumn(colName));
         }
+
         if (log.isDebugEnabled()) {
             log.debug(strBuffer.toString());
         }
+
         if (log.isTraceEnabled()) {
             log.trace("exit [column number:" + tableInfo.getColumnCount() + "]");
         }
-        return tableInfo.getColumnCount();
-    }
-
-    public long init_json_keys(TableInfo tableInfo, ArrayList<Integer> keys) {
-        if (log.isTraceEnabled()) { log.trace("enter [table info: " + tableInfo + "]"); }
-        String tableName=tableInfo.getSchemaName() + "."+ tableInfo.getTableName();
-        ColumnInfo firstColumn = tableInfo.getColumn(0);
-        if (firstColumn.getColumnID() != 0) {
-            log.warn("no primary key on table [" + tableName + "], use all of columns.");
-
-            for (int i = 0; i < tableInfo.getColumnCount(); i++) {
-                tableInfo.addKey(tableInfo.getColumn(i));
-            }
-
-            return tableInfo.getKeyCount();
-        }
-
-        StringBuffer strBuffer = null;
-        if (log.isDebugEnabled()) {
-            strBuffer = new StringBuffer();
-            strBuffer.append("\n\tget primakey of [" + tableName + "],");
-        }
-        int colId = 0;
-        for (int i = 0; i < keys.size(); i++) {
-            colId = keys.get(i);
-            ColumnInfo column = tableInfo.getColumnFromMap(colId);
-            if (log.isDebugEnabled()) {
-                strBuffer.append("\n\t key columns [" + column.getColumnName() + "], id [" + column.getColumnID()
-                        + "], Off [" + column.getColumnOff() + "], Type [" + column.getTypeName()
-                        + "], Type ID [" + column.getColumnType() + "]");
-            }
-            tableInfo.addKey(column);
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug(strBuffer.toString());
-        }
-
-        if (log.isTraceEnabled()) {
-            log.trace("exit [key column number: " + tableInfo.getKeyCount() + "]");
-        }
-
-        return tableInfo.getKeyCount();
     }
 
     public String toString() {
@@ -447,7 +427,6 @@ public class DatabaseParams {
 
         strBuffer.append("\nDatabase options:")
 	    .append("\n\tbatchSize     = "    + batchSize)
-	    .append("\n\tDBConns       = "    + DBConns)
 	    .append("\n\tDBIP          = "    + DBIP)
 	    .append("\n\tDBPort        = "    + DBPort)
 	    .append("\n\tDBDriver      = "    + DBDriver)
