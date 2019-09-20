@@ -54,7 +54,6 @@ public class TableState {
     private long                           errUpdate   = 0;
     @Getter
     private long                           errDelete   = 0;
-    private long                           updateNoExec= 0;
     private boolean                        havePK      = false;
 
     @Getter
@@ -724,7 +723,7 @@ public class TableState {
     }
 
     public long getUpdateRows() {
-        return updateRows.size()-updateNoExec;
+        return updateRows.size();
     }
 
     public long getDeleteRows() {
@@ -734,7 +733,7 @@ public class TableState {
     public void clearCache() {
         if (state == EMPTY) {
             tableInfo.incInsertRows(insertRows.size());
-            tableInfo.incUpdateRows(updateRows.size()-updateNoExec);
+            tableInfo.incUpdateRows(updateRows.size());
             tableInfo.incDeleteRows(deleteRows.size());
 
             tableInfo.incInsMsgNum(cacheInsert);
@@ -756,8 +755,6 @@ public class TableState {
         cacheUpdate = 0;
         cacheUpdkey = 0;
         cacheDelete = 0;
-
-        updateNoExec= 0;
 
         errInsert = 0;
         errUpdate = 0;
@@ -1019,7 +1016,9 @@ public class TableState {
         }
         //not executeUpdate if all columns not change
         if (columnInfo==null) {
-            updateNoExec++;
+            if (log.isDebugEnabled()) {
+                strBuffer.append("all columns not change,not execute this udpdate sql.\n");
+            }
             return true;
         }
 
@@ -1248,18 +1247,14 @@ public class TableState {
                 insert_row(urm);
                 break;
             case "U":
-		if (!is_update_key(urm)) {
-		    update_row(urm);
-		} else {
-		    urm.setOperatorType("K");
-		    update_row_with_key(urm);
-		}
-		break;
-
             case "K":
 		if (is_update_key(urm)) {
+		    urm.setOperatorType("K");
 		    update_row_with_key(urm);
-		} else {
+		} else if (havePK&&tableInfo.getParams().getDatabase().isBatchUpdate()) {
+		    urm.setOperatorType("I");
+                    insert_row(urm);
+                } else {
 		    urm.setOperatorType("U");
 		    update_row(urm);
 		}
