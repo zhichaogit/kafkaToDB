@@ -338,8 +338,10 @@ public class DatabaseParams {
 	List<TableInfo> tables = params.getMappings();
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
-        for (TableInfo table : params.getMappings()) {
-            init_json_table(table);
+	if (tables != null) {
+	    for (TableInfo table : tables) {
+		init_json_table(table);
+	    }
 	}
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
