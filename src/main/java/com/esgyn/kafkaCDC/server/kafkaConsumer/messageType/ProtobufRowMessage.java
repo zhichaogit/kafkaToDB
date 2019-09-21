@@ -67,8 +67,9 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         
         // transaction information
         String tableNamePro = messagePro.getTableName();
-        int keyColNum = messagePro.getKeyColumnList().size(); // keycol size
-        int colNum = messagePro.getColumnList().size(); //col size
+        int sourceType      = messagePro.getSourceType(); //message source oracle/DRDS
+        int keyColNum       = messagePro.getKeyColumnList().size(); // keycol size
+        int colNum          = messagePro.getColumnList().size(); //col size
 
         String[] names = tableNamePro.split("[.]");
         if (names.length == 3) {
@@ -99,6 +100,12 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             }
 
 	    return false;
+        }
+        if (colNum != tableInfo.getColumnCount() && (sourceType != SOURCEORACLE)) {
+            log.error("Table [" + schemaName + "." + tableName
+                    + "] column count in EsgynDB is not equal column count in messages."
+                    + "the kafka offset[" + getOffset() + "],the message:"+messagePro);
+            return false;
         }
         StringBuffer strBuffer = null;
         if (log.isDebugEnabled()) {
