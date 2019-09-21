@@ -1,0 +1,62 @@
+/*------------------------------------------------------------------------------
+ *  Module Name : 外部数据消息格式定义
+ *------------------------------------------------------------------------------
+ *  Description : 1.数据库表的DML操作消息格式定义
+ *                2.
+ *                3.
+ *------------------------------------------------------------------------------
+ *  TODO        : 1.
+ *                2.
+ *------------------------------------------------------------------------------
+ *  Created By  : wangran - wangxuanyue
+ *  E-mail      : wangran8@chinaunicom.cn
+ *  QQ          : 58950387
+ *  WeChat      : symbol7
+ *  Version     : 2.00.00 Time:2017/10/11 09:34:43 Created
+ *----------------------------------------------------------------------------*/
+syntax = "proto3";
+
+package oggccue;
+
+option java_package = "com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion";
+
+message Record {
+  int32 version                = 1;  // 消息版本标识
+  int32 extract                = 2;  // 数据提取程序类型(1:OGG/2:DTS)
+  string source                = 3;  // 数据来源(取值自配置文件,用以区分不同的源端系统)
+  int32 source_type            = 4;  // 源端数据库类型(1:Oracle/2:MySql)
+  string csn                   = 5;  // 提交序号
+  string xid                   = 6;  // 事务ID
+  uint32 begin_trans_trail_seq = 7;  // 事务开始所在文件序号
+  int32 begin_trans_trail_rba  = 8;  // 事务开始所在文件内位置
+  uint32 trail_seq             = 9;  // 数据所在文件序号(准确)
+  int32 trail_rba              = 10; // 数据所在文件内位置(准确)
+  int32 trans_seq              = 11; // 事务序号(参考)
+  int32 trans_flag             = 12; // 事务标志(0:开始/1:中间/2:结束/3:整个)(参考)
+  int32 operation_type         = 13; // 操作类型(透传)
+  string operation_time        = 14; // 操作时间(事务开始时间)
+  string table_name            = 15; // 表名
+  repeated Column key_column   = 16; // 主键列
+  repeated Column column       = 17; // 普通列
+}
+
+message Column {
+  int32 index     = 1; // 列序号(OGG抽取写入,DTS抽取也写入但可能不准确)
+  string name     = 2; // 列名称(OGG抽取时不填写,DTS抽取时写入)
+  bool old_have   = 3; // 是否有旧值
+  bool new_have   = 4; // 是否有新值
+  bool old_null   = 5; // 是否旧值为空
+  bool new_null   = 6; // 是否新值为空
+  bytes old_value = 7; // 旧值
+  bytes new_value = 8; // 新值
+}
+
+message Key {
+  int32 value_format    = 1; // 消息格式类型(1:JSON(调试用)/2:PROTOBUF/3:UE)
+  string source         = 2; // 数据来源(Record.source)
+  int32 version         = 3; // 用于强制区分出不同的KEY,例如OGG文件序号超过最大数重新从0开始时(取值自配置文件)
+  uint32 trail_seq      = 4; // 文件序号(Record.trail_seq)
+  int32 trail_rba       = 5; // 记录位置(Record.trail_rba)
+  string csn            = 6; // 提交序号(Record.csn)
+  string operation_time = 7; // 操作时间(Record.operation_time)
+}
