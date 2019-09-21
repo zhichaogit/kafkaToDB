@@ -1,12 +1,10 @@
 package com.esgyn.kafkaCDC.server.utils;
 
-import java.util.Date;
-import java.util.Arrays;
-import java.util.ArrayList;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 
 import org.apache.log4j.Logger;
 

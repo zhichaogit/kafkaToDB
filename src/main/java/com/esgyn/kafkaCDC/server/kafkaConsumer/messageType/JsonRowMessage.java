@@ -1,16 +1,15 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map.Entry;
 
-import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
+import org.apache.log4j.Logger;
+
 import com.esgyn.kafkaCDC.server.database.ColumnValue;
+import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Map.Entry;
-import org.apache.log4j.Logger;
 
 public class JsonRowMessage extends RowMessage<String> {
     private static Logger log                = Logger.getLogger(JsonRowMessage.class);

@@ -1,9 +1,5 @@
 package com.esgyn.kafkaCDC.server.utils;
 
-import org.apache.log4j.Logger;
-
-import com.esgyn.kafkaCDC.server.utils.Constants;
-
 import lombok.Getter;
 import lombok.Setter;
 

@@ -1,22 +1,18 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import org.apache.log4j.Logger;
 
+import com.esgyn.kafkaCDC.server.databaseLoader.LoaderHandle;
+import com.esgyn.kafkaCDC.server.databaseLoader.LoaderTasks;
 import com.esgyn.kafkaCDC.server.utils.Constants;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
 import com.esgyn.kafkaCDC.server.utils.TopicParams;
 
-import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumeStates;
-
-import com.esgyn.kafkaCDC.server.databaseLoader.LoaderTasks;
-import com.esgyn.kafkaCDC.server.databaseLoader.LoaderHandle;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import lombok.Getter;
-import lombok.Setter;
 
 public class ConsumerTasks<T> {
     private static Logger log = Logger.getLogger(ConsumerTasks.class);

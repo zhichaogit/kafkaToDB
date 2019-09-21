@@ -1,18 +1,11 @@
 package com.esgyn.kafkaCDC.server.utils;
 
-import java.util.Map;
-import java.util.List;
-import java.util.Date;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 
-import org.apache.log4j.Logger;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -22,15 +15,7 @@ import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.config.SaslConfigs;
-
-import com.esgyn.kafkaCDC.server.utils.Utils;
-import com.esgyn.kafkaCDC.server.utils.FileUtils;
-import com.esgyn.kafkaCDC.server.utils.Constants;
-import com.esgyn.kafkaCDC.server.utils.TableInfo;
-import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
-import com.esgyn.kafkaCDC.server.utils.KafkaParams;
-import com.esgyn.kafkaCDC.server.utils.DatabaseParams;
-import com.esgyn.kafkaCDC.server.utils.KafkaCDCParams;
+import org.apache.log4j.Logger;
 
 import lombok.Getter;
 import lombok.Setter;

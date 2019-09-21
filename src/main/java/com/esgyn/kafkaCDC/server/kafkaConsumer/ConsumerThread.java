@@ -1,10 +1,10 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.utils.Utils;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.Getter;
 

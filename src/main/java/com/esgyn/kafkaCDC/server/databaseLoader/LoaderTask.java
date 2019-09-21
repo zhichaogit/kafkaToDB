@@ -1,25 +1,16 @@
 package com.esgyn.kafkaCDC.server.databaseLoader;
 
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.esgyn.kafkaCDC.server.utils.Utils;
-import com.esgyn.kafkaCDC.server.utils.FileUtils;
-import com.esgyn.kafkaCDC.server.utils.Constants;
-import com.esgyn.kafkaCDC.server.utils.Parameters;
-import com.esgyn.kafkaCDC.server.utils.TableInfo;
-
 import com.esgyn.kafkaCDC.server.database.TableState;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
-
-import lombok.Getter;
-import lombok.Setter;
+import com.esgyn.kafkaCDC.server.utils.Parameters;
+import com.esgyn.kafkaCDC.server.utils.TableInfo;
 
 public class LoaderTask {
     private static Logger log = Logger.getLogger(LoaderTask.class);

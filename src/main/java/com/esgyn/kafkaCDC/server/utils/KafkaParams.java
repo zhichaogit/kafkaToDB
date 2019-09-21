@@ -3,9 +3,6 @@ package com.esgyn.kafkaCDC.server.utils;
 
 import java.util.List;
 
-import com.esgyn.kafkaCDC.server.utils.Constants;
-import com.esgyn.kafkaCDC.server.utils.TopicParams;
-
 import lombok.Getter;
 import lombok.Setter;
 

@@ -1,9 +1,10 @@
 package com.esgyn.kafkaCDC.server.utils;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
 import lombok.Getter;

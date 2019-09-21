@@ -1,19 +1,17 @@
 package com.esgyn.kafkaCDC.server.utils;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.FileInputStream;
-import java.io.FileOutputStream; 
-import java.io.InputStreamReader;
-import java.io.BufferedOutputStream; 
 import java.io.FileNotFoundException;
-
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.List;
-
-import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 
 import org.apache.log4j.Logger;
 
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 import com.google.gson.Gson;
 
 public class FileUtils {

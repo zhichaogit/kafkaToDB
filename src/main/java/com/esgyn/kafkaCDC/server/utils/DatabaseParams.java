@@ -1,20 +1,17 @@
 package com.esgyn.kafkaCDC.server.utils;
 
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.lang.StringBuffer;
-
-import java.sql.ResultSet;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
-import com.esgyn.kafkaCDC.server.utils.Constants;
-import com.esgyn.kafkaCDC.server.utils.Parameters;
+
 import com.esgyn.kafkaCDC.server.database.Database;
 
 import lombok.Getter;
