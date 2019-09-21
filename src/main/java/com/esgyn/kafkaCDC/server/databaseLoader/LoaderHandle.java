@@ -1,17 +1,14 @@
 package com.esgyn.kafkaCDC.server.databaseLoader;
 
-import org.apache.log4j.Logger;
-
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.esgyn.kafkaCDC.server.utils.Parameters;
-import com.esgyn.kafkaCDC.server.databaseLoader.LoaderTask;
-import com.esgyn.kafkaCDC.server.databaseLoader.LoadStates;
+import org.apache.log4j.Logger;
+
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
+import com.esgyn.kafkaCDC.server.utils.Parameters;
 
 import lombok.Getter;
-import lombok.Setter;
 
 public class LoaderHandle {
     private ConcurrentLinkedQueue<LoaderTask> tasks   = null;

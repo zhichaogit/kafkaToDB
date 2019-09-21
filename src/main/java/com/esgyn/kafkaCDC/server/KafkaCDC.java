@@ -1,15 +1,13 @@
 package com.esgyn.kafkaCDC.server;
 
-import java.util.ArrayList;
-
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
-import com.esgyn.kafkaCDC.server.utils.Constants;
-import com.esgyn.kafkaCDC.server.utils.Utils;
-import com.esgyn.kafkaCDC.server.utils.Parameters;
-import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerTasks;
 import com.esgyn.kafkaCDC.server.databaseLoader.LoaderTasks;
+import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerTasks;
+import com.esgyn.kafkaCDC.server.utils.Constants;
+import com.esgyn.kafkaCDC.server.utils.Parameters;
+import com.esgyn.kafkaCDC.server.utils.Utils;
 
 public class KafkaCDC {
     private static Logger log = Logger.getLogger(KafkaCDC.class);

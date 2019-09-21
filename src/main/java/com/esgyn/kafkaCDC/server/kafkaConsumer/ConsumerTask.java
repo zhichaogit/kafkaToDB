@@ -1,33 +1,31 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.config.SaslConfigs;
-import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
-
-import kafka.consumer.ConsumerTimeoutException;
-
-import com.esgyn.kafkaCDC.server.utils.Utils;
-import com.esgyn.kafkaCDC.server.utils.FileUtils;
-import com.esgyn.kafkaCDC.server.utils.Constants;
-import com.esgyn.kafkaCDC.server.utils.Parameters;
-import com.esgyn.kafkaCDC.server.utils.KafkaParams;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.SaslConfigs;
+import org.apache.kafka.common.errors.WakeupException;
+import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.databaseLoader.LoaderHandle;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
+import com.esgyn.kafkaCDC.server.utils.Constants;
+import com.esgyn.kafkaCDC.server.utils.FileUtils;
+import com.esgyn.kafkaCDC.server.utils.KafkaParams;
+import com.esgyn.kafkaCDC.server.utils.Parameters;
+import com.esgyn.kafkaCDC.server.utils.Utils;
 
+import kafka.consumer.ConsumerTimeoutException;
 import lombok.Getter;
 import lombok.Setter;
 

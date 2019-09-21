@@ -1,29 +1,23 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
-import java.util.HashMap;
-
-import com.esgyn.kafkaCDC.server.utils.Utils;
-import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
-import com.esgyn.kafkaCDC.server.utils.DatabaseParams;
-import com.esgyn.kafkaCDC.server.database.ColumnValue;
-
-import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
-import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb;
-import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Column;
-import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Record;
-
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.esgyn.kafkaCDC.server.utils.TableInfo;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+
+import com.esgyn.kafkaCDC.server.database.ColumnValue;
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb;
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Column;
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Record;
+import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
+import com.esgyn.kafkaCDC.server.utils.TableInfo;
+import com.esgyn.kafkaCDC.server.utils.Utils;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 /**
  * 
  * @author xzc

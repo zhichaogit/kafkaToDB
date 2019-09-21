@@ -1,31 +1,24 @@
 package com.esgyn.kafkaCDC.server.database;
 
-import java.sql.Statement;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.PreparedStatement;
 import java.sql.BatchUpdateException;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.lang.IndexOutOfBoundsException;
-
-import java.util.Map;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
+import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
+import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
 import com.esgyn.kafkaCDC.server.utils.FileUtils;
 import com.esgyn.kafkaCDC.server.utils.TableInfo;
-import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
-import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 
 import lombok.Getter;
-import lombok.Setter;
 
 public class TableState {
     public final static int                ERROR       = -1;

@@ -1,17 +1,13 @@
 package com.esgyn.kafkaCDC.server.databaseLoader;
 
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
-import java.lang.StringBuffer;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-import com.esgyn.kafkaCDC.server.utils.TableInfo;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
+import com.esgyn.kafkaCDC.server.utils.TableInfo;
 
 import lombok.Getter;
-import lombok.Setter;
 
 public class LoadStates {
     @Getter

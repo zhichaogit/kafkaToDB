@@ -1,28 +1,13 @@
 package com.esgyn.kafkaCDC.server.databaseLoader;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-
-import java.lang.StringBuffer;
-
-import java.util.Map;
-import java.util.Date;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-import com.esgyn.kafkaCDC.server.utils.TableInfo;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
 
-import com.esgyn.kafkaCDC.server.databaseLoader.LoadStates;
-import com.esgyn.kafkaCDC.server.databaseLoader.LoaderTask;
-import com.esgyn.kafkaCDC.server.databaseLoader.LoaderHandle;
-import com.esgyn.kafkaCDC.server.databaseLoader.LoaderThread;
-
 import lombok.Getter;
-import lombok.Setter;
 
 public class LoaderTasks<T> {
     private static Logger log = Logger.getLogger(LoaderTasks.class);

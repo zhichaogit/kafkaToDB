@@ -1,19 +1,18 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
 import java.io.UnsupportedEncodingException;
-
-import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
-import com.esgyn.kafkaCDC.server.utils.TableInfo;
-import com.esgyn.kafkaCDC.server.utils.Parameters;
-import com.esgyn.kafkaCDC.server.utils.KafkaCDCParams;
-import com.esgyn.kafkaCDC.server.database.ColumnValue;
-import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.protobufSerializtion.MessageDb.Record;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
+
+import com.esgyn.kafkaCDC.server.database.ColumnValue;
+import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
+import com.esgyn.kafkaCDC.server.utils.KafkaCDCParams;
+import com.esgyn.kafkaCDC.server.utils.Parameters;
+import com.esgyn.kafkaCDC.server.utils.TableInfo;
 
 import lombok.Getter;
 import lombok.Setter;

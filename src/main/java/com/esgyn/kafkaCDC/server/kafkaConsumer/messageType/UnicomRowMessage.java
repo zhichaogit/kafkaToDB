@@ -1,7 +1,5 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer.messageType;
 
-import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
 import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.database.ColumnValue;

@@ -1,25 +1,16 @@
 package com.esgyn.kafkaCDC.server.databaseLoader;
 
-import org.apache.log4j.Logger;
-
-import java.util.Map;
-import java.util.HashMap;
-
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.esgyn.kafkaCDC.server.utils.Utils;
+import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.database.Database;
 import com.esgyn.kafkaCDC.server.database.TableState;
-
-import com.esgyn.kafkaCDC.server.databaseLoader.LoaderTask;
-import com.esgyn.kafkaCDC.server.databaseLoader.LoaderTasks;
-import com.esgyn.kafkaCDC.server.databaseLoader.LoaderHandle;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import lombok.Getter;
+import com.esgyn.kafkaCDC.server.utils.Utils;
 
 public class LoaderThread extends Thread {
     private long                loadedNumber   = 0;

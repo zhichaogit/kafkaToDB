@@ -4,16 +4,10 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-
-import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
-import com.esgyn.kafkaCDC.server.utils.KafkaCDCParams;
 import com.esgyn.kafkaCDC.server.database.ColumnValue;
 import com.esgyn.kafkaCDC.server.database.TableState;
-
-import lombok.Getter;
-import lombok.Setter;
+import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
+import com.esgyn.kafkaCDC.server.utils.KafkaCDCParams;
 
 public class HongQuanRowMessage extends RowMessage<byte[]> {
     private static Logger           log         = Logger.getLogger(HongQuanRowMessage.class);

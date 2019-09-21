@@ -1,17 +1,15 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer;
 
-import org.apache.log4j.Logger;
-
-import java.util.Date;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 
-import com.esgyn.kafkaCDC.server.utils.Parameters;
+import org.apache.log4j.Logger;
+
 import com.esgyn.kafkaCDC.server.databaseLoader.LoadStates;
-import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerTasks;
+import com.esgyn.kafkaCDC.server.utils.Parameters;
 
 import lombok.Getter;
-import lombok.Setter;
 
 public class ConsumeStates {
     @Getter

@@ -9,9 +9,6 @@ import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.utils.DatabaseParams;
 
-import lombok.Getter;
-import lombok.Setter;
-
 public class Database {
     private static Logger log    = Logger.getLogger(Database.class);
     private static String CQDSQL = "cqd pcode_opt_level 'OFF';";
