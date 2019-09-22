@@ -75,7 +75,8 @@ $KAFKA/bin/kafka-console-producer.sh --broker-list $BROKER --topic $TOPIC < $DAT
 KAFKA_CDC="$KAFKA_CDC"
 cd $KAFKA_CDC/bin;
 CONFIG="conf/multi_table_insert_mapping.json"
-$TOPDIR/template.sh $PARTITION $BROKER $DBIP $TOPIC "Unicom" $DESTSCHEMA $TABLE1 $TABLE2 $KAFKA_CDC/$CONFIG
+echo "$TOPDIR/template $PARTITION $BROKER $DBIP $TOPIC \"Unicom\" $DESTSCHEMA $TABLE1 $TABLE2 $KAFKA_CDC/$CONFIG"
+$TOPDIR/template $PARTITION $BROKER $DBIP $TOPIC "Unicom" $DESTSCHEMA $TABLE1 $TABLE2 $KAFKA_CDC/$CONFIG
 echo "./KafkaCDC-server.sh --conf $CONFIG"
 ./KafkaCDC-server.sh --conf $CONFIG
 
@@ -105,10 +106,10 @@ log OFF;
 log $EXPECTPATH2;
 SELECT * FROM $TABLEEXP2;
 log OFF;
---DROP TABLE IF EXISTS $TABLE1;
---DROP TABLE IF EXISTS $TABLE2;
---DROP TABLE IF EXISTS $TABLEEXP1;
---DROP TABLE IF EXISTS $TABLEEXP2;
+DROP TABLE IF EXISTS $TABLE1;
+DROP TABLE IF EXISTS $TABLE2;
+DROP TABLE IF EXISTS $TABLEEXP1;
+DROP TABLE IF EXISTS $TABLEEXP2;
 EOFsql\r"
   expect "$ "
   send "sed -i \"1d\" $RESULTPATH1\r"
@@ -176,7 +177,7 @@ else
   RESULT="$currentTime $TOPIC failed"
 fi
 
-#$KAFKA/bin/kafka-topics.sh --delete --zookeeper $ZOOKEEPER --topic $TOPIC
+$KAFKA/bin/kafka-topics.sh --delete --zookeeper $ZOOKEEPER --topic $TOPIC
 if [ "x${DEBUG}" != "xYES" ]; then
   rm -f $DATAFILE
   rm -f $RESULTPATH1

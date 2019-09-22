@@ -71,7 +71,6 @@ fi
 $KAFKA/bin/kafka-topics.sh --create --zookeeper $ZOOKEEPER --replication-factor 1 --partitions $PARTITION --topic $TOPIC
 $KAFKA/bin/kafka-topics.sh --list --zookeeper $ZOOKEEPER
 $KAFKA/bin/kafka-console-producer.sh --broker-list $BROKER --topic $TOPIC < $DATAFILE
-#$KAFKA/bin/kafka-console-consumer.sh --zookeeper $ZOOKEEPER --topic $TOPIC --from-beginning
 
 KAFKA_CDC="$KAFKA_CDC"
 cd $KAFKA_CDC/bin;

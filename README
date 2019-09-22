@@ -7,7 +7,6 @@ usage: Consumer Server
     --batchUpdate       update operate will use batch, default: false
     --bigendian         the data format is big endian, default: little endian
     --conf <arg>        specified configuration parameter file
-    --conns <arg>       database connection number to database, default: 4
     --consumers <arg>   specify connection number to kafka, default: 4.
  -d,--dbip <arg>        database server ip, default: "localhost"
     --dbport <arg>      database server port, default: 23400
