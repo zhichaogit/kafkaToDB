@@ -55,6 +55,18 @@ public class LoaderHandle {
 	    log.debug("generate the database load task [" + loaderTask + "]"); 
 	}
 
+	int size = tasks.size();
+	while (size >= 10) {
+	    log.info("the loader [" + loaderID + "] have [" + size 
+		     + "] tasks, more than 10, consumer [" + consumerID_
+		     + "] need wait 10ms to continue"); 
+	    try {
+		Thread.sleep(10);
+	    } catch (Exception e) {
+	    }
+	    size = tasks.size();
+	}
+
 	tasks.offer(loaderTask);
 	loadStates.addTotalTasks(1);
 	

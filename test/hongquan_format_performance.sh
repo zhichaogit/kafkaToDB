@@ -49,7 +49,7 @@ $KAFKA/bin/kafka-topics.sh --list --zookeeper $ZOOKEEPER
 KAFKA_CDC="$KAFKA_CDC"
 cd $KAFKA_CDC
 javac -d bin -cp example/:libs/* -Xlint:deprecation example/ProducerTest.java
-java -cp bin:bin/*:libs/* ProducerTest 100000
+java -cp bin:bin/*:libs/* ProducerTest 250000
 
 cd $KAFKA_CDC/bin
 
