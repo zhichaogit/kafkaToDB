@@ -754,6 +754,37 @@ public class TableState {
         errDelete = 0;
     }
 
+    boolean executeBatch(PreparedStatement stmt, Map<Integer, RowMessage> errRows,
+			 String operate)  throws SQLException {
+	boolean result = true;
+
+        try {
+            stmt.executeBatch();
+        } catch (BatchUpdateException bue) {
+	    if (Database.isAccepableSQLExpection(bue))
+		throw bue;
+
+	    log.error("throw exception when batch execute the sql:", bue);
+
+            // print the error data 
+            int[] counts = bue.getUpdateCounts();
+            printBatchErrorMsg(counts, errRows, operate);
+            result = false;
+        } catch (IndexOutOfBoundsException iobe) {
+	    log.error("throw exception when batch execute the sql:", iobe);
+            result = false;
+        }catch (SQLException se) {
+	    if (Database.isAccepableSQLExpection(se))
+		throw se;
+	    log.error("throw exception when batch execute the sql:", se);
+            result = false;
+        }finally {
+            errRows.clear();
+        }
+
+	return result;
+    }
+
     private boolean insert_row_data(Map<Integer, ColumnValue> row, int offset) throws SQLException {
         boolean result = true;
         StringBuffer strBuffer=null;
@@ -838,31 +869,18 @@ public class TableState {
 	    }
             errRows.put(offset, insertRM);
             offset++;
+
+	    if ((offset % tableInfo.getBatchSize()) == 0) {
+		result = executeBatch(insertStmt, errRows, I_OPERATE);
+
+		if (!result)
+		    return result;
+	    }
         }
 
-        try {
-            insertStmt.executeBatch();
-        } catch (BatchUpdateException bue) {
-	    if (Database.isAccepableSQLExpection(bue))
-		throw bue;
-
-	    log.error("throw exception when execute the insert sql:", bue);
-
-            // print the error data 
-            int[] insertCounts = bue.getUpdateCounts();
-            printBatchErrorMsg(insertCounts, errRows, I_OPERATE);
-            result = false;
-        } catch (IndexOutOfBoundsException iobe) {
-	    log.error("throw exception when execute the insert sql:", iobe);
-            result = false;
-        }catch (SQLException se) {
-	    if (Database.isAccepableSQLExpection(se))
-		throw se;
-	    log.error("throw exception when execute the insert sql:", se);
-            result = false;
-        }finally {
-            errRows.clear();
-        }
+	if ((offset % tableInfo.getBatchSize()) != 0) {
+	    result = executeBatch(insertStmt, errRows, I_OPERATE);
+	}
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
 
@@ -1062,32 +1080,19 @@ public class TableState {
 		    return false;
 		}
                 offset++;
+
+		if ((offset % tableInfo.getBatchSize()) == 0) {
+		    result = executeBatch(updateStmt, errRows, U_OPERATE);
+
+		    if (!result)
+			return result;
+		}
             }
         }
 
-        if (tableInfo.getParams().getDatabase().isBatchUpdate()) {
-	    try {
-		updateStmt.executeBatch();
-	    } catch (BatchUpdateException bue) {
-		if (Database.isAccepableSQLExpection(bue))
-		    throw bue;
-
-		// print the error data 
-		int[] updateCounts = bue.getUpdateCounts();
-		printBatchErrorMsg(updateCounts, errRows, U_OPERATE);
-		result = false;
-	    } catch (IndexOutOfBoundsException iobe) {
-		log.error("throw exception when execute the update sql:", iobe);
-		result = false;
-	    }catch (SQLException se) {
-		if (Database.isAccepableSQLExpection(se))
-		    throw se;
-
-		log.error("throw exception when execute the update sql", se);
-		result = false;
-	    }finally {
-		errRows.clear();
-	    }
+        if (tableInfo.getParams().getDatabase().isBatchUpdate()
+	    && (offset % tableInfo.getBatchSize()) != 0) {
+	    result = executeBatch(updateStmt, errRows, U_OPERATE);
 	}
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
@@ -1186,31 +1191,18 @@ public class TableState {
 	    }
 
             offset++;
+
+	    if ((offset % tableInfo.getBatchSize()) == 0) {
+		result = executeBatch(deleteStmt, errRows, D_OPERATE);
+
+		if (!result)
+		    return result;
+	    }
         }
 
-        try {
-            int[] batchResult = deleteStmt.executeBatch();
-        } catch (BatchUpdateException bue) {
-	    if (Database.isAccepableSQLExpection(bue))
-		throw bue;
-
-	    log.error("throw exception when execute the insert sql:", bue);
-
-            // print the error data 
-            int[] deleteCounts = bue.getUpdateCounts();
-            printBatchErrorMsg(deleteCounts, errRows, D_OPERATE);
-            result = false;
-        } catch (IndexOutOfBoundsException iobe) {
-	    log.error("throw exception when execute the insert sql:", iobe);
-            result = false;
-        }catch (SQLException se) {
-	    if (Database.isAccepableSQLExpection(se))
-		throw se;
-	    log.error("throw exception when execute the insert sql:", se);
-            result = false;
-        }finally {
-            errRows.clear();
-        }
+	if ((offset % tableInfo.getBatchSize()) != 0) {
+	    result = executeBatch(deleteStmt, errRows, D_OPERATE);
+	}
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
 	return result;

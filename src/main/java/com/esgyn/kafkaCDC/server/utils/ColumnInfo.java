@@ -25,7 +25,8 @@ public class ColumnInfo {
     @Setter
     @Getter
     private String srcColumnName = null;
-
+    @Setter
+    @Getter
     private int    columnSize = -1;
 
     public ColumnInfo() { }

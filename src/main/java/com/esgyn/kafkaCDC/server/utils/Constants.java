@@ -33,6 +33,7 @@ public class Constants {
     public final static String       DEFAULT_USER          = "db__root";
     public final static String       DEFAULT_PASSWORD      = "zz";
     public final static String       DEFAULT_ENCODING      = "UTF8";
+    public final static long         DEFAULT_COMMITSIZE    = 512*1024*1024;
 
     // Kafka information
     public final static String       DEFAULT_BROKER        = "localhost:9092";

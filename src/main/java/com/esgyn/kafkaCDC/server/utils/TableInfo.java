@@ -35,6 +35,8 @@ public class TableInfo {
     @Getter
     private Parameters       params        = null;
 
+    private long             columnSize    = 0;
+
     private long             insMsgNum     = 0;
     private long             updMsgNum     = 0;
     private long             keyMsgNum     = 0;
@@ -83,6 +85,7 @@ public class TableInfo {
         columns.add(columnInfo);
         columnMap.put(columnInfo.getColumnID(), columnInfo);
         columnNameMap.put(columnInfo.getColumnName(), columnInfo);
+	columnSize += columnInfo.getColumnSize();
     }
 
     public ColumnInfo getColumn(int index) { return columns.get(index); }
@@ -91,6 +94,15 @@ public class TableInfo {
 	columnNameMap.put(colName, colomnInfo);
     }
     public ColumnInfo getColumnFromMap(int colid) { return columnMap.get(colid); }
+    public long getBatchSize() {
+	long tableBatchSize = Constants.DEFAULT_COMMITSIZE / columnSize;
+
+	if (params.getDatabase().getBatchSize() > tableBatchSize)
+	    return tableBatchSize;
+	else 
+	    return params.getDatabase().getBatchSize();
+    }
+
 
     public long getColumnCount() { return columns.size(); }
     public void addKey(ColumnInfo column) { keyColumns.add(column); }
