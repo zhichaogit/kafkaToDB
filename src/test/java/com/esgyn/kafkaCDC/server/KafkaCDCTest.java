@@ -16,7 +16,7 @@ public class KafkaCDCTest {
 	Parameters paras = null;
     @Before
     public void init() throws Exception {
-        paras = new Parameters(null);
+        paras = new Parameters();
     }
     @Test
     public void isValidLong() throws Exception {

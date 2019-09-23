@@ -81,10 +81,11 @@ public class Constants {
         {"f",  "fetchBytes",  false,  true, "fetch data from kafka size, default: 10485760, it's 100MB"},
         {"g",  "group",       false,  true, "group for this consumer, default: 0"},
         {"p",  "partition",   false,  true, "partition number to process message, one thread only process the data from one partition, default: 16. the format: \"id [, id] ...\", id should be: \"id-id\". "
-	 + "example: \n\t   -p \"-1\" :means process the all partition of this topic.\n"
-	 + "\ta. -p \"1,4-5,8\" : means process the partition " + "1,4,5 and 8\n"
-	 + "\tb. -p 4 : means process the partition 0,1,2 and 3\n"
-	 + "\tc. -p \"2-2\" : means process the partition 2"},
+	 + "example: \n"
+	 + "\ta. -p \"1,4-5,8\" : means process the partition 1,4,5 and 8\n"
+	 + "\tb. -p 4           : means process the partition 0,1,2 and 3\n"
+	 + "\tc. -p \"2-2\"     : means process the partition 2\n"
+	 + "\td. -p \"-1\"      : means process the all partition of this topic."},
         {"t",  "topic",       false,  true, "REQUIRED. topic of subscription"},
 	{"",   "kafkauser",   false,  true, "kafka user name , default: \"\""},
 	{"",   "kafkapw",     false,  true, "kafka password , default: \"\""},

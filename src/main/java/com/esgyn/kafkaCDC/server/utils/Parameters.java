@@ -35,7 +35,7 @@ public class Parameters {
     private List<TableInfo> mappings    = null;
     @Getter 
     private String          startTime   = null;
-
+    public Parameters() {};
     public Parameters(String[] args_) 
     {
 	startTime = Utils.getCurrentTime();
@@ -428,6 +428,9 @@ public class Parameters {
 	    if (partitions == null){
 		int [] kafkaParts = getPartsArrayFromKafka(consumer, topicName);
 		partitions = getPartArrayFromStr(topic.getPartition());
+		if (partitions==null) {
+		    partitions=kafkaParts;
+		}
 		checkKafkaPartitions(topicName, partitions, kafkaParts);
 
 		topic.setPartitions(partitions);
@@ -526,6 +529,10 @@ public class Parameters {
 
     public void checkKafkaPartitions(String topic, int [] partitions, int [] existParts){
         if (log.isTraceEnabled()) { log.trace("enter"); }
+        if (log.isDebugEnabled()) {
+            log.debug("topic[" + topic + "],specify parts[" + Arrays.toString(partitions)
+            + "],existParts[" + Arrays.toString(existParts)+"]");
+        }
 
 	List notExistPartitions = getNotExistParts(partitions, existParts);
 	if (notExistPartitions.size() != 0) {
