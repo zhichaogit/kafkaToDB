@@ -260,7 +260,7 @@ public class Parameters {
 	kafkaCDC.setConsumers(getLongParam("consumers", Constants.DEFAULT_CONSUMERS));
 	kafkaCDC.setBigEndian(getBoolParam("bigendian", false));
         kafkaCDC.setDelimiter(getStringParam("delim", Constants.DEFAULT_DELIMITER));
-	kafkaCDC.setDumpBinary(getBoolParam("dumpbinary", true));
+	kafkaCDC.setDumpBinary(getBoolParam("dumpbinary", false));
         kafkaCDC.setEncoding(getStringParam("encode", Constants.DEFAULT_ENCODING));
         kafkaCDC.setFormat(getStringParam("format", ""));
         kafkaCDC.setInterval(getLongParam("interval", Constants.DEFAULT_INTERVAL_S));
@@ -270,9 +270,9 @@ public class Parameters {
 	kafkaCDC.setKafkaDir(getStringParam("kafkaDir", "kafka"));
 	kafkaCDC.setShowConsumers(getBoolParam("showConsumers", true));
 	kafkaCDC.setShowLoaders(getBoolParam("showLoaders", true));
-	kafkaCDC.setShowTasks(getBoolParam("showTasks", true));
+	kafkaCDC.setShowTasks(getBoolParam("showTasks", false));
 	kafkaCDC.setShowTables(getBoolParam("showTables", true));
-	kafkaCDC.setShowSpeed(getBoolParam("showSpeed", true));
+	kafkaCDC.setShowSpeed(getBoolParam("showSpeed", false));
     }
 
     private void checkOptions()
