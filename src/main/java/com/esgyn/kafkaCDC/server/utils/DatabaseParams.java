@@ -358,14 +358,12 @@ public class DatabaseParams {
 	if (srcSchemaName == null || srcSchemaName.isEmpty()) {
 	    srcSchemaName = tableInfoMap.getSchemaName();
 	} 
-	tableInfoMap.setSrcSchemaName(srcSchemaName);
 	
 	String    srcTableName = tableInfo.getSrcTableName();
 	if (srcTableName == null || srcTableName.isEmpty()) {
 	    srcTableName = tableInfoMap.getTableName();
 	}
 
-	tableInfoMap.setSrcTableName(srcTableName);
 	srcTableName = srcSchemaName + "." + srcTableName;
 
         log.info("start to init table [" + tableName 

@@ -97,8 +97,11 @@ public class LoadStates {
 	if (params.getKafkaCDC().isShowTables()) {
 	    strBuffer.append("  The detail of table loaded:\n");
 	    Map<String, TableInfo> tableHashMap = params.getDatabase().getTableHashMap();
-	    for (TableInfo tableInfo : tableHashMap.values()) {
-		tableInfo.show(strBuffer);
+	    for (String tableName : tableHashMap.keySet()) {
+		TableInfo tableInfo = tableHashMap.get(tableName);
+		String mapTableName = tableInfo.getSchemaName() + "." + tableInfo.getTableName();
+		if (tableName.equals(mapTableName))
+		    tableInfo.show(strBuffer);
 	    }
 	}
     }

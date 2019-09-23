@@ -67,14 +67,7 @@ echo "{
 		\"srcSchemaName\": \"${DESTSCHEMA}SRC\",
 		\"srcTableName\": \"${TABLE1}SRC\",
 		\"schemaName\": \"${DESTSCHEMA}\",
-		\"tableName\": \"${TABLE1}\",
-		\"columns\": [{
-			\"srcColumnName\": \"\",
-			\"columnName\": \"t001_c1\"
-		}, {
-			\"srcColumnName\": \"\",
-			\"columnName\": \"t001_c2\"
-		}]
+		\"tableName\": \"${TABLE1}\"
 	}, {
 		\"srcSchemaName\": \"${DESTSCHEMA}SRC\",
 		\"srcTableName\": \"${TABLE2}SRC\",

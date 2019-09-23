@@ -61,16 +61,6 @@
 		"srcSchemaName": "",
 		"srcTableName": "",
 		"schemaName": "SEABSE",
-		"tableName": "T2",
-		"columns": [{
-			"srcColumnName": "t2_c1",
-			"columnName": "c1",
-		}, {
-			"srcColumnName": "t2_c2",
-			"columnName": "c2",
-		}, {
-			"srcColumnName": "t2_c3",
-			"columNname": "c3"
-		}]
+		"tableName": "T2"
 	}]
 }
