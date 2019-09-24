@@ -165,7 +165,7 @@ public class RowMessage<T> implements Cloneable{
         ColumnInfo  columnInfo  = tableInfo.getColumn(0);
 	ColumnValue columnValue = columns.get(columnInfo.getColumnOff());
 	String      value = ") VALUES(" + columnValue.getCurValueStr();
-	String      sql   = "INSERT INTO \"" + schemaName + "\"." 
+	String      sql   = "UPSERT INTO \"" + schemaName + "\"." 
 	    + "\"" + tableName + "\"" + "(" + columnInfo.getColumnName();
 
         for (int i = 1; i < columns.size(); i++) {
