@@ -26,7 +26,7 @@ usage: Consumer Server
 * -f,--format <arg>     format of data, support "Unicom" "UnicomJson"
                         "HongQuan"  "Json" "Protobuf" and "user-defined"
                         default: "",
-*    --fetch <arg>      num message per Kakfa synch/pull, default: 10000
+*    --fetchSize <arg>      num message per Kakfa synch/pull, default: 10000
 * -g,--group <arg>      group for this consumer, default: 0
 * -h,--help             show help information
 *   --hbto <arg>        heartbeat.interval.ms, default: 10s
@@ -108,7 +108,7 @@ Must have maven and JDK.
 
 # normal
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -s SEABASE --table tab -t test --mode start -dbuser trafodion --dbpw traf123
-* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -s SEABASE --table tab -t test --mode start --sto 20 --interval 10 --sto 20  --dbuser trafodion --dbpw traf123 --fetch 500 --batchSize 500 -delim "|"
+* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -s SEABASE --table tab -t test --mode start --sto 20 --interval 10 --sto 20  --dbuser trafodion --dbpw traf123 --fetchSize 500 --batchSize 500 -delim "|"
 # HongQuan
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -s SEABASE --table tab -t g_ad --mode start --dbuser trafodion --dbpw traf123 -f HongQuan -s kafkaCDC --table hqTable  --sto 20 --interval 10 --zkto 20 --key org.apache.kafka.common.serialization.LongDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
 
@@ -116,14 +116,14 @@ Must have maven and JDK.
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom  -t test
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --mode start --dbuser trafodion --dbpw traf123 -t test
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --mode start --dbuser trafodion --dbpw traf123 -s SEABASE  -t test
-* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --mode start --dbuser trafodion --dbpw traf123 -s SEABASE --table tab -t test --sto 20 --interval 10 --zkto 20 --dbip localhost --fetch 500 --batchSize 500
+* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --mode start --dbuser trafodion --dbpw traf123 -s SEABASE --table tab -t test --sto 20 --interval 10 --zkto 20 --dbip localhost --fetchSize 500 --batchSize 500
 
 # Json
-* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Json --mode start --dbuser trafodion --dbpw traf123 -s [schemaname] -t testTopic --sto 20 --interval 10 --fetch 500 --batchSize 500
+* ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Json --mode start --dbuser trafodion --dbpw traf123 -s [schemaname] -t testTopic --sto 20 --interval 10 --fetchSize 500 --batchSize 500
 
 # Protobuf
-*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f Protobuf --mode start --dbuser trafodion --dbpw traf123 -s schemaname -t testTopic -f  --encode GBK --sto 20 --interval 5 --fetch 500 --batchSize 500 --key org.apache.kafka.common.serialization.ByteArrayDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
-*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f Protobuf --mode start --dbuser trafodion --dbpw traf123 -s schemaname -t testTopic -f  --encode GBK --sto 20 --interval 5 --fetch 500 --batchSize 500 --key org.apache.kafka.common.serialization.ByteArrayDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer  --kafkauser username --kafkapw password
+*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f Protobuf --mode start --dbuser trafodion --dbpw traf123 -s schemaname -t testTopic -f  --encode GBK --sto 20 --interval 5 --fetchSize 500 --batchSize 500 --key org.apache.kafka.common.serialization.ByteArrayDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
+*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f Protobuf --mode start --dbuser trafodion --dbpw traf123 -s schemaname -t testTopic -f  --encode GBK --sto 20 --interval 5 --fetchSize 500 --batchSize 500 --key org.apache.kafka.common.serialization.ByteArrayDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer  --kafkauser username --kafkapw password
 
 # UnicomJson And authentication
-*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f UnicomJson --mode start --dbuser trafodion --dbpw traf123 -s schemaName  -t testTopic --sto 20 --interval 10  --fetch 500 --batchSize 500  --kafkauser username --kafkapw passwd
+*./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f UnicomJson --mode start --dbuser trafodion --dbpw traf123 -s schemaName  -t testTopic --sto 20 --interval 10  --fetchSize 500 --batchSize 500  --kafkauser username --kafkapw passwd

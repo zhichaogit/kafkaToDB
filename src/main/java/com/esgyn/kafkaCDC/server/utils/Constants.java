@@ -72,7 +72,7 @@ public class Constants {
 
 	// kafka information
         {"b",  "broker",      false,  true, "bootstrap.servers setting, ex: <node>:9092, default: \"localhost:9092\""},
-        {"",   "fetch",       false,  true, "num message per Kakfa synch/pull, default: 10000"},
+        {"",   "fetchSize",   false,  true, "num message per Kakfa synch/pull, default: 10000"},
         {"",   "mode",        false,  true, "pull data from beginning or End or specify the offset, default: offset submitted last time.\n"
 	 + "\ta. --mode start : means pull the all data from the beginning(earliest)\n"
 	 + "\tb. --mode end   : means pull the data from the end(latest)\n"
