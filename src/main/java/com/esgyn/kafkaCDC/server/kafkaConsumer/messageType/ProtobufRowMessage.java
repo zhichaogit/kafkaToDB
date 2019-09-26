@@ -45,6 +45,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     private final int     SQL_DDL_VAL              = 160;
     private final int     SOURCEORACLE             = 1;
     private final int     SOURCEDRDS               = 2;
+
     public ProtobufRowMessage() {}
 
     @Override
@@ -93,7 +94,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 	tableInfo = getTableInfo(schemaName + "." + tableName);   
 	int operationType = messagePro.getOperationType();
 
-        if (tableInfo == null) {
+        if (tableInfo == null ) {
             if (log.isDebugEnabled()) {
                 log.error("Table [" + schemaName + "." + tableName
                         + "] is not exist in Database.");

@@ -272,7 +272,7 @@ public class DatabaseParams {
         if (firstColumn.getColumnID() != 0) {
             log.warn("no primary key on table [" + table.getSchemaName() + "."
                     + table.getTableName() + "], use all of columns.");
-
+            table.setTherePK(false);
             for (int i = 0; i < table.getColumnCount(); i++) {
                 table.addKey(table.getColumn(i));
             }
