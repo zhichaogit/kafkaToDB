@@ -47,7 +47,6 @@ public class TableState {
     private long                           errUpdate   = 0;
     @Getter
     private long                           errDelete   = 0;
-    private boolean                        havePK      = false;
 
     @Getter
     private TableInfo                      tableInfo   = null;
@@ -89,7 +88,7 @@ public class TableState {
     }
 
     public boolean init(){
-        if (tableInfo.isRepeatable()) {
+        if (!tableInfo.isTherePK()) {
             insertRows = new IdentityHashMap<String, RowMessage>(0);
         } else {
             insertRows = new HashMap<String, RowMessage>(0);
@@ -97,9 +96,6 @@ public class TableState {
         updateRows = new HashMap<String, RowMessage>(0);
         deleteRows = new HashMap<String, RowMessage>(0);
         msgs       = new ArrayList<RowMessage>();
-
-        if (columns.get(0).getColumnID() == 0)
-            havePK = true;
 
 	init_insert_stmt();
 	init_delete_stmt();
@@ -189,7 +185,7 @@ public class TableState {
 
             if (cur) {
                 if (column.curValueIsNull()) {
-                    if (havePK) {
+                    if (tableInfo.isTherePK()) {
                         log.error("the cur primary key value is null. column name ["
                                 + keyInfo.getColumnName() + "] message [" + message + "]");
                         return null;
@@ -213,7 +209,7 @@ public class TableState {
                 }
             } else {
                 if (column.oldValueIsNull()) {
-                    if (havePK) {
+                    if (tableInfo.isTherePK()) {
                         log.error("the old primary key value is null. column name ["
                                 + keyInfo.getColumnName() + "] message [" + message + "]");
                         return null;
@@ -264,8 +260,6 @@ public class TableState {
         // new row is inserted
         insertRows.put(key, rowMessage);
 
-        cacheInsert++;
-
         if (log.isTraceEnabled()) {
             log.trace("exit cache insert [rows: " + cacheInsert + ", insert: "
 		      + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
@@ -294,7 +288,7 @@ public class TableState {
                 log.debug("update the keys [" + oldValue + "] to [" + curValue + "]");
             }
 
-            if (havePK && !curValue.equals(oldValue)) {
+            if (tableInfo.isTherePK() && !curValue.equals(oldValue)) {
 		if (log.isDebugEnabled()) {
 		    log.error("U message cann't update the keys," + "tablename [" + schemaName 
 			      + "." + tableName + "],curValue [" + curValue + "],oldValue "
@@ -402,8 +396,6 @@ public class TableState {
                 updateRows.put(key, rowMessage);
             }
         }
-
-        cacheUpdate++;
 
         if (log.isTraceEnabled()) {
             log.trace("exit cache update [rows: " + cacheUpdate + ", insert: "
@@ -546,7 +538,6 @@ public class TableState {
             }
         }
 
-        cacheUpdkey++;
         if (log.isTraceEnabled()) {
             log.trace("exit cache updkey [rows: " + cacheUpdkey + ", insert: "
                     + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
@@ -575,8 +566,6 @@ public class TableState {
 	merge_offsets(key, rowMessage);
         // delete cur row
         deleteRows.put(key, rowMessage);
-
-        cacheDelete++;
 
         if (log.isTraceEnabled()) {
             log.trace("exit cache delete [rows: " + cacheDelete + ", insert: "
@@ -763,8 +752,11 @@ public class TableState {
         } catch (BatchUpdateException bue) {
 	    if (Database.isAccepableSQLExpection(bue))
 		throw bue;
-
-	    log.error("throw exception when batch execute the sql:", bue);
+	    SQLException se = bue;
+	    do {
+	        log.error("throw exception when batch execute the sql:", se);
+	        se = se.getNextException();
+            } while (se != null);
 
             // print the error data 
             int[] counts = bue.getUpdateCounts();
@@ -936,7 +928,7 @@ public class TableState {
 		    }
 
 		    if (keyValue == null || keyValue.oldValueIsNull()) {
-			if (havePK) {
+			if (tableInfo.isTherePK()) {
 			    String key = get_key_value(null, row, false);
 			    log.error("the primary key value is null [table:" 
 				      + schemaName + "." + tableName + ", column:"
@@ -1125,7 +1117,7 @@ public class TableState {
 		}
 
 		if (keyValue == null || keyValue.oldValueIsNull()) {
-		    if (havePK) {
+		    if (tableInfo.isTherePK()) {
 			String key = get_key_value(null, row, false);
 			log.error("the primary key value is null [table:" 
 				  + schemaName + "." + tableName + ", column:"
@@ -1226,30 +1218,36 @@ public class TableState {
 
         msgs.add(urm);
 	lastMsg = urm;
-
-        switch (urm.getOperatorType()) {
+	String operatorType = urm.getOperatorType();
+	 long update_rows ;
+        switch (operatorType) {
             case "I":
-                insert_row(urm);
+                cacheInsert += insert_row(urm);
                 break;
             case "U":
             case "K":
 		if (is_update_key(urm)) {
 		    urm.setOperatorType("K");
-		    update_row_with_key(urm);
-		} else if (havePK&&tableInfo.getParams().getDatabase().isBatchUpdate()) {
+		    update_rows = update_row_with_key(urm);
+		} else if (tableInfo.isTherePK()&&tableInfo.getParams().getDatabase().isBatchUpdate()) {
 		    urm.setOperatorType("I");
-                    insert_row(urm);
+		    update_rows = insert_row(urm);
                 } else {
 		    urm.setOperatorType("U");
-		    update_row(urm);
+		    update_rows = update_row(urm);
 		}
+		if (operatorType.equals("U")) {
+		    cacheUpdate += update_rows;
+                }else {
+                    cacheUpdkey += update_rows;
+                }
                 break;
             case "D":
-                delete_row(urm);
+                cacheDelete += delete_row(urm);
                 break;
 
             default:
-                log.error("operator [" + urm.getOperatorType() + "]");
+                log.error("operator [" + operatorType + "]");
                 return 0;
         }
 

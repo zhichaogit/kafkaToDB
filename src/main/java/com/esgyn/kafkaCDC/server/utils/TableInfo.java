@@ -36,6 +36,9 @@ public class TableInfo {
     private Parameters       params        = null;
 
     private long             columnSize    = 0;
+    @Setter
+    @Getter
+    private boolean          therePK       = true;
 
     private long             insMsgNum     = 0;
     private long             updMsgNum     = 0;
@@ -112,9 +115,6 @@ public class TableInfo {
     public ArrayList<ColumnInfo> getKeyColumns() { return keyColumns; }
     public ArrayList<ColumnInfo> getColumns() { return columns; }
     public Map<Integer, ColumnInfo> getColumnMap() { return columnMap; }
-
-    // there are no primary key when colId is 0, the data can been repeatable
-    public boolean isRepeatable() { return (keyColumns.get(0).getColumnID() != 0); }
 
     public synchronized void incInsertRows(long rows) { insertNum += rows; }
     public synchronized void incUpdateRows(long rows) { updateNum += rows; }
