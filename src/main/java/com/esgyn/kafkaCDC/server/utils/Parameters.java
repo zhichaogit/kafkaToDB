@@ -217,7 +217,7 @@ public class Parameters {
 	database.setDBType(getStringParam("type", Constants.DEFAULT_DATABASE));
 	database.setDBDriver(getStringParam("driver", Constants.DEFAULT_DRIVER));
 	database.setDBUser(getStringParam("dbuser", Constants.DEFAULT_USER));
-        database.setDBPassword(getStringParam("dbpw", Constants.DEFAULT_PASSWORD));
+        database.setDBPW(getStringParam("dbpw", Constants.DEFAULT_PASSWORD));
 	database.setDBTenant(getStringParam("tenant", null));
         database.setDefSchema(getStringParam("schema", null));
         database.setDefTable(getStringParam("table", null));
