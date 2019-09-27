@@ -55,7 +55,10 @@ public class ConsumerThread extends Thread {
 		    consumerTasks.offer(consumerTask);
 		} else {
 		    // check the timeout and set looping false to exit loop
-		    checkTimeOut();
+		    if (!checkTimeOut()) {
+			// if not timeout, need to return the task to the queue
+			consumerTasks.offer(consumerTask);
+		    }
 		}
 		// reset the task null
 		consumerTask = null;
@@ -81,7 +84,7 @@ public class ConsumerThread extends Thread {
         if (log.isTraceEnabled()) { log.trace("exit");}
     }
 
-    public void checkTimeOut() { 
+    public boolean checkTimeOut() { 
 	Long  freeTime = Utils.getTime() - preConsumeTime;
 
 	if (freeTime > consumerTasks.getMaxFreeTime()) {
@@ -89,7 +92,10 @@ public class ConsumerThread extends Thread {
 		     + "s] had more than the max free time [" 
 		     + consumerTasks.getMaxFreeTime()/1000 + "s]");
 	    looping.set(false);
+	    return true;
 	}
+
+	return false;
     }
 
     public void show(StringBuffer strBuffer) { 
