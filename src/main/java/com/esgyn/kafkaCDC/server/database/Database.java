@@ -15,12 +15,16 @@ public class Database {
 
     public static Connection CreateConnection(DatabaseParams database_) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
+        if (log.isDebugEnabled()) {
+            log.debug("dburl[" + database_.getDBUrl() + "],dbuser[" + database_.getDBUser()
+            + "],DBPassword[" + database_.getDBPW() + "]");
+        }
 
         Connection dbConn = null;
         try {
             Class.forName(database_.getDBDriver());
             dbConn = DriverManager.getConnection(database_.getDBUrl(), database_.getDBUser(), 
-						 database_.getDBPassword());
+						 database_.getDBPW());
             dbConn.setAutoCommit(false);
             Statement cqdStmt = dbConn.createStatement();
             cqdStmt.execute(CQDSQL);

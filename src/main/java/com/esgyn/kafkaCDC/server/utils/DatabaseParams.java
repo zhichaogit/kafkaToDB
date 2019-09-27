@@ -41,7 +41,7 @@ public class DatabaseParams {
     private String          DBUser      = Constants.DEFAULT_USER;
     @Setter
     @Getter
-    private String          DBPassword  = Constants.DEFAULT_PASSWORD;
+    private String          DBPW        = Constants.DEFAULT_PASSWORD;
     @Setter
     @Getter
     private String          DBTenant    = null;
@@ -428,7 +428,7 @@ public class DatabaseParams {
 	    .append("\n\tDBPort        = "    + DBPort)
 	    .append("\n\tDBDriver      = "    + DBDriver)
 	    .append("\n\tDBUser        = "    + DBUser)
-	    .append("\n\tDBPassword    = "    + DBPassword)
+	    .append("\n\tDBPassword    = "    + DBPW)
 	    .append("\n\tDBTenant      = "    + DBTenant)
 	    .append("\n\tdefSchema     = "    + defSchema)
 	    .append("\n\tdefTable      = "    + defTable)
