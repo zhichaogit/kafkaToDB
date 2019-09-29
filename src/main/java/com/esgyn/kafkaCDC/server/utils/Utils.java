@@ -1,9 +1,11 @@
 package com.esgyn.kafkaCDC.server.utils;
 
+import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 
 import org.apache.log4j.Logger;
@@ -140,5 +142,59 @@ public class Utils {
 	} catch (Exception e) {
 	    log.error("throw exception when call Thread.sleep.");
 	}
+    }
+    /**
+     * @param passWord
+     * @return decode passWord
+     */
+    public static String getDecodePW(String passWord) {
+        if (passWord !=null && passWord.startsWith("[") && passWord.endsWith("]")) {
+            passWord=passWord.substring(1, passWord.length() - 1);
+            decodeBase64(passWord, "utf-8");
+        }
+        return passWord;
+    }
+    /**
+     * Base64 decode.
+     * @param input
+     * @param encoding
+     * @return decodeBase64
+     */
+    public static String decodeBase64(String input,String encoding) {
+        String decodeBase64 = null;
+        try {
+            decodeBase64 =
+                    new String(Base64.getDecoder().decode(input.getBytes()), encoding);
+        } catch (UnsupportedEncodingException e) {
+            log.error("decode passWD has error"+e);
+        }
+        return decodeBase64;
+    }
+    /**
+     * 
+     * @param passWord
+     * @return encodePW
+     */
+    public static String getEncodePW(String passWord) {
+        String encodePW = null;
+        if (passWord !=null) {
+            encodePW = encodeBase64(passWord,"utf-8");
+        }
+        return ("[" + encodePW + "]");
+    }
+    /**
+     * Base64 encode.
+     * @param input
+     * @return
+     */
+    public static String encodeBase64(String input,String encoding) {
+
+        String asB64 = null;
+        try {
+            asB64 = Base64.getEncoder().encodeToString(input.getBytes(encoding));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return asB64;
     }
 }

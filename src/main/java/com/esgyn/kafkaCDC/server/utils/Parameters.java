@@ -143,7 +143,12 @@ public class Parameters {
 	    database = params.getDatabase();
 	    kafkaCDC = params.getKafkaCDC();
 	    mappings = params.getMappings();
-        } else {
+        } else if (cmdLine.hasOption("encryptPW")) {
+            String encryptPW = getStringParam("encryptPW", null);
+            String encodePW = Utils.getEncodePW(encryptPW);
+            log.info("encodePW:" + encodePW);
+            System.exit(0);
+        }else {
 
 	    // for database options
 	    setDatabaseOptions();
@@ -383,6 +388,7 @@ public class Parameters {
         props.put("key.deserializer", Constants.KEY_STRING);
         props.put("value.deserializer", Constants.VALUE_STRING);
         if (kafkaUser != null && kafkaPW != null) {
+            kafkaPW = Utils.getDecodePW(kafkaPW);
             props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
             props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
             props.put("sasl.jaas.config", Constants.SEC_PLAIN_STRING

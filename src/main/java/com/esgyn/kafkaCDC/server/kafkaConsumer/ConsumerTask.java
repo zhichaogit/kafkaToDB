@@ -182,13 +182,16 @@ public class ConsumerTask<T> {
         props.put("value.deserializer",        kafkaParams.getValue());
         props.put("max.poll.records",          (int) kafkaParams.getFetchSize());
         
-        if (kafkaParams.getKafkaUser() != null) {
+        String kafkaUser = kafkaParams.getKafkaUser();
+        String kafkaPW   = kafkaParams.getKafkaPW();
+        if (kafkaUser != null && kafkaPW != null) {
+            kafkaPW = Utils.getDecodePW(kafkaPW);
 	    props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, 
 		      "SASL_PLAINTEXT");
 	    props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
 	    props.put("sasl.jaas.config", Constants.SEC_PLAIN_STRING
-		      + kafkaParams.getKafkaUser() + " password=" 
-		      + kafkaParams.getKafkaPW() + ";");
+		      + kafkaUser + " password="
+		      + kafkaPW + ";");
         }
 
         if (log.isTraceEnabled()) { log.trace("exit"); }

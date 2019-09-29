@@ -23,6 +23,7 @@ usage: Consumer Server
 *    --delim <arg>      field delimiter, default: ','(comma)
 *    --driver <arg>     database driver, default:
 * -e,--encode <arg>     character encoding of data, default: "utf8"
+*    --encryptPW <arg>  encryption the password
 * -f,--format <arg>     format of data, support "Unicom" "UnicomJson"
                         "HongQuan"  "Json" "Protobuf" and "user-defined"
                         default: "",
@@ -127,3 +128,6 @@ Must have maven and JDK.
 
 # UnicomJson And authentication
 *./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f UnicomJson --mode start --dbuser trafodion --dbpw traf123 -s schemaName  -t testTopic --sto 20 --interval 10  --fetchSize 500 --batchSize 500  --kafkauser username --kafkapw passwd
+
+#.encryption the password(e.g. encodePW:[dHJhZjEyMw==],the [dHJhZjEyMw==] is your password)
+*./encryptPW.sh password

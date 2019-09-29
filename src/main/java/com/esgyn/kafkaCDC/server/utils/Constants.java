@@ -103,6 +103,7 @@ public class Constants {
         {"",   "bigendian",   false, false, "the data format is big endian, default: little endian"},
         {"",   "delim",       false,  true, "field delimiter, default: ','(comma)"},
         {"e",  "encode",      false,  true, "character encoding of data, default: \"utf8\""},
+        {"",   "encryptPW",   false,  true, "encryption the password"},
         {"f",  "format",      false,  true, "format of data, support \"Unicom\" \"UnicomJson\" \"HongQuan\"  \"Json\" \"Protobuf\" and \"user-defined\" default: \"\","},
         {"",   "interval",    false,  true, "the print state time interval, the unit is second, default: 10s"},
         {"",   "keepalive",   false,  true, "check database keepalive, default is false"},
