@@ -39,6 +39,11 @@ public class UnicomJsonRowMessage extends RowMessage<String> {
             strBuffer.append("start analyzeMessage...\n");
 
         }
+
+        if (schemaName==null && desSchema != null) {
+            schemaName = desSchema;
+        }
+
         try {
             JsonNode nodes = mapper.readTree(message);
             for (JsonNode node : nodes) {

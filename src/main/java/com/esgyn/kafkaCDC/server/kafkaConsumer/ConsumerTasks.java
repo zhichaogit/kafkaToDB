@@ -76,6 +76,7 @@ public class ConsumerTasks<T> {
 	
 	for(TopicParams topic : topics){
 	    String topicName  = topic.getTopic();
+	    String desSchema  = topic.getDesSchema();
 
 	    if (log.isDebugEnabled()) {
 		log.debug("there are [" + topic.getPartitions().length 
@@ -92,7 +93,7 @@ public class ConsumerTasks<T> {
 		    loaderID = 0;
 		loaderHandle = loaderHandles.get(loaderID++);
 		ConsumerTask consumerTask = 
-		    new ConsumerTask(consumeStates, topicName, topic.getGroup(), 
+		    new ConsumerTask(consumeStates, topicName, desSchema, topic.getGroup(),
 				     partitionID, loaderHandle);
 		if (!consumerTask.init())
 		    return false;

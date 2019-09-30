@@ -44,6 +44,9 @@ public class ConsumerTask<T> {
     private String              topic                        = null;
     @Setter
     @Getter
+    private String              desSchema                    = null;
+    @Setter
+    @Getter
     private String              group                        = null;
     @Setter
     @Getter
@@ -75,12 +78,13 @@ public class ConsumerTask<T> {
 
     private static Logger       log     = Logger.getLogger(ConsumerTask.class);
 
-    public ConsumerTask(ConsumeStates consumeStates_, String topic_, String group_,
+    public ConsumerTask(ConsumeStates consumeStates_, String topic_,String desSchema_, String group_,
 			int partitionID_, LoaderHandle loaderHandle_) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
 	consumeStates  = consumeStates_;
 	topic          = topic_;
+	desSchema      = desSchema_;
 	group          = group_;
         partitionID    = partitionID_;
 
@@ -272,7 +276,7 @@ public class ConsumerTask<T> {
 		return false;
 
 	    if (!urm.init(params, consumerID, curOffset, curTime, 
-			  partitionID, topic, msg)) {
+			  partitionID, topic, desSchema, msg)) {
 		log.error("message from Kafka initialize RowMessage error, "
 			  + "we can continue to consume except you fix the issue. "
 			  + "thread [" + consumerID + "], offset [" + curOffset

@@ -8,6 +8,9 @@ public class TopicParams {
     @Setter
     @Getter
     private String          topic       = null;
+    @Setter
+    @Getter
+    private String          desSchema   = null;
     @Setter 
     @Getter
     private String          partition   = "-1";
@@ -27,7 +30,7 @@ public class TopicParams {
 	    partStr += "," + partitions[i];
 	}
 	partStr += "]";
-	strBuffer.append(topic + " : {")
+	strBuffer.append(topic +"(" + desSchema + ")"+" : {")
 	    .append("partition : " + partStr + ", group : " + group)
 	    .append("}");
 

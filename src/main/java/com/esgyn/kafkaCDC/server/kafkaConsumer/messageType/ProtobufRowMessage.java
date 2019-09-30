@@ -86,8 +86,9 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             tableName = names[0];
         }
 
-        if (schemaName==null) 
-	    schemaName = params.getDatabase().getDefSchema();
+        if (schemaName==null && desSchema != null) {
+            schemaName = desSchema;
+        }
 
         if (tableName==null) 
 	    tableName = params.getDatabase().getDefTable();

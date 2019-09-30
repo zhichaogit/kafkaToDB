@@ -19,6 +19,7 @@
 		"mode": "start",
 		"topics": [{
 		 	  "topic":"g_ad",
+		 	  "desSchema":"SEABASE",
 			  "partition":1,
 			  "group": "0"
                 }],
