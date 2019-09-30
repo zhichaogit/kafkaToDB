@@ -79,7 +79,8 @@ public class RowMessage<T> implements Cloneable{
 	partitionID= partitionID_;
 	message    = message_;
 	
-        schemaName = params.getDatabase().getDefSchema();
+        String defSchema = params.getDatabase().getDefSchema();
+        schemaName = (defSchema==null || defSchema.contains(",")) ? null : defSchema;
         tableName  = params.getDatabase().getDefTable();
 	if (schemaName != null && !schemaName.isEmpty()
 	    && tableName != null && !tableName.isEmpty()) {
