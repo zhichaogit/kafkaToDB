@@ -1,16 +1,22 @@
 PARTITION=$1
 BROKER=$2
 DBIP=$3
-TOPIC=$4
-FORMAT=$5
-DESTSCHEMASRC=$6
-DESTSCHEMA=$7
-T1SRC=$8
-T1=$9
-T2SRC=${10}
-T2=${11}
+TOPIC1=$4
+TOPIC2=$5
+FORMAT=$6
+DESTSCHEMASRC1=$7
+DESTSCHEMASRC2=$8
+DESTSCHEMA1=$9
+DESTSCHEMA2=${10}
+T1SRC=${11}
+T1=${12}
+T2SRC=${13}
+T2=${14}
 
-CONFILE=${12}
+CONFILE=${15}
+DESSCHEMA1=${16}
+DESSCHEMA2=${17}
+
 
 echo "{
 	\"database\": {
@@ -32,9 +38,15 @@ echo "{
 		\"fetchSize\": 10000,
 		\"mode\": \"start\",
 		\"topics\": [{
-		 	  \"topic\":\"${TOPIC}\",
+		 	  \"topic\":\"${TOPIC1}\",
+                          \"desSchema\":\"${DESSCHEMA1}\",
 			  \"partition\":${PARTITION},
 			  \"group\": \"0\"
+                },{
+                          \"topic\":\"${TOPIC2}\",
+                          \"desSchema\":\"${DESSCHEMA2}\",
+                          \"partition\":${PARTITION},
+                          \"group\": \"0\"
                 }],
 		\"kafkaUser\": null,
 		\"kafkaPW\": null,
@@ -67,9 +79,9 @@ echo "{
 		\"showSpeed\": true
 	},
 	\"mappings\": [{
-		\"srcSchemaName\": \"${DESTSCHEMASRC}\",
+		\"srcSchemaName\": \"${DESTSCHEMASRC1}\",
 		\"srcTableName\": \"$T1SRC\",
-		\"schemaName\": \"${DESTSCHEMA}\",
+		\"schemaName\": \"${DESTSCHEMA1}\",
 		\"tableName\": \"$T1\",
 		\"columns\": [{
 			\"srcColumnName\": \"\",
@@ -79,9 +91,9 @@ echo "{
 			\"columnName\": \"t001_c2\"
 		}]
 	}, {
-		\"srcSchemaName\": \"${DESTSCHEMASRC}\",
+		\"srcSchemaName\": \"${DESTSCHEMASRC2}\",
 		\"srcTableName\": \"$T2SRC\",
-		\"schemaName\": \"${DESTSCHEMA}\",
+		\"schemaName\": \"${DESTSCHEMA2}\",
 		\"tableName\": \"$T2\"
 	}]
 }" > $CONFILE

@@ -355,6 +355,11 @@ public class DatabaseParams {
         String    srcSchemaName = tableInfo.getSrcSchemaName();
 	TableInfo tableInfoMap = tableHashMap.get(tableName);
 
+        if (tableInfoMap == null) {
+            log.warn( tableInfoMap + " not exist when mapping.");
+            return;
+        }
+
 	if (srcSchemaName == null || srcSchemaName.isEmpty()) {
 	    srcSchemaName = tableInfoMap.getSchemaName();
 	} 
