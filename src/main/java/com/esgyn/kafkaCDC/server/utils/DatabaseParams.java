@@ -100,12 +100,11 @@ public class DatabaseParams {
 
         try {
             DatabaseMetaData dbmd = dbConnMD.getMetaData();
-            String schemaName = null;
 
             if (defSchema == null) {
                 schemaRS = dbmd.getSchemas();
                 while (schemaRS.next()) {
-                    schemaName = schemaRS.getString("TABLE_SCHEM");
+                    String schemaName = schemaRS.getString("TABLE_SCHEM");
 		    // skip the system schema
 		    if (schemaName.equals("_LIBMGR_") || schemaName.equals("_MD_") 
 			|| schemaName.equals("_PRIVMGR_MD_") || schemaName.equals("_REPOS_")
@@ -116,8 +115,11 @@ public class DatabaseParams {
                     init_schema(dbConnMD, schemaName);
                 }
             } else {
-                log.info("start to init default schema [" + defSchema + "]");
-                init_schema(dbConnMD, defSchema);
+                String[] schemaNames= defSchema.split(",");
+                for (String schemaName : schemaNames) {
+                    log.info("start to init default schema [" + schemaName + "]");
+                    init_schema(dbConnMD, schemaName);
+                }
 
                 if (tableHashMap.size() <= 0) {
                     log.error("init schema [" + defSchema + "] fail, cann't find any table!");
@@ -172,7 +174,7 @@ public class DatabaseParams {
             } else {
                 String[] tableNames= defTable.split(",");
                 for (String tableName : tableNames) {
-                    init_table(tableInfo, dbconn, defSchema, tableName);
+                    init_table(tableInfo, dbconn, schemaName, tableName);
                 }
                 if (tableNames.length > 1) 
                     defTable = null;
