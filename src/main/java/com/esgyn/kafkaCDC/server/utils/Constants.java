@@ -16,7 +16,9 @@ public class Constants {
     public final static int          DEFAULT_HEATBEAT_TO_S = 10;
     public final static int          DEFAULT_SESSION_TO_S  = 30;
     public final static int          DEFAULT_REQUEST_TO_S  = 305;
+    public final static long         DEFAULT_CLEANDELAY_S  = 3600;
     public final static long         DEFAULT_INTERVAL_S    = 10;
+    public final static long         DEFAULT_CLEAN_I_S     = 60;
 
     public final static long         DEFAULT_BATCH_SIZE    = 5000;
     public final static long         DEFAULT_FETCH_SIZE    = 10000;
@@ -61,6 +63,8 @@ public class Constants {
 	 + " default: 5000 "},
 	{"",   "batchUpdate", false, false, "update operate will use batch, default: false"},
 	{"",   "conf",        false,  true, "specified configuration parameter file"},
+	{"",   "cleanDelayTime",   false,  true, "clean the log delay time,default: 3600s"},
+	{"",   "cleanInterval",false,  true, "clean log interval time,-1 will not clean.default: 10s"},
         {"d",  "dbip",        false,  true, "database server ip, default: \"localhost\""},
         {"",   "dbport",      false,  true, "database server port, default: 23400"},
         {"",   "dbuser",      false,  true, "database server user, default: db__root"},

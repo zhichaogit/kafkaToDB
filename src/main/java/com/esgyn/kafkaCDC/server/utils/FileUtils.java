@@ -7,6 +7,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -177,5 +179,61 @@ public class FileUtils {
 
 	    return dumped;
 	}
+    }
+    /**
+     * @param rootPathStr
+     * @param startTime   save file start time
+     * @param endTime    save file start end
+     * @return
+     */
+    public static long saveTimeRegionFiles(String rootPathStr,Date startTime,Date endTime) {
+        if (log.isTraceEnabled()) { log.trace("enter"); }
+        File fullFilePath      = null;
+        Date fileModifyTime    = null;
+        StringBuffer strBuffer = null;
+        File rootPath          = new File(rootPathStr);
+        List<File> deleteFiles = new ArrayList<>();
+        rootPathStr            = rootPathStr.endsWith("/") ? rootPathStr : (rootPathStr + "/");
+
+        if (log.isDebugEnabled()) {
+            strBuffer = new StringBuffer();
+            strBuffer.append("current delete " + rootPathStr + " files[");
+        }
+        for (String fileName : rootPath.list()) {
+            fullFilePath   = new File(rootPathStr +"/"+ fileName);
+            fileModifyTime = new Date(fullFilePath.lastModified());
+            if (fileModifyTime.before(endTime) || fileModifyTime.after(startTime)) {
+                if (log.isDebugEnabled()) {
+                    strBuffer.append(fileName + ",");
+                }
+                deleteFiles.add(fullFilePath);
+            }
+        }
+
+        long dropFileCount= batchDropFiles(deleteFiles);
+
+        if (log.isDebugEnabled()) {
+            if (dropFileCount > 0) {
+                log.debug("current delete files num [" + dropFileCount + "]");
+                strBuffer.append("]");
+                log.debug(strBuffer.toString());
+            }else {
+                log.debug("no file need to drop.");
+            }
+        }
+
+        if (log.isTraceEnabled()) { log.trace("exit"); }
+        return dropFileCount;
+    }
+    /**
+     *  batch drop files
+     * @param deleteFiles  file List for drop
+     * @return dropFileCount drop File number
+     */
+    public static long batchDropFiles(List<File> deleteFiles) {
+        for (File file : deleteFiles) {
+            file.delete();
+        }
+        return deleteFiles.size();
     }
 }

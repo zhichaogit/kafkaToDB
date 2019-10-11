@@ -44,6 +44,8 @@
 		"encoding": "UTF8",
 		"format": "HongQuan",
 		"interval": 2,
+                "cleanDelayTime": 3600,
+                "cleanInterval": 10,
 		"skip": false,
 		"loaders": 4,
 		"loadDir": "load",

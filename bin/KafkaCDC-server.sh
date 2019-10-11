@@ -34,7 +34,13 @@ echo "java_home:$JAVA_HOME"
 echo "BASEPATH:${BASEPATH}"
 echo "LIBSPATH:${LIBSPATH}"
 
-#2 analy parameters
+#2 drop logs just reserve 3
+if [ -d $BASEPATH/logs ];then
+  LOGSPATH="$BASEPATH/logs"
+  echo "LOGSPATH:${LOGSPATH}"
+  . $BASEPATH/bin/droplogs.sh
+fi
+#3 analy parameters
 execCommand="java -Djava.ext.dirs=${LIBSPATH}:$JAVA_HOME/jre/lib/ext -jar $LIBSPATH/KafkaCDC.jar"
 
 if [ $# = 0 ]; then
@@ -43,5 +49,5 @@ if [ $# = 0 ]; then
   exit
 fi
 
-#3. exec jar file
+#4. exec jar file
 exec ${execCommand} "${@}"

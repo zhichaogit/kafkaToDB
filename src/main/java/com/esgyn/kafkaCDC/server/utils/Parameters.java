@@ -60,6 +60,9 @@ public class Parameters {
      *    --batchUpdate update operate will use batch, default: false
      *    --conf <arg> read parameters from config file
      * -c --commit <arg> num message per Kakfa synch/pull (num recs, default is 5000) 
+     *    --cleanInterval <arg>   specified interval time of clean log,-1 will not clean.
+     *                            default: -1
+     *    --cleanTime <arg>       specified the time of clean Previous log,default: "3600" s
      * -d --dbip <arg> database server ip 
      * -e --encode <arg> character encoding of data, default: utf8 
      * -f,--format <arg> format of data, default: "" 
@@ -280,6 +283,8 @@ public class Parameters {
         kafkaCDC.setEncoding(getStringParam("encode", Constants.DEFAULT_ENCODING));
         kafkaCDC.setFormat(getStringParam("format", ""));
         kafkaCDC.setInterval(getLongParam("interval", Constants.DEFAULT_INTERVAL_S));
+        kafkaCDC.setCleanDelayTime(getLongParam("cleanDelayTime", Constants.DEFAULT_CLEANDELAY_S));
+        kafkaCDC.setCleanInterval(getLongParam("cleanInterval", Constants.DEFAULT_CLEAN_I_S));
 	kafkaCDC.setSkip(getBoolParam("skip", false));
 	kafkaCDC.setLoaders(getLongParam("loader", Constants.DEFAULT_LOADERS));
 	kafkaCDC.setLoadDir(getStringParam("loadDir", "load"));
@@ -331,9 +336,13 @@ public class Parameters {
             reportErrorAndExit("if table is specified, schema must be specified too.");
         }
 
-        // interval ||zkTO || hbTO || seTO ||reqTo can't be "0"
+        // interval ||CleanDelayTime||zkTO || hbTO || seTO ||reqTo can't be "0"
         if (kafkaCDC.getInterval() <= 0) {
             reportErrorAndExit("the interval parameter can't less than or equal \"0\" ");
+        }
+
+        if (kafkaCDC.getCleanDelayTime() <= 0) {
+            reportErrorAndExit("the CleanDelayTime parameter can't less than or equal \"0\" ");
         }
 
         if (kafka.getZkTO() <= 0) {

@@ -6,61 +6,69 @@ import lombok.Setter;
 public class KafkaCDCParams {
     @Setter 
     @Getter 
-    private long            consumers   = Constants.DEFAULT_CONSUMERS;
+    private long            consumers     = Constants.DEFAULT_CONSUMERS;
     @Setter 
     @Getter
-    private boolean         bigEndian   = false;
+    private boolean         bigEndian     = false;
     @Setter 
     @Getter
-    private String          delimiter   = Constants.DEFAULT_DELIMITER;
+    private String          delimiter     = Constants.DEFAULT_DELIMITER;
     @Setter 
     @Getter
-    private boolean         dumpBinary  = false;
+    private boolean         dumpBinary    = false;
     @Setter 
     @Getter
-    private String          encoding    = Constants.DEFAULT_ENCODING;
+    private String          encoding      = Constants.DEFAULT_ENCODING;
     @Setter 
     @Getter
-    private String          format      = null;
+    private String          format        = null;
     @Setter 
     @Getter
-    private long            interval    = Constants.DEFAULT_INTERVAL_S;
-    @Setter 
-    @Getter
-    private boolean         skip        = false;
-    @Setter 
-    @Getter 
-    private long            loaders     = Constants.DEFAULT_LOADERS;
-    @Setter 
-    @Getter
-    private String          loadDir     = null;
+    private long            interval      = Constants.DEFAULT_INTERVAL_S;
     @Setter
     @Getter
-    private String          kafkaDir    = null;
+    private long            cleanDelayTime= Constants.DEFAULT_CLEANDELAY_S;
+    @Setter
+    @Getter
+    private long            cleanInterval = Constants.DEFAULT_CLEAN_I_S;
+    @Setter 
+    @Getter
+    private boolean         skip          = false;
+    @Setter 
+    @Getter 
+    private long            loaders       = Constants.DEFAULT_LOADERS;
+    @Setter 
+    @Getter
+    private String          loadDir       = null;
+    @Setter
+    @Getter
+    private String          kafkaDir      = null;
     @Setter 
     @Getter
     private boolean         showConsumers = true;
     @Setter 
     @Getter
-    private boolean         showLoaders = true;
+    private boolean         showLoaders   = true;
     @Setter 
     @Getter
-    private boolean         showTasks   = false;
+    private boolean         showTasks     = false;
     @Setter 
     @Getter
-    private boolean         showTables  = true;
+    private boolean         showTables    = true;
     @Setter 
     @Getter
-    private boolean         showSpeed   = false;
+    private boolean         showSpeed     = false;
     @Setter 
     @Getter
-    private String          msgClass    = null;
+    private String          msgClass      = null;
 
     public void init(String startTime) {
 	loadDir = getFullPath(loadDir, startTime);
 	kafkaDir = getFullPath(kafkaDir, startTime);
 
-	interval *= 1000;
+	interval       *= 1000;
+	cleanDelayTime *= 1000;
+	cleanInterval  *= 1000;
 	msgClass = "com.esgyn.kafkaCDC.server.kafkaConsumer.messageType." 
 	    + format + "RowMessage";
     }
@@ -83,6 +91,8 @@ public class KafkaCDCParams {
 	    .append("\n\tencoding      = "    + encoding)
 	    .append("\n\tformat        = "    + format)
 	    .append("\n\tinterval      = "    + interval/1000 + "s")
+	    .append("\n\tcleanTime     = "    + cleanDelayTime/1000 + "s")
+	    .append("\n\tcleanInterval = "    + cleanInterval/1000 + "s")
 	    .append("\n\tskip          = "    + skip)
 	    .append("\n\tloaders       = "    + loaders)
 	    .append("\n\tloadDir       = "    + loadDir)
