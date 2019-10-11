@@ -37,6 +37,10 @@ public class JsonRowMessage extends RowMessage<String> {
             dataJsonNode = node.get("data");
             oldJsonNode = node.get("old");
 
+            if (schemaName==null && desSchema != null) {
+                schemaName = desSchema;
+            }
+
             if (log.isDebugEnabled()) {
                 StringBuffer strBuffer = new StringBuffer();
                 strBuffer.append("schema: [" + schemaName + "], tablename: [" + tableName + "]}");

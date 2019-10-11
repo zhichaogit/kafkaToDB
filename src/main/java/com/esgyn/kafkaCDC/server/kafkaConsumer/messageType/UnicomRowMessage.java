@@ -55,6 +55,11 @@ public class UnicomRowMessage extends RowMessage<String> {
         } else {
             tableName = names[0];
         }
+
+        if (schemaName==null && desSchema != null) {
+            schemaName = desSchema;
+        }
+
         operatorType = formats[2];
         timestamp = formats[3];
 

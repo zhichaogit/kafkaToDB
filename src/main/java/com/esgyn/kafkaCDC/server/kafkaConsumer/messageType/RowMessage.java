@@ -55,6 +55,8 @@ public class RowMessage<T> implements Cloneable{
     protected long                 partitionID  = -1;
     @Getter
     protected String               topic        = null;
+    @Getter
+    protected String               desSchema    = null;
 
 
     public TableInfo getTableInfo(String tableName) {
@@ -66,7 +68,7 @@ public class RowMessage<T> implements Cloneable{
 
     public boolean init(Parameters params_, int thread_, Long offset_,
 			long latestTime_, long partitionID_, String topic_, 
-			T message_) {
+			String desSchema_, T message_) {
 	boolean retValue = true;
 
         if (log.isTraceEnabled()) { log.trace("enter"); }
@@ -76,6 +78,7 @@ public class RowMessage<T> implements Cloneable{
 	offset     = offset_;
 	latestTime = latestTime_;
 	topic      = topic_;
+	desSchema  = desSchema_;
 	partitionID= partitionID_;
 	message    = message_;
 	
