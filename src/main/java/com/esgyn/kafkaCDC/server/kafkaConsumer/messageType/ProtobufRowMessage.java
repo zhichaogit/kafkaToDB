@@ -101,7 +101,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                         + "] is not exist in Database.");
             }
 
-	    return false;
+	    return true;
         }
         if (colNum != tableInfo.getColumnCount() && (sourceType != SOURCEORACLE)) {
             log.error("Table [" + schemaName + "." + tableName
