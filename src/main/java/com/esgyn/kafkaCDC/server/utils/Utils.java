@@ -35,6 +35,27 @@ public class Utils {
         return ts;
     }
     /**
+     * Long format stamp  to String format date
+     * @param stamp
+     * @return dateStr
+     */
+    public static String stampToDateStr(long stamp) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String dateStr = sdf.format(stamp);
+        return  dateStr;
+    }
+    /**
+     *  date format to string
+     * @param date
+     * @return date string
+     */
+    public static String dateToStr(Date date) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String dateStr = sdf.format(date);
+        return dateStr;
+    }
+
+    /**
      * Determine whether it is a time type
      * @param datevalue
      * @return 

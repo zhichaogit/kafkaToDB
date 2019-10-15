@@ -275,8 +275,7 @@ public class ConsumerTask<T> {
 	    if (!checkRecord(record))
 		return false;
 
-	    if (!urm.init(params, consumerID, curOffset, curTime, 
-			  partitionID, topic, desSchema, msg)) {
+	    if (!urm.init(params, consumerID, curOffset, partitionID, topic, desSchema, msg)) {
 		log.error("message from Kafka initialize RowMessage error, "
 			  + "we can continue to consume except you fix the issue. "
 			  + "thread [" + consumerID + "], offset [" + curOffset
@@ -358,6 +357,7 @@ public class ConsumerTask<T> {
 
 	consumeStates.addKafkaMsgNum(records.count());
 	consumeStates.addKafkaErrNum(insErrs + updErrs + keyErrs + delErrs);
+	consumeStates.setLatestTime(topic, curTime);
 
 	if (log.isTraceEnabled()) { log.trace("exit"); }
 
@@ -485,9 +485,9 @@ public class ConsumerTask<T> {
     public void show(StringBuffer strBuffer) {
 	String consumerTaskStr =
 	    String.format("  -> msg task [loader:%3d, topic:%16s, partition:%3d"
-			  + ", group:%16s, number:%12d, time:%15d, offset:%12d]\n",
+			  + ", group:%16s, number:%12d, time:%15s, offset:%12d]\n",
 			  loaderHandle.getLoaderID(), topic, partitionID, group, 
-			  consumeNumber, curTime, curOffset);
+			  consumeNumber, Utils.stampToDateStr(curTime), curOffset);
 
 	strBuffer.append(consumerTaskStr);
     }

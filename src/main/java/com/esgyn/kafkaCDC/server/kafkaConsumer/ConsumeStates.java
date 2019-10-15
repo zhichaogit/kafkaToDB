@@ -1,13 +1,15 @@
 package com.esgyn.kafkaCDC.server.kafkaConsumer;
 
 import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.databaseLoader.LoadStates;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
+import com.esgyn.kafkaCDC.server.utils.Utils;
 
 import lombok.Getter;
 
@@ -36,6 +38,7 @@ public class ConsumeStates {
     private long                        maxSpeed      = 0;
 
     private Date                        startTime     = null;
+    private Map<String, Long>           latestTimeMap = null;
 
     private static Logger log = Logger.getLogger(ConsumeStates.class);
 
@@ -47,6 +50,7 @@ public class ConsumeStates {
 	params        = consumerTasks.getParams();
 
         startTime     = new Date();
+        latestTimeMap = new HashMap<String, Long>();
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
     }
@@ -88,8 +92,24 @@ public class ConsumeStates {
 	incMsgNum   += kafkaMsgNum_;
     }
 
+    public synchronized void setLatestTime(String topic,long latestTime_) {
+        if (latestTimeMap.get(topic) == null || (latestTime_ > latestTimeMap.get(topic))) {
+            latestTimeMap.put(topic, latestTime_);
+        }
+    }
+
     public synchronized void addKafkaErrNum(long kafkaErrNum_) {
         kafkaErrNum += kafkaErrNum_;
+    }
+
+    public String mapToStr(Map<String, Long> latestTimeMap) {
+        StringBuffer strBuf = new StringBuffer();
+        for(Map.Entry<String, Long> entry : latestTimeMap.entrySet()){
+            String topic = entry.getKey();
+            String latstTimeStr = Utils.stampToDateStr(entry.getValue());
+            strBuf.append("  latestTime:[" + topic + "=" + latstTimeStr +"]\n");
+        }
+        return strBuf.toString();
     }
 
     public void show(StringBuffer strBuffer) {
@@ -101,13 +121,12 @@ public class ConsumeStates {
         if (curSpeed > maxSpeed)
             maxSpeed = curSpeed;
         DecimalFormat df = new DecimalFormat("####0.000");
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	strBuffer.append("  running time [" + df.format(useTime) + "s")
-	    .append(", start: " + sdf.format(startTime))
-	    .append(", cur: " + sdf.format(endTime) + "]\n")
-	    .append("  Consumers states [total: " + kafkaMsgNum)
-	    .append(", err: " + kafkaErrNum)
+	    .append(", start: " + Utils.dateToStr(startTime))
+	    .append(", cur: " + Utils.dateToStr(endTime) + "]\n")
+	    .append("  Consumers states:\n")
+	    .append("  [total: " + kafkaMsgNum+", err: " + kafkaErrNum)
 	    .append(", inc: " + incMsgNum + "]")
 	    .append(", messages [I: " + insMsgNum)
 	    .append(", U: " + updMsgNum)
@@ -119,7 +138,8 @@ public class ConsumeStates {
 	    .append(", D: " + delErrNum + "]")
 	    .append(", Speed(n/s) [max: " + maxSpeed)
 	    .append(", avg: " + avgSpeed)
-	    .append(", cur: " + curSpeed + "]\n");
+	    .append(", cur: " + curSpeed + "]\n")
+	    .append(mapToStr(latestTimeMap));
 
 	incMsgNum = 0;
     }
