@@ -69,7 +69,7 @@ usage: Consumer Server
 *    --showTables       show the tables details, default: true
 *    --showTasks        show the consumers task details, default: false
 *    --skip             skip all errors of data, default: false
-*    --sto <arg>        kafka poll time-out limit, default: 60s
+*    --sto <arg>        consumer free TimeOut,-1 not TO forever, default: 60s
 * -t,--topic <arg>      REQUIRED. topic of subscription
 *    --table <arg>      table name, default: null, you should write like
                         this [tablename]  if tablename is lowerCase you
