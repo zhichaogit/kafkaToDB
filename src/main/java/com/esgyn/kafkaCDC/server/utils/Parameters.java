@@ -16,6 +16,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.log4j.Logger;
+import org.apache.log4j.xml.DOMConfigurator;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -112,9 +113,11 @@ public class Parameters {
 	try{
 	    cmdLine = parser.parse(exeOptions, args);
 	} catch (Exception e) {
-	    log.error("KafkaCDC init parameters error.", e);
+	    System.err.println("KafkaCDC init parameters error."+ e);
             System.exit(0);
 	}
+
+	init_log4j_conf();
 
         boolean getVersion = cmdLine.hasOption("version") ? true : false;
         if (getVersion) {
@@ -163,6 +166,14 @@ public class Parameters {
 	reportOptions();
 
 	initDirectories();
+    }
+
+    public void init_log4j_conf() {
+        long logDelay = cmdLine.hasOption("logDelay") ? Long.parseLong(
+                cmdLine.getOptionValue("logDelay")) : Constants.DEFAULT_LOGDELAY_TO_S;
+        logDelay = logDelay*1000;
+        // load configure log4j.xml
+        DOMConfigurator.configureAndWatch(Constants.DEFAULT_LOGCONFPATH, logDelay);
     }
 
     public void reinit() {
