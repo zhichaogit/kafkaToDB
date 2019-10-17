@@ -57,9 +57,11 @@ public class LoaderHandle {
 
 	int size = tasks.size();
 	while (size >= 10) {
-	    log.info("the loader [" + loaderID + "] have [" + size 
-		     + "] tasks, more than 10, consumer [" + consumerID_
-		     + "] need wait 10ms to continue"); 
+	    if (log.isDebugEnabled()) {
+	        log.debug("the loader [" + loaderID + "] have [" + size
+	                + "] tasks, more than 10, consumer [" + consumerID_
+	                + "] need wait 10ms to continue");
+            }
 	    try {
 		Thread.sleep(10);
 	    } catch (Exception e) {
