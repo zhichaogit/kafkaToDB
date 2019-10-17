@@ -143,7 +143,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 
             ColumnValue columnvalue = null;
             try {
-                columnvalue = get_column(messagePro,column,tableInfo);
+                columnvalue = get_column(messagePro,column,tableInfo,true);
             } catch (Exception e) {
                 return false;
             }
@@ -158,7 +158,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             }
             ColumnValue columnvalue= null;
             try {
-                columnvalue = get_column(messagePro,column,tableInfo);
+                columnvalue = get_column(messagePro,column,tableInfo,false);
             } catch (Exception e) {
                 return false;
             }
@@ -205,7 +205,8 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     }
 
 
-    private ColumnValue get_column(Record messagePro,Column column,TableInfo tableInfo) throws Exception {
+    private ColumnValue get_column(Record messagePro,Column column,TableInfo tableInfo,
+            boolean isKeyCol) throws Exception {
         String colTypeName = null;
         int sourceType = messagePro.getSourceType();//1.oracle 2.mysql(DRDS)
         offset = 0;
@@ -229,7 +230,11 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 ColumnInfo columnInfo = tableInfo.getColumn(index);
                 colTypeName = columnInfo.getTypeName().trim();
                 newValue = covertValue1(newNull,newValuebs,colTypeName,messagePro,index,colname);
-                oldValue = covertValue1(oldNull,oldValuebs,colTypeName,messagePro,index,colname);
+                if (isKeyCol && oldNull) {
+                    oldValue = newValue;
+                }else {
+                    oldValue = covertValue1(oldNull,oldValuebs,colTypeName,messagePro,index,colname);
+                }
                 break;
             case SOURCEDRDS:
                 if (log.isDebugEnabled()) {
