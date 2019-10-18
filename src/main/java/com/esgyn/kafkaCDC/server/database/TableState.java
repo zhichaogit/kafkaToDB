@@ -1039,7 +1039,7 @@ public class TableState {
 		throw se;
 
 	    log.error("throw exception when execute the update sql, the sql:["
-		      + updateSql + "]");
+		      + updateSql + "]",se);
 	    result = false;
 	}
 
