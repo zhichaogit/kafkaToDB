@@ -91,7 +91,7 @@ public class Constants {
 	{"",   "kafkapw",     false,  true, "kafka password , default: \"\""},
         {"",   "key",         false,  true, "key deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer"},
         {"",   "value",       false,  true, "value deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer"},
-        {"",   "sto",         false,  true, "kafka poll time-out limit, default: 60s"},
+        {"",   "sto",         false,  true, "consumer free TimeOut,-1 not TO forever, default: 60s"},
         {"",   "zkto",        false,  true, "zookeeper time-out limit, default: 10s"},
         {"",   "hbto",        false,  true, "heartbeat.interval.ms, default: 10s"},
         {"",   "seto",        false,  true, "session.timeout.ms, default: 30s"},

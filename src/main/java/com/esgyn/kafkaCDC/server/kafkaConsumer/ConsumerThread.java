@@ -87,7 +87,7 @@ public class ConsumerThread extends Thread {
     public boolean checkTimeOut() { 
 	Long  freeTime = Utils.getTime() - preConsumeTime;
 
-	if (freeTime > consumerTasks.getMaxFreeTime()) {
+	if ((consumerTasks.getMaxFreeTime() >=0) && (freeTime > consumerTasks.getMaxFreeTime())) {
 	    log.info("ConsumeThread free time [" + freeTime/1000 
 		     + "s] had more than the max free time [" 
 		     + consumerTasks.getMaxFreeTime()/1000 + "s]");

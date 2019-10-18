@@ -320,13 +320,9 @@ public class Parameters {
             reportErrorAndExit("if table is specified, schema must be specified too.");
         }
 
-        // interval ||streamTO ||zkTO || hbTO || seTO ||reqTo can't be "0"
+        // interval ||zkTO || hbTO || seTO ||reqTo can't be "0"
         if (kafkaCDC.getInterval() <= 0) {
             reportErrorAndExit("the interval parameter can't less than or equal \"0\" ");
-        }
-
-        if (kafka.getStreamTO() <= 0) {
-	    reportErrorAndExit("the sto parameter can't less than or equal \" 0\" ");
         }
 
         if (kafka.getZkTO() <= 0) {
