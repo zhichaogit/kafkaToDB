@@ -1,6 +1,7 @@
 {
 	"database": {
 		"batchSize": 5000,
+		"batchUpdate":false,
 		"DBIP": "localhost",
 		"DBPort": "23400",
 		"DBType": "EsgynDB",
