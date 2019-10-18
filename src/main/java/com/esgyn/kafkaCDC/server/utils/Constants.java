@@ -9,6 +9,7 @@ public class Constants {
     public final static String       KafkaCDC_VERSION      = "KafkaCDC-2.0.0";
 
     // the unit is second
+    public final static long         DEFAULT_LOGDELAY_TO_S = 10;
     public final static long         DEFAULT_STREAM_TO_S   = 60;
     public final static long         DEFAULT_WAIT_TO_S     = 2;
     public final static long         DEFAULT_ZOOK_TO_S     = 10;
@@ -109,6 +110,7 @@ public class Constants {
         {"",   "keepalive",   false,  true, "check database keepalive, default is false"},
         {"",   "skip",        false, false, "skip all errors of data, default: false"},
 	{"",   "loader",      false,  true, "processer number, default:4"},
+	{"",   "logDelay",    false,  true, "Dynamically load log4j.xml conf files interval time, default:10s"},
 	{"",   "showConsumers",false, false, "show the consumer thread details, default: true"},
 	{"",   "showLoaders", false, false, "show the loader thread details, default: true"},
 	{"",   "showTasks",   false, false, "show the consumers task details, default: false"},

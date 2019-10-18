@@ -35,6 +35,8 @@ usage: Consumer Server
                         alizer
     --loaddir <arg>     dump process data file path
     --loader <arg>      processer number, default:4
+    --logDelay <arg>    Dynamically load log4j.xml conf files interval
+                        time, default:10s
     --mode <arg>        pull data from beginning or End or specify the
                         offset, default: offset submitted last time.
                         a. --mode start : means pull the all data from the

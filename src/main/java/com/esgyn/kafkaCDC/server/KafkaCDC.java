@@ -1,11 +1,9 @@
 package com.esgyn.kafkaCDC.server;
 
 import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
 
 import com.esgyn.kafkaCDC.server.databaseLoader.LoaderTasks;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerTasks;
-import com.esgyn.kafkaCDC.server.utils.Constants;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
 import com.esgyn.kafkaCDC.server.utils.Utils;
 
@@ -44,9 +42,6 @@ public class KafkaCDC {
     }
 
     public static void main(String[] args) {
-        // load configure log4j.xml
-        DOMConfigurator.configure(Constants.DEFAULT_LOGCONFPATH);
-
 	Parameters params = new Parameters(args);
 	params.init();
 
