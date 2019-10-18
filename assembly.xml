@@ -33,6 +33,10 @@
 			<directory>conf</directory>
 			<outputDirectory>KafkaCDC/conf</outputDirectory>
 		</fileSet>
+                <fileSet>
+			<directory>bin</directory>
+			<outputDirectory>KafkaCDC/bin</outputDirectory>
+		</fileSet>
 	</fileSets>
 	
 	<!-- file move to tar -->
@@ -47,11 +51,6 @@
 		<file>
 			<source>README</source>
 			<outputDirectory>KafkaCDC</outputDirectory>
-			<filtered>true</filtered>
-		</file>
-		<file>
-			<source>bin/KafkaCDC-server.sh</source>
-			<outputDirectory>KafkaCDC/bin</outputDirectory>
 			<filtered>true</filtered>
 		</file>
 	</files>

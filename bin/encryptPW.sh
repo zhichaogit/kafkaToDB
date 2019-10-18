@@ -15,21 +15,30 @@
 # limitations under the License.
 
 
-# Operational environment preparation
+# Operational environment preparation 
 
 #1.make sure env
 if [ "x$(uname)" == "xLinux" ];
 then
 JAVA_HOME=${JAVA_HOME-"/usr/bin/java"}
 fi
-echo "java_home:$JAVA_HOME"
+bin=`which $0`
+bin=`dirname ${bin}`
+bin=`cd "$bin"; pwd`
 
-compilebasepath=$(cd `dirname $0`; pwd)
-echo "compilePath:$compilebasepath"
+BASEPATH=$(cd $bin ; cd ../; pwd)
+LIBSPATH=$(cd $BASEPATH/libs ; pwd)
 
-#2.mvn clean package
-cd $compilebasepath ;mvn clean package
 
-#3. unzip tar.gz
-tar -zxvf ./target/KafkaCDC.tar.gz -C ./target
-echo "tar.gz has unzip, you should go to ./target"
+cd ${BASEPATH}
+#2 analy parameters
+execCommand="java -Djava.ext.dirs=libs:$JAVA_HOME/jre/lib/ext -jar $LIBSPATH/KafkaCDC.jar --encryptPW "
+
+if [ $# = 0 ]; then
+  execCommand="$execCommand -h"
+  exec ${execCommand}
+  exit
+fi
+
+#3. exec jar file
+exec ${execCommand} "${@}"

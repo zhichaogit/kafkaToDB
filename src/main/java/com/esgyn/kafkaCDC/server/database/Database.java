@@ -8,6 +8,7 @@ import java.sql.Statement;
 import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.utils.DatabaseParams;
+import com.esgyn.kafkaCDC.server.utils.Utils;
 
 public class Database {
     private static Logger log    = Logger.getLogger(Database.class);
@@ -20,11 +21,13 @@ public class Database {
             + "],DBPassword[" + database_.getDBPW() + "]");
         }
 
-        Connection dbConn = null;
+        Connection dbConn     = null;
+        String     DBPW       = null;
         try {
             Class.forName(database_.getDBDriver());
+            DBPW = Utils.getDecodePW(database_.getDBPW());
             dbConn = DriverManager.getConnection(database_.getDBUrl(), database_.getDBUser(), 
-						 database_.getDBPW());
+                                                 DBPW);
             dbConn.setAutoCommit(false);
             Statement cqdStmt = dbConn.createStatement();
             cqdStmt.execute(CQDSQL);
