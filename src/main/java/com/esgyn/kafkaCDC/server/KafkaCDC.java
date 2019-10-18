@@ -15,7 +15,7 @@ public class KafkaCDC {
     public static void show(ConsumerTasks consumerTasks) {
 	StringBuffer strBuffer = new StringBuffer();
 	LoaderTasks  loaderTasks = consumerTasks.getLoaderTasks();
-	strBuffer.append("KafkaCDC states:\n")
+	strBuffer.append("\n  KafkaCDC states:\n")
 	    .append("  There are [" + consumerTasks.getRunning())
 	    .append("] consumers and [" + loaderTasks.getRunning())
 	    .append("] loaders running, ");
