@@ -169,9 +169,9 @@ public class Utils {
      * @return decode passWord
      */
     public static String getDecodePW(String passWord) {
-        if (passWord !=null && passWord.startsWith("[") && passWord.endsWith("]")) {
-            passWord=passWord.substring(1, passWord.length() - 1);
-            decodeBase64(passWord, "utf-8");
+        if (passWord != null && passWord.startsWith("[") && passWord.endsWith("]")) {
+            passWord = passWord.substring(1, passWord.length() - 1);
+            passWord = decodeBase64(passWord, "utf-8");
         }
         return passWord;
     }
