@@ -13,6 +13,8 @@ usage: Consumer Server
                         default: 5000
 *    --batchUpdate      update operate will use batch, default: false
 *    --bigendian        the data format is big endian, default: little endian
+*    --cleanInterval <arg> clean log interval time,-1 will not clean.default: 10s
+*    --cleanDelayTime <arg>  clean the log delay time,default: 3600s
 *    --conf <arg>       specified configuration parameter file
 *    --consumers <arg>  specify connection number to kafka, default: 4.
 * -d,--dbip <arg>       database server ip, default: "localhost"

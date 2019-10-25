@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.databaseLoader.LoaderTasks;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerTasks;
+import com.esgyn.kafkaCDC.server.utils.CleanDataLogs;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
 import com.esgyn.kafkaCDC.server.utils.Utils;
 
@@ -51,14 +52,20 @@ public class KafkaCDC {
 	    log.error("consumer task init error");
 	    return;
 	}
+	//cleanLogs
+	CleanDataLogs  cleanDataLogs= new CleanDataLogs(params);
+	cleanDataLogs.setName("cleanDataLogs");
+        cleanDataLogs.start();
 
 	Runtime.getRuntime().addShutdownHook(new Thread() {
 		public void run() {
 		    // show help or version information
 		    setName("CtrlCThread");
 		    log.warn("exiting via Ctrl+C, show the lastest states:");
-
 		    wait_loader_stop(consumerTasks);
+ 
+                    log.warn("stop cleanDataLogs process thread.");
+                    cleanDataLogs.interrupt();
 		}
 	    });
 
@@ -75,6 +82,8 @@ public class KafkaCDC {
         }
 
 	wait_loader_stop(consumerTasks);
+        log.warn("stop cleanDataLogs process thread.");
+        cleanDataLogs.interrupt();
 
         log.info("exit time: " + Utils.getCurrentTime());
     }
