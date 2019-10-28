@@ -41,6 +41,7 @@ public class Constants {
     // Kafka information
     public final static String       DEFAULT_BROKER        = "localhost:9092";
     public final static long         DEFAULT_LOADERS       = 4;
+    public final static long         DEFAULT_MAXWAITTASKS  = 2;
     public final static long         DEFAULT_CONSUMERS     = 4;
     public final static String       DEFAULT_KEY           =
 	"org.apache.kafka.common.serialization.StringDeserializer";
@@ -114,6 +115,7 @@ public class Constants {
         {"",   "keepalive",   false,  true, "check database keepalive, default is false"},
         {"",   "skip",        false, false, "skip all errors of data, default: false"},
 	{"",   "loader",      false,  true, "processer number, default:4"},
+	{"",   "maxWaitTasks",false,  true, "max wait Tasks size, default:2"},
 	{"",   "logDelay",    false,  true, "Dynamically load log4j.xml conf files interval time, default:10s"},
 	{"",   "showConsumers",false, false, "show the consumer thread details, default: true"},
 	{"",   "showLoaders", false, false, "show the loader thread details, default: true"},

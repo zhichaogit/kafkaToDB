@@ -56,11 +56,12 @@ public class LoaderHandle {
 	}
 
 	int size = tasks.size();
-	while (size >= 10) {
+	long maxWaitTasksSize = params.getKafkaCDC().getMaxWaitTasks();
+	while (size >= maxWaitTasksSize) {
 	    if (log.isDebugEnabled()) {
 	        log.debug("the loader [" + loaderID + "] have [" + size
-	                + "] tasks, more than 10, consumer [" + consumerID_
-	                + "] need wait 10ms to continue");
+	                + "] tasks, more than the maxWaitTasksSize [ " + maxWaitTasksSize
+	                + "], consumer [" + consumerID_ + "] need wait 10ms to continue");
             }
 	    try {
 		Thread.sleep(10);

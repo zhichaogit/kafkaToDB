@@ -43,6 +43,7 @@ usage: Consumer Server
                         org.apache.kafka.common.serialization.StringDeserializer
 *    --loaddir <arg>    dump process data file path
 *    --loader <arg>     processer number, default:4
+*    --maxWaitTasks<arg> max wait Tasks size, default:2
 *    --logDelay <arg>   Dynamically load log4j.xml conf files interval
                         time, default:10s
 *    --mode <arg>       pull data from beginning or End or specify the

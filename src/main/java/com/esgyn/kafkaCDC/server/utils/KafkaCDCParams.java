@@ -61,6 +61,9 @@ public class KafkaCDCParams {
     @Setter 
     @Getter
     private String          msgClass      = null;
+    @Setter
+    @Getter
+    private long            maxWaitTasks  = Constants.DEFAULT_MAXWAITTASKS;
 
     public void init(String startTime) {
 	loadDir = getFullPath(loadDir, startTime);
@@ -95,6 +98,7 @@ public class KafkaCDCParams {
 	    .append("\n\tcleanInterval = "    + cleanInterval/1000 + "s")
 	    .append("\n\tskip          = "    + skip)
 	    .append("\n\tloaders       = "    + loaders)
+	    .append("\n\tmaxWaitTasks  = "    + maxWaitTasks)
 	    .append("\n\tloadDir       = "    + loadDir)
 	    .append("\n\tkafkaDir      = "    + kafkaDir)
 	    .append("\n\tshowConsumers = "    + showConsumers)
