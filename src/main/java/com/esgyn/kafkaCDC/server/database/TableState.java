@@ -23,7 +23,7 @@ import lombok.Getter;
 public class TableState {
     public final static int                ERROR       = -1;
     public final static int                EMPTY       = 0;
-    
+
     @Getter
     private int                            state       = EMPTY;
     @Getter
@@ -679,21 +679,23 @@ public class TableState {
 	// if reconnect to database, we must prepare the stmt again
 	prepareStmts(dbConn_);
 	if (insertRows.size() > 0 && !insert_data()) {
+	    state = ERROR;
 	    return false;
 	}
 
         if (updateRows.size() > 0 && !update_data()) {
-	    return false;
+            state = ERROR;
+            return false;
 	}
 
         if (deleteRows.size() > 0 && !delete_data()) {
-	    return false;
+            state = ERROR;
+            return false;
 	}
 
-	dbConn_.commit();
-	if (!dump_data_to_file(false)) {
-	    return false;
-	}
+        if (!dump_data_to_file(false)) {
+            return false;
+        }
 	state = EMPTY;
 
 	return true;
@@ -754,7 +756,7 @@ public class TableState {
 		throw bue;
 	    SQLException se = bue;
 	    do {
-	        log.error("throw exception when batch execute the sql:", se);
+	        log.error("throw exception when batch execute the sql,the data dump to file", se);
 	        se = se.getNextException();
             } while (se != null);
 

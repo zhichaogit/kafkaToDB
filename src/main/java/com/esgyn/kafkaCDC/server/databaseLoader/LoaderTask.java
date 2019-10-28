@@ -139,9 +139,7 @@ public class LoaderTask {
 	    }
 
 	    if (!tableState.commitTable(dbConn))
-		return false;
-
-	    transactions++;
+	        return false;
 
 	    loadStates.addErrInsertNum(tableState.getErrInsert());
 	    loadStates.addErrUpdateNum(tableState.getErrUpdate());
@@ -153,6 +151,10 @@ public class LoaderTask {
 
             tableState.clearCache();
         }
+
+        dbConn.commit();
+        transactions++;
+
 	loadStates.addTransTotal(transactions);
 
         if (log.isTraceEnabled()) { log.trace("exit"); }

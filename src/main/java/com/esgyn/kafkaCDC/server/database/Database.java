@@ -72,12 +72,14 @@ public class Database {
 	 * && Timeout expired(-29154) Exception
 	 * ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated
 	 * ERROR[8738] Statement must be recompiled due to redefinition of the object(s) accessed
+	 * ERROR[8448] UNABLE TO ACCESS Hbase interface. HBASE_ACCESS_ERROR(-706)
 	 */
 	switch (se.getErrorCode()) {
 	case -19002:
 	case -29154:
 	case -8734:
 	case -8738:
+	case -8448:
 	    return true;
 
 	default:
