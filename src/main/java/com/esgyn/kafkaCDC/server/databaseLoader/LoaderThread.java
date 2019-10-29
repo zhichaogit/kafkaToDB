@@ -64,7 +64,7 @@ public class LoaderThread extends Thread {
 				log.error("loader thread load data to database fail! "
 					  + "fix the database error as soon as possable please, "
 					  + "loader thread will wait 1000ms and continue");
-
+				loaderTask.getLoadStates().addTransFails(1);
 				Utils.waitMillisecond(1000);
 
 				Database.CloseConnection(dbConn);
@@ -86,6 +86,7 @@ public class LoaderThread extends Thread {
 		    } catch (SQLException se) {
 			log.error("loader thread throw exception when execute work:", se);
 			try {
+			    loaderTask.getLoadStates().addTransFails(1);
 			    dbConn.rollback();
 			} catch (Exception e) {
 			}

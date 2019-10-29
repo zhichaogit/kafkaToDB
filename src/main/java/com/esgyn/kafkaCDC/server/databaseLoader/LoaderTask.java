@@ -12,8 +12,11 @@ import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
 import com.esgyn.kafkaCDC.server.utils.TableInfo;
 
+import lombok.Getter;
+
 public class LoaderTask {
     private static Logger log = Logger.getLogger(LoaderTask.class);
+    @Getter
     private LoadStates               loadStates  = null;
     private String                   topic       = null;
     private int                      partitionID = -1;
