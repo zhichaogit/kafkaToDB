@@ -1,7 +1,7 @@
 {
 	"database": {
 		"batchSize": 5000,
-		"batchUpdate":false,
+		"batchUpdate":true,
 		"DBIP": "localhost",
 		"DBPort": "23400",
 		"DBType": "EsgynDB",
@@ -28,8 +28,8 @@
 		"kafkaPW": null,
 		"key": "org.apache.kafka.common.serialization.LongDeserializer",
 		"value": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
-		"streamTO": 5,
-		"waitTO": 2,
+		"streamTO": -1,
+		"waitTO": 1,
 		"zkTO": 10,
 		"hbTO": 10,
 		"seTO": 30,

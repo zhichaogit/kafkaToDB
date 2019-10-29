@@ -23,7 +23,7 @@ public class DatabaseParams {
     private long            batchSize   = Constants.DEFAULT_BATCH_SIZE;
     @Setter
     @Getter 
-    private boolean         batchUpdate = false;
+    private boolean         batchUpdate = true;
     @Setter
     @Getter
     private String          DBIP        = "localhost";

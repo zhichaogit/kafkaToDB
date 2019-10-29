@@ -18,7 +18,7 @@ public class KafkaParams {
     private long            fetchSize   = Constants.DEFAULT_FETCH_SIZE;
     @Setter
     @Getter
-    private String          mode        = null;
+    private String          mode        = "";
     @Setter
     @Getter
     private List<TopicParams> topics = null;
@@ -93,6 +93,7 @@ public class KafkaParams {
 	    .append("\n\tkey           = "    + key)
 	    .append("\n\tvalue         = "    + value)
 	    .append("\n\tstreamTO      = "    + streamTO/1000 + "s")
+	    .append("\n\twaitTO        = "    + waitTO/1000 + "s")
 	    .append("\n\tzkTO          = "    + zkTO/1000 + "s")
 	    .append("\n\tbhTO          = "    + hbTO/1000 + "s")
 	    .append("\n\tseTO          = "    + seTO/1000 + "s")

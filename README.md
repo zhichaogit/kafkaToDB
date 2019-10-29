@@ -11,7 +11,7 @@ usage: Consumer Server
                         default: "localhost:9092"
 *    --batchSize <arg>  batch means update operate will batch execute,
                         default: 5000
-*    --batchUpdate      update operate will use batch, default: false
+*    --batchUpdate      update operate will use batch, default: true
 *    --bigendian        the data format is big endian, default: little endian
 *    --cleanInterval <arg> clean log interval time,-1 will not clean.default: 10s
 *    --cleanDelayTime <arg>  clean the log delay time,default: 3600s
@@ -35,13 +35,13 @@ usage: Consumer Server
 *   --hbto <arg>        heartbeat.interval.ms, default: 10s
 *    --interval <arg>   the print state time interval, the unit is second,
                         default: 10s
-*    --kafkadir <arg>   dump consumer data file path
+*    --kafkadir <arg>   dump consumer data file path,default:null
 *    --kafkapw <arg>    kafka password , default: ""
 *    --kafkauser <arg>  kafka user name , default: ""
 *    --keepalive <arg>  check database keepalive, default is false
 *    --key <arg>        key deserializer, default is:
                         org.apache.kafka.common.serialization.StringDeserializer
-*    --loaddir <arg>    dump process data file path
+*    --loaddir <arg>    dump process data file path,default:null
 *    --loader <arg>     processer number, default:4
 *    --maxWaitTasks<arg> max wait Tasks size, default:2
 *    --logDelay <arg>   Dynamically load log4j.xml conf files interval
@@ -75,7 +75,7 @@ usage: Consumer Server
 *    --showTables       show the tables details, default: true
 *    --showTasks        show the consumers task details, default: false
 *    --skip             skip all errors of data, default: false
-*    --sto <arg>        consumer free TimeOut,-1 not TO forever, default: 60s
+*    --sto <arg>        consumer free TimeOut,-1 not TO forever, default: -1
 * -t,--topic <arg>      REQUIRED. topic of subscription
 *    --table <arg>      table name, default: null, you should write like
                         this [tablename]  if tablename is lowerCase you

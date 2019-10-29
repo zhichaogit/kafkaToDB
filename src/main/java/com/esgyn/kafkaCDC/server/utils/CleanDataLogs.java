@@ -27,9 +27,16 @@ public class CleanDataLogs extends Thread {
             Date startTime = new Date(curTime);
             Date endTime   = new Date(curTime - cleanDelayTime);
             
-            long cleanKafkaLogNum = FileUtils.saveTimeRegionFiles(kafkaCDC.getKafkaDir(), startTime, endTime);
-            long cleanLoadLogNum = FileUtils.saveTimeRegionFiles(kafkaCDC.getLoadDir(), startTime, endTime);
-            
+            long cleanKafkaLogNum = 0;
+            long cleanLoadLogNum  = 0;
+
+            if (kafkaCDC.getKafkaDir() !=null) {
+                cleanKafkaLogNum = FileUtils.saveTimeRegionFiles(kafkaCDC.getKafkaDir(), startTime, endTime);
+            }
+            if (kafkaCDC.getLoadDir() !=null) {
+                cleanLoadLogNum = FileUtils.saveTimeRegionFiles(kafkaCDC.getLoadDir(), startTime, endTime);
+            }
+
             log.info("clean [" + kafkaCDC.getKafkaDir() + "] dir files num [" + cleanKafkaLogNum 
                     +"] , ["+kafkaCDC.getLoadDir()+"] dir files num [ " + cleanLoadLogNum + "]");
             try {
