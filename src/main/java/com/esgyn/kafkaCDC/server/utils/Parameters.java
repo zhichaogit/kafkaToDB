@@ -287,6 +287,7 @@ public class Parameters {
         kafkaCDC.setCleanInterval(getLongParam("cleanInterval", Constants.DEFAULT_CLEAN_I_S));
 	kafkaCDC.setSkip(getBoolParam("skip", false));
 	kafkaCDC.setLoaders(getLongParam("loader", Constants.DEFAULT_LOADERS));
+	kafkaCDC.setMaxWaitTasks(getLongParam("maxWaitTasks", Constants.DEFAULT_MAXWAITTASKS));
 	kafkaCDC.setLoadDir(getStringParam("loadDir", "load"));
 	kafkaCDC.setKafkaDir(getStringParam("kafkaDir", "kafka"));
 	kafkaCDC.setShowConsumers(getBoolParam("showConsumers", true));
@@ -336,7 +337,11 @@ public class Parameters {
             reportErrorAndExit("if table is specified, schema must be specified too.");
         }
 
-        // interval ||CleanDelayTime||zkTO || hbTO || seTO ||reqTo can't be "0"
+        // maxWaitTasks || interval ||CleanDelayTime||zkTO || hbTO || seTO ||reqTo can't be "0"
+        if (kafkaCDC.getMaxWaitTasks() < 0) {
+            reportErrorAndExit("the maxWaitTasks parameter can't less \"0\" ");
+        }
+
         if (kafkaCDC.getInterval() <= 0) {
             reportErrorAndExit("the interval parameter can't less than or equal \"0\" ");
         }
