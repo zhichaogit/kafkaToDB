@@ -48,6 +48,7 @@
                 "cleanInterval": 10,
 		"skip": false,
 		"loaders": 4,
+		"maxWaitTasks":2,
 		"loadDir": "load",
 		"kafkaDir": "kafka",
 		"showConsumers": true,
