@@ -4,14 +4,13 @@ public class Constants {
     public final static String       DEFAULT_LOGCONFPATH   = "conf/log4j.xml";
     public final static String       DEFAULT_JSONCONFPATH  = "conf/kafkaCDC.json";
     public final static String       DEFAULT_LOG_PATH      = "logs/";
-    public final static String       DEFAULT_KAFKA_PATH    = "kafka/";
-    public final static String       DEFAULT_LOAD_PATH     = "database/";
+    public final static String       DEFAULT_UNLOAD_PATH   = "unload/";
     public final static String       KafkaCDC_VERSION      = "KafkaCDC-2.0.0";
 
     // the unit is second
     public final static long         DEFAULT_LOGDELAY_TO_S = 10;
-    public final static long         DEFAULT_STREAM_TO_S   = 60;
-    public final static long         DEFAULT_WAIT_TO_S     = 2;
+    public final static long         DEFAULT_STREAM_TO_S   = -1;
+    public final static long         DEFAULT_WAIT_TO_S     = 1;
     public final static long         DEFAULT_ZOOK_TO_S     = 10;
     public final static int          DEFAULT_HEATBEAT_TO_S = 10;
     public final static int          DEFAULT_SESSION_TO_S  = 30;
@@ -62,7 +61,7 @@ public class Constants {
 	// database information
         {"",   "batchSize",   false,  true, "batch means update operate will batch execute,"
 	 + " default: 5000 "},
-	{"",   "batchUpdate", false, false, "update operate will use batch, default: false"},
+	{"",   "batchUpdate", false, false, "update operate will use batch, default: true"},
 	{"",   "conf",        false,  true, "specified configuration parameter file"},
 	{"",   "cleanDelayTime",   false,  true, "clean the log delay time,default: 3600s"},
 	{"",   "cleanInterval",false,  true, "clean log interval time,-1 will not clean.default: 10s"},
@@ -97,7 +96,7 @@ public class Constants {
 	{"",   "kafkapw",     false,  true, "kafka password , default: \"\""},
         {"",   "key",         false,  true, "key deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer"},
         {"",   "value",       false,  true, "value deserializer, default is: org.apache.kafka.common.serialization.StringDeserializer"},
-        {"",   "sto",         false,  true, "consumer free TimeOut,-1 not TO forever, default: 60s"},
+        {"",   "sto",         false,  true, "consumer free TimeOut,-1 not TO forever, default: -1"},
         {"",   "zkto",        false,  true, "zookeeper time-out limit, default: 10s"},
         {"",   "hbto",        false,  true, "heartbeat.interval.ms, default: 10s"},
         {"",   "seto",        false,  true, "session.timeout.ms, default: 30s"},
@@ -122,8 +121,8 @@ public class Constants {
 	{"",   "showTasks",   false, false, "show the consumers task details, default: false"},
 	{"",   "showTables",  false, false, "show the tables details, default: true"},
 	{"",   "showSpeed",   false, false, "print the tables run speed info, not need arg, default:false"},
-	{"",   "loaddir",     false,  true, "dump process data file path"},
-	{"",   "kafkadir",    false,  true, "dump consumer data file path"},
+	{"",   "loaddir",     false,  true, "dump process data file path,default: null"},
+	{"",   "kafkadir",    false,  true, "dump consumer data file path,default: null"},
 
 	// system info
         {"h",  "help",        false, false, "show help information"},

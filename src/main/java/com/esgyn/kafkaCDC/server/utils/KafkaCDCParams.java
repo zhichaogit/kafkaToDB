@@ -42,6 +42,9 @@ public class KafkaCDCParams {
     private String          loadDir       = null;
     @Setter
     @Getter
+    private String          unloadDir     = Constants.DEFAULT_UNLOAD_PATH;
+    @Setter
+    @Getter
     private String          kafkaDir      = null;
     @Setter 
     @Getter
@@ -67,6 +70,7 @@ public class KafkaCDCParams {
 
     public void init(String startTime) {
 	loadDir = getFullPath(loadDir, startTime);
+	unloadDir = getFullPath(unloadDir, startTime);
 	kafkaDir = getFullPath(kafkaDir, startTime);
 
 	interval       *= 1000;
@@ -100,6 +104,7 @@ public class KafkaCDCParams {
 	    .append("\n\tloaders       = "    + loaders)
 	    .append("\n\tmaxWaitTasks  = "    + maxWaitTasks)
 	    .append("\n\tloadDir       = "    + loadDir)
+	    .append("\n\tunloadDir     = "    + unloadDir)
 	    .append("\n\tkafkaDir      = "    + kafkaDir)
 	    .append("\n\tshowConsumers = "    + showConsumers)
 	    .append("\n\tshowLoaders   = "    + showLoaders)

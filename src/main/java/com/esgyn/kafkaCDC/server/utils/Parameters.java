@@ -230,7 +230,7 @@ public class Parameters {
 	database = new DatabaseParams();
 
 	database.setBatchSize(getLongParam("batchSize", Constants.DEFAULT_BATCH_SIZE));
-	database.setBatchUpdate(getBoolParam("batchUpdate", false));
+	database.setBatchUpdate(getBoolParam("batchUpdate", true));
 	database.setDBIP(getStringParam("dbip", Constants.DEFAULT_IPADDR));
 	database.setDBPort(getStringParam("dbport", Constants.DEFAULT_PORT));
 	database.setDBType(getStringParam("type", Constants.DEFAULT_DATABASE));
@@ -288,8 +288,8 @@ public class Parameters {
 	kafkaCDC.setSkip(getBoolParam("skip", false));
 	kafkaCDC.setLoaders(getLongParam("loader", Constants.DEFAULT_LOADERS));
 	kafkaCDC.setMaxWaitTasks(getLongParam("maxWaitTasks", Constants.DEFAULT_MAXWAITTASKS));
-	kafkaCDC.setLoadDir(getStringParam("loadDir", "load"));
-	kafkaCDC.setKafkaDir(getStringParam("kafkaDir", "kafka"));
+	kafkaCDC.setLoadDir(getStringParam("loadDir", null));
+	kafkaCDC.setKafkaDir(getStringParam("kafkaDir", null));
 	kafkaCDC.setShowConsumers(getBoolParam("showConsumers", true));
 	kafkaCDC.setShowLoaders(getBoolParam("showLoaders", true));
 	kafkaCDC.setShowTasks(getBoolParam("showTasks", false));
@@ -395,6 +395,7 @@ public class Parameters {
 	FileUtils.createDirectory(Constants.DEFAULT_LOG_PATH + startTime);
 	FileUtils.createDirectory(kafkaCDC.getKafkaDir());
 	FileUtils.createDirectory(kafkaCDC.getLoadDir());
+	FileUtils.createDirectory(kafkaCDC.getUnloadDir());
     }
 
     private void getTopicsPartitions()

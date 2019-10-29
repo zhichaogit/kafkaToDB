@@ -1309,6 +1309,8 @@ public class TableState {
 	allList.addAll(deleteList);
 
 	String rootPath = tableInfo.getParams().getKafkaCDC().getLoadDir();
+	String UnloadRootPath = tableInfo.getParams().getKafkaCDC().getUnloadDir();
+	rootPath = withError ? UnloadRootPath : rootPath;
 	if (rootPath != null) {
 	    // file name: schema_table_topic_partitionID_offset.sql
 	    String errorPath = withError ? "_error" : "";
