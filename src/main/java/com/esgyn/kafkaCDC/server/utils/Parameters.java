@@ -230,7 +230,7 @@ public class Parameters {
 	database = new DatabaseParams();
 
 	database.setBatchSize(getLongParam("batchSize", Constants.DEFAULT_BATCH_SIZE));
-	database.setBatchUpdate(getBoolParam("batchUpdate", true));
+	database.setBatchUpdate(getBoolParam("batchUpdate", false));
 	database.setDBIP(getStringParam("dbip", Constants.DEFAULT_IPADDR));
 	database.setDBPort(getStringParam("dbport", Constants.DEFAULT_PORT));
 	database.setDBType(getStringParam("type", Constants.DEFAULT_DATABASE));
