@@ -81,7 +81,7 @@ public class KafkaCDCParams {
     }
 
     private String getFullPath(String curDir, String startTime) {
-	if (curDir == null)
+	if (curDir == null || (curDir.trim().equals("")))
 	    return null;
 
 	return Constants.DEFAULT_LOG_PATH + startTime + "/" + curDir + "/";
