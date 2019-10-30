@@ -118,14 +118,14 @@ $KAFKA/bin/kafka-console-producer.sh --broker-list $BROKER --topic $TOPIC2 < $DA
 #$KAFKA/bin/kafka-console-consumer.sh --zookeeper $ZOOKEEPER --topic $TOPIC --from-beginning
 
 KAFKA_CDC="$KAFKA_CDC"
-cd $KAFKA_CDC/bin;
+cd $KAFKA_CDC;
 
 CONFIG="conf/unicom_desSchema_mulParts_mapping.json"
 echo "$TOPDIR/template $PARTITION $BROKER $DBIP $TOPIC1 $TOPIC2 "Unicom" \"\" $DESTSCHEMA1 \"\" $DESTSCHEMA3 \"\" \"\" $TABLE $TABLE $KAFKA_CDC/$CONFIG $DESTSCHEMA1 $DESTSCHEMA2"
 $TOPDIR/template $PARTITION $BROKER $DBIP $TOPIC1 $TOPIC2 "Unicom" "" $DESTSCHEMA1 "" $DESTSCHEMA3 "" "" $TABLE $TABLE $KAFKA_CDC/$CONFIG $DESTSCHEMA1 $DESTSCHEMA2
 
-echo "./KafkaCDC-server.sh --conf $CONFIG"
-./KafkaCDC-server.sh --conf $CONFIG
+echo "./bin/KafkaCDC-server.sh --conf $CONFIG"
+./bin/KafkaCDC-server.sh --conf $CONFIG
 
 #get result file from $DBUSER
 expect <<-EOF

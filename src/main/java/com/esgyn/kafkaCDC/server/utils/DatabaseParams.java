@@ -23,7 +23,7 @@ public class DatabaseParams {
     private long            batchSize   = Constants.DEFAULT_BATCH_SIZE;
     @Setter
     @Getter 
-    private boolean         batchUpdate = true;
+    private boolean         batchUpdate = false;
     @Setter
     @Getter
     private String          DBIP        = "localhost";
@@ -431,6 +431,7 @@ public class DatabaseParams {
 
         strBuffer.append("\nDatabase options:")
 	    .append("\n\tbatchSize     = "    + batchSize)
+	    .append("\n\tbatchUpdate   = "    + batchUpdate)
 	    .append("\n\tDBIP          = "    + DBIP)
 	    .append("\n\tDBPort        = "    + DBPort)
 	    .append("\n\tDBDriver      = "    + DBDriver)

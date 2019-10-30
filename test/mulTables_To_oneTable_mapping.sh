@@ -65,12 +65,12 @@ $KAFKA/bin/kafka-topics.sh --list --zookeeper $ZOOKEEPER
 $KAFKA/bin/kafka-console-producer.sh --broker-list $BROKER --topic $TOPIC < $DATAFILE
 
 KAFKA_CDC="$KAFKA_CDC"
-cd $KAFKA_CDC/bin;
+cd $KAFKA_CDC;
 CONFIG="conf/mulTables_To_oneTable_mapping.json"
 echo "$TOPDIR/template $PARTITION $BROKER $DBIP $TOPIC $TOPIC "Unicom" $DESTSCHEMA $DESTSCHEMA $DESTSCHEMA $DESTSCHEMA $TABLE2 $TABLE1 $TABLE1 $TABLE1 $KAFKA_CDC/$CONFIG \"\" \"\""
 $TOPDIR/template $PARTITION $BROKER $DBIP $TOPIC $TOPIC "Unicom" $DESTSCHEMA $DESTSCHEMA $DESTSCHEMA $DESTSCHEMA $TABLE2 $TABLE1 $TABLE1 $TABLE1 $KAFKA_CDC/$CONFIG "" ""
-echo "./KafkaCDC-server.sh --conf $CONFIG"
-./KafkaCDC-server.sh --conf $CONFIG
+echo "./bin/KafkaCDC-server.sh --conf $CONFIG"
+./bin/KafkaCDC-server.sh --conf $CONFIG
 
 #get result file from $USER
 expect <<-EOF

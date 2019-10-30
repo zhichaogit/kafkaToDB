@@ -11,7 +11,7 @@ usage: Consumer Server
                         default: "localhost:9092"
 *    --batchSize <arg>  batch means update operate will batch execute,
                         default: 5000
-*    --batchUpdate      update operate will use batch, default: true
+*    --batchUpdate      update operate will use batch, default: false
 *    --bigendian        the data format is big endian, default: little endian
 *    --cleanInterval <arg> clean log interval time,-1 will not clean.default: 10s
 *    --cleanDelayTime <arg>  clean the log delay time,default: 3600s
