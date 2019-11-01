@@ -91,10 +91,8 @@ public class LoaderThread extends Thread {
 			} catch (Exception e) {
 			}
 			// if the disconnect, reconnect in next loop
-			if (Database.isAccepableSQLExpection(se)) {
-			    Database.CloseConnection(dbConn);
-			    dbConn = null;
-			}
+			Database.CloseConnection(dbConn);
+			dbConn = null;
 
 			log.error("throw unhandled exception! "
 				  + "fix the database error as soon as possable please, "

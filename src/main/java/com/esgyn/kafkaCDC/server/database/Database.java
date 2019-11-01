@@ -73,6 +73,8 @@ public class Database {
 	 * ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated
 	 * ERROR[8738] Statement must be recompiled due to redefinition of the object(s) accessed
 	 * ERROR[8448] UNABLE TO ACCESS Hbase interface. HBASE_ACCESS_ERROR(-706)
+	 * ERROR[2105] this query could not be compiled because of incompatible control query
+	 * shape(CQS)specifications.
 	 */
 	switch (se.getErrorCode()) {
 	case -19002:
@@ -80,6 +82,7 @@ public class Database {
 	case -8734:
 	case -8738:
 	case -8448:
+	case -2105:
 	    return true;
 
 	default:
