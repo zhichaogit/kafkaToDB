@@ -1312,6 +1312,7 @@ public class TableState {
 	String rootPath = tableInfo.getParams().getKafkaCDC().getLoadDir();
 	String UnloadRootPath = tableInfo.getParams().getKafkaCDC().getUnloadDir();
 	rootPath = withError ? UnloadRootPath : rootPath;
+
 	if (rootPath != null) {
 	    // file name: schema_table_topic_partitionID_offset.sql
             String filePath = String.format("%s_%s_%s_%d.sql", 
@@ -1325,6 +1326,15 @@ public class TableState {
 		return false;
 	    }
 	}
+	// add the error count
+        if (withError) {
+            errInsert = insertList.size();
+            errUpdate = updateList.size();
+            errDelete = deleteList.size();
+            tableInfo.incErrInsNum(errInsert);
+            tableInfo.incErrUpdNum(errUpdate);
+            tableInfo.incErrDelNum(errDelete);
+        }
 
 	if (log.isTraceEnabled()) { log.trace("exit"); }
 

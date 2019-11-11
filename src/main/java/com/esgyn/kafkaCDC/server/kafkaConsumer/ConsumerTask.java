@@ -372,7 +372,7 @@ public class ConsumerTask<T> {
 
 	String rootPath = params.getKafkaCDC().getKafkaDir();
 	if (rootPath != null) {
-	    String fileName = topic + "_" + partitionID + "_" + curOffset;
+	    String fileName = topic + "_" + partitionID;
 	    String filePath = rootPath + fileName;
 	    if (params.getKafkaCDC().isDumpBinary() &&
 		!FileUtils.dumpDataToFile(rows, filePath, FileUtils.BYTE_STRING)) {
