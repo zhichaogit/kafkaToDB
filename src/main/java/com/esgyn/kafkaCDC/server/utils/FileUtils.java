@@ -104,13 +104,11 @@ public class FileUtils {
 		    
 	try {
 	    File file = new File(filePath);
-	    if(file.exists()) {
-		log.error("file [" + filePath + "] exist exception, please check the file");
-		return false;
+	    if(!file.exists()) {
+		file.createNewFile();
 	    }
 
-	    file.createNewFile();
-	    output = new FileOutputStream(file);
+	    output = new FileOutputStream(file, true);
 	    buffer = new BufferedOutputStream(output);
 	    for (RowMessage row : rows) {
 		if (log.isDebugEnabled()) 

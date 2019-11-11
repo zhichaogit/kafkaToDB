@@ -17,6 +17,7 @@ import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
 import com.esgyn.kafkaCDC.server.utils.FileUtils;
 import com.esgyn.kafkaCDC.server.utils.TableInfo;
+import com.esgyn.kafkaCDC.server.utils.Constants;
 
 import lombok.Getter;
 
@@ -665,14 +666,14 @@ public class TableState {
         errDelete = 0;
     }
 
-    public boolean flushData(Connection dbConn_) throws SQLException {
+    public boolean flushData(Connection dbConn_, int state_) throws SQLException {
         if (log.isTraceEnabled()) {
             log.trace("commit table [" + schemaName + "." + tableName + ", insert: "
 		      + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
 		      + deleteRows.size() + "] ");
         }
 
-	if (state == ERROR) {
+	if (state == ERROR || state_ == Constants.KAFKA_CDC_ABORT) {
 	    return dump_data_to_file(true);
 	}
 
@@ -1313,14 +1314,11 @@ public class TableState {
 	rootPath = withError ? UnloadRootPath : rootPath;
 	if (rootPath != null) {
 	    // file name: schema_table_topic_partitionID_offset.sql
-	    String errorPath = withError ? "_error" : "";
-            String filePath = String.format("%s_%s_%s_%d_%d%s.sql", 
+            String filePath = String.format("%s_%s_%s_%d.sql", 
 					    tableInfo.getSchemaName(), 
 					    tableInfo.getTableName(), 
 					    lastMsg.getTopic(), 
-					    lastMsg.getPartitionID(), 
-					    lastMsg.getOffset(),
-					    errorPath);
+					    lastMsg.getPartitionID());
 	    filePath = rootPath + filePath;
 	    if (!FileUtils.dumpDataToFile(allList, filePath, FileUtils.SQL_STRING)) {
 		log.error("dump sql data to file fail.");

@@ -65,16 +65,16 @@ public class LoaderTasks<T> {
 
     public synchronized void decrease() { running--; }
 
-    public void close() {
+    public void close(int signal_) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
 	// close the load threads
 	log.info("start to stop the all loader threads ...");
         for (LoaderThread loader : loaders) {
             try {
-		if (loader.getRunning()) {
+		if (loader.getLoaderState() < signal_) {
 		    log.info("waiting for [" + loader.getName() + "] close ...");
-		    loader.stopLoader();
+		    loader.stopLoader(signal_);
 		    // don't need to join, same as ConsumerTasks
 		    // loader.join();
 		    log.info("loader [" + loader.getName() + "] stop succeed!");

@@ -28,6 +28,7 @@ public class LoaderTask {
     private int                      loaderID    = -1;
     private Connection               dbConn      = null;
     private Map<String, TableState>  tables      = null;
+    private int                      state       = 0;
 
     // execute states
     private Long                     curOffset   = null;
@@ -107,7 +108,7 @@ public class LoaderTask {
 	return 1;
     }
 
-    public long work(int loaderID_, Connection dbConn_, Map<String, TableState> tables_)
+    public long work(int loaderID_, Connection dbConn_, Map<String, TableState> tables_, int state_)
 	throws SQLException {
         if (log.isTraceEnabled()) { 
 	    log.trace("enter, loader [" + loaderID_ + ", conn [" + dbConn_ 
@@ -117,6 +118,7 @@ public class LoaderTask {
 	loaderID  = loaderID_;
 	dbConn    = dbConn_;
 	tables    = tables_;
+	state     = state_;
 
 	if (!process_records())
 	    return -1;
@@ -143,7 +145,7 @@ public class LoaderTask {
 		log.debug("there are [" + tableState.getCacheTotal() + "] rows in cache"); 
 	    }
 
-	    if (!tableState.flushData(dbConn))
+	    if (!tableState.flushData(dbConn, state))
 	        return false;
 
 	    loadStates.addErrInsertNum(tableState.getErrInsert());

@@ -168,7 +168,7 @@ public class ConsumerTasks<T> {
 
     public synchronized void decrease() { running--; }
 
-    public void close() {
+    public void close(int signal_) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
 	for (ConsumerThread consumer : consumers) {
@@ -185,7 +185,7 @@ public class ConsumerTasks<T> {
 	    }
 	}
  
-	loaderTasks.close();
+	loaderTasks.close(signal_);
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
    }

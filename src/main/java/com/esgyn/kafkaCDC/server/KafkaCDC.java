@@ -6,6 +6,7 @@ import com.esgyn.kafkaCDC.server.databaseLoader.LoaderTasks;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerTasks;
 import com.esgyn.kafkaCDC.server.utils.CleanDataLogs;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
+import com.esgyn.kafkaCDC.server.utils.Constants;
 import com.esgyn.kafkaCDC.server.utils.Utils;
 
 public class KafkaCDC {
@@ -22,9 +23,9 @@ public class KafkaCDC {
 	log.info(strBuffer.toString());
     }
 
-    public static void wait_loader_stop(ConsumerTasks consumerTasks) {
+    public static void wait_loader_stop(ConsumerTasks consumerTasks, int signal_) {
 	log.info("stop all process threads ...");
-	consumerTasks.close();
+	consumerTasks.close(signal_);
 
 	log.info("consumers exited, waiting for loader finish the tasks");
 	while (consumerTasks.getLoaderTasks().getRunning() > 0) {
@@ -62,7 +63,7 @@ public class KafkaCDC {
 		    // show help or version information
 		    setName("CtrlCThread");
 		    log.warn("exiting via Ctrl+C, show the lastest states:");
-		    wait_loader_stop(consumerTasks);
+		    wait_loader_stop(consumerTasks, Constants.KAFKA_CDC_NORMAL);
  
                     log.warn("stop cleanDataLogs process thread.");
                     cleanDataLogs.interrupt();
@@ -81,7 +82,7 @@ public class KafkaCDC {
             }
         }
 
-	wait_loader_stop(consumerTasks);
+	wait_loader_stop(consumerTasks, Constants.KAFKA_CDC_NORMAL);
         log.warn("stop cleanDataLogs process thread.");
         cleanDataLogs.interrupt();
 

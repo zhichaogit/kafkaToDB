@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 import com.esgyn.kafkaCDC.server.database.Database;
 import com.esgyn.kafkaCDC.server.database.TableState;
 import com.esgyn.kafkaCDC.server.utils.Utils;
+import com.esgyn.kafkaCDC.server.utils.Constants;
 
 public class LoaderThread extends Thread {
     private long                loadedNumber   = 0;
@@ -23,7 +24,7 @@ public class LoaderThread extends Thread {
 
     private Connection          dbConn         = null;
 
-    private final AtomicBoolean running = new AtomicBoolean(true);
+    private static int    state = Constants.KAFKA_CDC_RUNNING;
 
     private static Logger log = Logger.getLogger(LoaderThread.class);
 
@@ -59,7 +60,7 @@ public class LoaderThread extends Thread {
 
 			if (dbConn != null) {
 			    long loadNumber = loaderTask.work(loaderHandle.getLoaderID(), 
-							      dbConn, tables);
+							      dbConn, tables, state);
 			    if (loadNumber < 0) {
 				log.error("loader thread load data to database fail! "
 					  + "fix the database error as soon as possable please, "
@@ -101,7 +102,7 @@ public class LoaderThread extends Thread {
 			Utils.waitMillisecond(1000);
 		    }
 		}
-	    } else if (running.get()) {
+	    } else if (state == Constants.KAFKA_CDC_RUNNING) {
 		// there are no work to do, go to sleep a while
 		if (log.isDebugEnabled()) {
 		    log.debug("loader thread haven't task to do, loader goto sleep 1000ms");
@@ -135,19 +136,19 @@ public class LoaderThread extends Thread {
 
     public void show(StringBuffer strBuffer) {
 	String loaderThreadStr =
-	    String.format("  -> loader   [id:%3d, loaded:%12d, wait:%12ds, looping:%s, running:%s]\n", 
+	    String.format("  -> loader   [id:%3d, loaded:%12d, wait:%12ds, looping:%s, state:%s]\n", 
 			  loaderHandle.getLoaderID(), loadedNumber, waitTime/1000,
-			  String.valueOf(looping), String.valueOf(running));
+			  String.valueOf(looping), String.valueOf(state));
 
 	strBuffer.append(loaderThreadStr);
     }
 
-    public synchronized boolean getRunning() { return running.get(); }
-    public synchronized void stopLoader() {
+    public synchronized int getLoaderState() { return state; }
+    public synchronized void stopLoader(int signal_) {
         if (log.isTraceEnabled()) { log.trace("enter");}
 
 	log.info("close the loader thread [" + loaderHandle.getLoaderID() +  "].");
-	running.set(false); 
+	state = signal_; 
 
         if (log.isTraceEnabled()) { log.trace("exit");}
     }

@@ -57,6 +57,11 @@ public class Constants {
     public final static String       SEC_PLAIN_STRING      =
 	"org.apache.kafka.common.security.plain.PlainLoginModule required username=";
 
+    public final static int          KAFKA_CDC_INIT        = 0;
+    public final static int          KAFKA_CDC_RUNNING     = 1;
+    public final static int          KAFKA_CDC_NORMAL      = 2;
+    public final static int          KAFKA_CDC_ABORT       = 3;
+
     public final static Object[][]   CONFIG_PARAMS = {
 	// database information
         {"",   "batchSize",   false,  true, "batch means update operate will batch execute,"
