@@ -173,9 +173,9 @@ public class ConsumerTasks<T> {
 
 	for (ConsumerThread consumer : consumers) {
 	    try {
-		if (consumer.getLooping()) {
+		if (consumer.getRunning()) {
 		    log.info("waiting for [" + consumer.getName() + "] stop ...");
-		    consumer.Close();
+		    consumer.stopConsumer();
 		    // don't need to join, via the running number to handle
 		    // consumer.join();
 		    log.info(consumer.getName() + " stoped success.");

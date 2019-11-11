@@ -18,9 +18,9 @@ public class ConsumerThread extends Thread {
     @Getter
     private long                preConsumeTime = 0;
 
-    private boolean             running        = true;
+    private boolean             looping        = true;
     @Getter
-    private final AtomicBoolean looping = new AtomicBoolean(true);
+    private final AtomicBoolean running = new AtomicBoolean(true);
 
     private static Logger log = Logger.getLogger(ConsumerThread.class);
 
@@ -41,7 +41,7 @@ public class ConsumerThread extends Thread {
 
 	log.info("consumer server started.");
 	ConsumerTask consumerTask = null;
-	while (looping.get()) {
+	while (running.get()) {
 	    // remove the task from the queue
 	    consumerTask = consumerTasks.poll();
 	    if (consumerTask != null){
@@ -54,7 +54,7 @@ public class ConsumerThread extends Thread {
 		    // return the task to the queue
 		    consumerTasks.offer(consumerTask);
 		} else {
-		    // check the timeout and set looping false to exit loop
+		    // check the timeout and set running false to exit loop
 		    if (!checkTimeOut()) {
 			// if not timeout, need to return the task to the queue
 			consumerTasks.offer(consumerTask);
@@ -77,7 +77,7 @@ public class ConsumerThread extends Thread {
 	} // while true
 
 	consumerTasks.decrease();
-	running = false;
+	looping = false;
 
 	log.info("consumer thread stoped.");
 
@@ -91,7 +91,7 @@ public class ConsumerThread extends Thread {
 	    log.info("ConsumeThread free time [" + freeTime/1000 
 		     + "s] had more than the max free time [" 
 		     + consumerTasks.getMaxFreeTime()/1000 + "s]");
-	    looping.set(false);
+	    running.set(false);
 	    return true;
 	}
 
@@ -101,13 +101,13 @@ public class ConsumerThread extends Thread {
     public void show(StringBuffer strBuffer) { 
 	Long  freeTime = Utils.getTime() - preConsumeTime;
 	String consumerThreadStr =
-	    String.format("  -> consumer [id:%3d, msgs:%12d, free:%8ds"
-			  + ", state:%s]\n", consumerID, consumedNumber, 
-			  freeTime/1000, running ? "running" : "stoped");
+	    String.format("  -> consumer [id:%3d, msgs:%12d, free:%8ds, looping:%s, running:%s]\n",
+			  consumerID, consumedNumber, freeTime/1000, 
+			  String.valueOf(looping), String.valueOf(running));
 
 	strBuffer.append(consumerThreadStr);
     }
 
-    public synchronized boolean getLooping() { return looping.get(); }
-    public synchronized void Close() { looping.set(false); }
+    public synchronized boolean getRunning() { return running.get(); }
+    public synchronized void stopConsumer() { running.set(false); }
 }

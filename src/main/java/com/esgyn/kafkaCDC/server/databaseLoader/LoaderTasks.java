@@ -72,9 +72,9 @@ public class LoaderTasks<T> {
 	log.info("start to stop the all loader threads ...");
         for (LoaderThread loader : loaders) {
             try {
-		if (loader.getLooping()) {
+		if (loader.getRunning()) {
 		    log.info("waiting for [" + loader.getName() + "] close ...");
-		    loader.Close();
+		    loader.stopLoader();
 		    // don't need to join, same as ConsumerTasks
 		    // loader.join();
 		    log.info("loader [" + loader.getName() + "] stop succeed!");

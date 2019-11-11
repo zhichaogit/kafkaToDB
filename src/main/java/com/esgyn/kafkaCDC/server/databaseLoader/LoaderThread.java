@@ -15,7 +15,7 @@ import com.esgyn.kafkaCDC.server.utils.Utils;
 public class LoaderThread extends Thread {
     private long                loadedNumber   = 0;
     private long                waitTime       = 0;
-    private boolean             running        = true;
+    private boolean             looping        = true;
 
     private LoaderHandle        loaderHandle   = null;
     private LoaderTasks         loaderTasks    = null;
@@ -23,7 +23,7 @@ public class LoaderThread extends Thread {
 
     private Connection          dbConn         = null;
 
-    private final AtomicBoolean looping = new AtomicBoolean(true);
+    private final AtomicBoolean running = new AtomicBoolean(true);
 
     private static Logger log = Logger.getLogger(LoaderThread.class);
 
@@ -101,7 +101,7 @@ public class LoaderThread extends Thread {
 			Utils.waitMillisecond(1000);
 		    }
 		}
-	    } else if (looping.get()) {
+	    } else if (running.get()) {
 		// there are no work to do, go to sleep a while
 		if (log.isDebugEnabled()) {
 		    log.debug("loader thread haven't task to do, loader goto sleep 1000ms");
@@ -128,26 +128,26 @@ public class LoaderThread extends Thread {
 	}
 
 	loaderTasks.decrease();
-	running = false;
+	looping = false;
 
         if (log.isTraceEnabled()) { log.trace("exit");}
     }
 
     public void show(StringBuffer strBuffer) {
 	String loaderThreadStr =
-	    String.format("  -> loader   [id:%3d, loaded:%12d, wait:%12ds, state:%s]\n", 
+	    String.format("  -> loader   [id:%3d, loaded:%12d, wait:%12ds, looping:%s, running:%s]\n", 
 			  loaderHandle.getLoaderID(), loadedNumber, waitTime/1000,
-			  running ? "running" : "stoped");
+			  String.valueOf(looping), String.valueOf(running));
 
 	strBuffer.append(loaderThreadStr);
     }
 
-    public synchronized boolean getLooping() { return looping.get(); }
-    public synchronized void Close() {
+    public synchronized boolean getRunning() { return running.get(); }
+    public synchronized void stopLoader() {
         if (log.isTraceEnabled()) { log.trace("enter");}
 
 	log.info("close the loader thread [" + loaderHandle.getLoaderID() +  "].");
-	looping.set(false); 
+	running.set(false); 
 
         if (log.isTraceEnabled()) { log.trace("exit");}
     }
