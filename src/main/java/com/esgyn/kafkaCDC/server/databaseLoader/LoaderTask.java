@@ -56,17 +56,18 @@ public class LoaderTask {
 
 	for (RowMessage row : rows) {
 	    if (row.getOperatorType().equals("K")) {
-	    	if (!commit_tables())
+	    	if (!flush_data())
 	    	    return false;
 	    } 
 
 	    existTable += process_record(row);
 	}
 
-	if (!commit_tables())
+	if (!flush_data())
 	    return false;
 
 	loadStates.addExistTable(existTable);
+
 	if (log.isTraceEnabled()) { log.trace("exit"); }
 
 	return true;
@@ -120,6 +121,8 @@ public class LoaderTask {
 	if (!process_records())
 	    return -1;
 	
+        dbConn.commit();
+	loadStates.addTransTotal(1);
 	loadStates.addDoneTasks(1);
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
@@ -128,10 +131,9 @@ public class LoaderTask {
     }
 
 
-    private boolean commit_tables() throws SQLException {
+    private boolean flush_data() throws SQLException {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
-	long transactions = 0;
         for (TableState tableState : tables.values()) {
             if (tableState.getCacheTotal() == 0) {
                 continue;
@@ -141,7 +143,7 @@ public class LoaderTask {
 		log.debug("there are [" + tableState.getCacheTotal() + "] rows in cache"); 
 	    }
 
-	    if (!tableState.commitTable(dbConn))
+	    if (!tableState.flushData(dbConn))
 	        return false;
 
 	    loadStates.addErrInsertNum(tableState.getErrInsert());
@@ -154,11 +156,6 @@ public class LoaderTask {
 
             tableState.clearCache();
         }
-
-        dbConn.commit();
-        transactions++;
-
-	loadStates.addTransTotal(transactions);
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
 

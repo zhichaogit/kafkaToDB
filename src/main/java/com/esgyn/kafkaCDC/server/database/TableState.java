@@ -665,7 +665,7 @@ public class TableState {
         errDelete = 0;
     }
 
-    public boolean commitTable(Connection dbConn_) throws SQLException {
+    public boolean flushData(Connection dbConn_) throws SQLException {
         if (log.isTraceEnabled()) {
             log.trace("commit table [" + schemaName + "." + tableName + ", insert: "
 		      + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
