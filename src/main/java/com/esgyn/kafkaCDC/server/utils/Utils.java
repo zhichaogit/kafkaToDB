@@ -157,12 +157,15 @@ public class Utils {
 	return name;
     }
 
-    public static void waitMillisecond(long milliseconds) {
+    public static boolean waitMillisecond(long milliseconds) {
 	try {
 	    Thread.sleep(milliseconds);
 	} catch (Exception e) {
-	    log.error("throw exception when call Thread.sleep.");
+	    log.error("throw exception when call Thread.sleep.", e);
+	    return false;
 	}
+
+	return true;
     }
     /**
      * @param passWord

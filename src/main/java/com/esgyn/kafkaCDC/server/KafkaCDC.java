@@ -23,9 +23,11 @@ public class KafkaCDC {
 	log.info(strBuffer.toString());
     }
 
-    public static void wait_loader_stop(ConsumerTasks consumerTasks, int signal_) {
+    public static void wait_loader_stop(ConsumerTasks consumerTasks, 
+					CleanDataLogs cleanDataLogs, int signal_) {
 	log.info("stop all process threads ...");
 	consumerTasks.close(signal_);
+        cleanDataLogs.interrupt();
 
 	log.info("consumers exited, waiting for loader finish the tasks");
 	while (consumerTasks.getLoaderTasks().getRunning() > 0) {
@@ -48,7 +50,7 @@ public class KafkaCDC {
 	    return;
 	}
 	//cleanLogs
-	CleanDataLogs  cleanDataLogs= new CleanDataLogs(params);
+	CleanDataLogs  cleanDataLogs = new CleanDataLogs(params);
 	cleanDataLogs.setName("cleanDataLogs");
         cleanDataLogs.start();
 
@@ -57,10 +59,7 @@ public class KafkaCDC {
 		    // show help or version information
 		    setName("CtrlCThread");
 		    log.warn("exiting via Ctrl+C, show the lastest states:");
-		    wait_loader_stop(consumerTasks, Constants.KAFKA_CDC_NORMAL);
- 
-                    log.warn("stop cleanDataLogs process thread.");
-                    cleanDataLogs.interrupt();
+		    wait_loader_stop(consumerTasks, cleanDataLogs, Constants.KAFKA_CDC_NORMAL);
 		}
 	    });
 
@@ -70,9 +69,7 @@ public class KafkaCDC {
 	    show(consumerTasks);
         }
 
-	wait_loader_stop(consumerTasks, Constants.KAFKA_CDC_NORMAL);
-        log.warn("stop cleanDataLogs process thread.");
-        cleanDataLogs.interrupt();
+	wait_loader_stop(consumerTasks, cleanDataLogs, Constants.KAFKA_CDC_NORMAL);
 
         log.info("exit time: " + Utils.getCurrentTime());
     }
