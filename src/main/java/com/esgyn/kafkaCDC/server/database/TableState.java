@@ -18,6 +18,7 @@ import com.esgyn.kafkaCDC.server.utils.ColumnInfo;
 import com.esgyn.kafkaCDC.server.utils.FileUtils;
 import com.esgyn.kafkaCDC.server.utils.TableInfo;
 import com.esgyn.kafkaCDC.server.utils.Constants;
+import com.esgyn.kafkaCDC.server.utils.Utils;
 
 import lombok.Getter;
 
@@ -673,30 +674,52 @@ public class TableState {
 		      + deleteRows.size() + "] ");
         }
 
+	long startTime = Utils.getTime();
+
 	if (state == ERROR || state_ == Constants.KAFKA_CDC_ABORT) {
 	    return dump_data_to_file(true);
 	}
 
 	// if reconnect to database, we must prepare the stmt again
 	prepareStmts(dbConn_);
+
+	long endPrepareTime = Utils.getTime();
 	if (insertRows.size() > 0 && !insert_data()) {
 	    state = ERROR;
 	    return false;
 	}
+
+	long endInsertTime = Utils.getTime();
 
         if (updateRows.size() > 0 && !update_data()) {
             state = ERROR;
             return false;
 	}
 
+	long endUpdateTime = Utils.getTime();
+
         if (deleteRows.size() > 0 && !delete_data()) {
             state = ERROR;
             return false;
 	}
 
+	long endDeleteTime = Utils.getTime();
+
         if (!dump_data_to_file(false)) {
             return false;
         }
+
+	long endDumpTime = Utils.getTime();
+
+	if (log.isDebugEnabled()) { 
+	    log.debug("table flush data [total time: " + (endDumpTime - startTime)/100
+		     + "s, prepare time: " + (endPrepareTime - startTime)/1000 
+		     + "s, insert time: " + (endInsertTime - endPrepareTime)/1000 
+		     + "s, update time: " + (endUpdateTime - endInsertTime)/1000
+		     + "s, delete time: " + (endDeleteTime - endUpdateTime)/1000
+		     + "s, dump time: " + (endDumpTime - endDeleteTime)/1000 + "s]"); 
+	}
+
 	state = EMPTY;
 
 	return true;

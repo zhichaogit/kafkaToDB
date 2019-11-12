@@ -11,6 +11,7 @@ import com.esgyn.kafkaCDC.server.database.TableState;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
 import com.esgyn.kafkaCDC.server.utils.TableInfo;
+import com.esgyn.kafkaCDC.server.utils.Utils;
 
 import lombok.Getter;
 
@@ -120,12 +121,22 @@ public class LoaderTask {
 	tables    = tables_;
 	state     = state_;
 
+	long startTime = Utils.getTime();
+
 	if (!process_records())
 	    return -1;
 	
+	long endProcessTime = Utils.getTime();
         dbConn.commit();
+	long endCommitTime = Utils.getTime();
 	loadStates.addTransTotal(1);
 	loadStates.addDoneTasks(1);
+
+	log.info("loader task [totle time: " + (endCommitTime - startTime)/1000
+		 + "s, process time: " + (endProcessTime - startTime)/1000 
+		 + "s, commit time: " + (endCommitTime - endProcessTime)/1000 
+		 + "s, speed: " + (rows.size() * 1000/(endCommitTime - startTime)) 
+		 + "(n/s)]"); 
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
 	
