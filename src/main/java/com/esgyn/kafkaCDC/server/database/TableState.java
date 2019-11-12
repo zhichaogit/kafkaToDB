@@ -674,7 +674,16 @@ public class TableState {
         }
 
 	if (state == ERROR || state_ == Constants.KAFKA_CDC_ABORT) {
-	    return dump_data_to_file(true);
+	    boolean isDumpToFile = dump_data_to_file(true);
+	    if (isDumpToFile) {
+	            errInsert = insertRows.size();
+	            errUpdate = updateRows.size();
+	            errDelete = deleteRows.size();
+	            tableInfo.incErrInsNum(errInsert);
+	            tableInfo.incErrUpdNum(errUpdate);
+	            tableInfo.incErrDelNum(errDelete);
+	    }
+	    return isDumpToFile;
 	}
 
 	// if reconnect to database, we must prepare the stmt again
@@ -1326,15 +1335,6 @@ public class TableState {
 		return false;
 	    }
 	}
-	// add the error count
-        if (withError) {
-            errInsert = insertList.size();
-            errUpdate = updateList.size();
-            errDelete = deleteList.size();
-            tableInfo.incErrInsNum(errInsert);
-            tableInfo.incErrUpdNum(errUpdate);
-            tableInfo.incErrDelNum(errDelete);
-        }
 
 	if (log.isTraceEnabled()) { log.trace("exit"); }
 
