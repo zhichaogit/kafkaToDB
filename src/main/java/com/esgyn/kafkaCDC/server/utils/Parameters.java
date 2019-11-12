@@ -295,6 +295,7 @@ public class Parameters {
 	kafkaCDC.setShowTasks(getBoolParam("showTasks", false));
 	kafkaCDC.setShowTables(getBoolParam("showTables", true));
 	kafkaCDC.setShowSpeed(getBoolParam("showSpeed", false));
+	kafkaCDC.setSleepTime(getLongParam("sleepTime", Constants.DEFAULT_SLEEP_TIME));
     }
 
     private void checkOptions()

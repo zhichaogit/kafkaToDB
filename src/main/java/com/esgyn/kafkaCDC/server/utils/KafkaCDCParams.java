@@ -66,6 +66,9 @@ public class KafkaCDCParams {
     private String          msgClass      = null;
     @Setter
     @Getter
+    private long            sleepTime     = Constants.DEFAULT_SLEEP_TIME;
+    @Setter
+    @Getter
     private long            maxWaitTasks  = Constants.DEFAULT_MAXWAITTASKS;
 
     public void init(String startTime) {
@@ -111,6 +114,7 @@ public class KafkaCDCParams {
 	    .append("\n\tshowTasks     = "    + showTasks)
 	    .append("\n\tshowTables    = "    + showTables)
 	    .append("\n\tshowSpeed     = "    + showSpeed)
+	    .append("\n\tsleepTime     = "    + sleepTime)
 	    .append("\n\tmsgClass      = "    + msgClass);
 
 	return strBuffer.toString();

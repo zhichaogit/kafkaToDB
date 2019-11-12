@@ -55,6 +55,7 @@
 		"showLoaders": true,
 		"showTasks": true,
 		"showTables": true,
+		"sleepTime": 10,
 		"showSpeed": true
 	},
 	"mappings": [{

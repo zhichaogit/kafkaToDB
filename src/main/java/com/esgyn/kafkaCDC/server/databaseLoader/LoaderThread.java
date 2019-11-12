@@ -67,7 +67,7 @@ public class LoaderThread extends Thread {
 					  + "fix the database error as soon as possable please, "
 					  + "loader thread will wait 1000ms and continue");
 				loaderTask.getLoadStates().addTransFails(1);
-				Utils.waitMillisecond(1000);
+				Utils.waitMillisecond(loaderHandle.getParams().getKafkaCDC().getSleepTime());
 
 				Database.CloseConnection(dbConn);
 				dbConn = null;
@@ -83,7 +83,7 @@ public class LoaderThread extends Thread {
 				      + "fix the database error as soon as possable please, "
 				      + "loader thread will wait 1000ms and continue");
 			    loaderTask.clean();
-			    Utils.waitMillisecond(10);
+			    Utils.waitMillisecond(loaderHandle.getParams().getKafkaCDC().getSleepTime());
 			}
 		    } catch (SQLException se) {
 			log.error("loader thread throw exception when execute work:", se);
@@ -100,7 +100,7 @@ public class LoaderThread extends Thread {
 				  + "fix the database error as soon as possable please, "
 				  + "loader thread will wait 1000ms and continue");
 			loaderTask.clean();
-			Utils.waitMillisecond(10);
+			Utils.waitMillisecond(loaderHandle.getParams().getKafkaCDC().getSleepTime());
 		    }
 		}
 	    } else if (state == Constants.KAFKA_CDC_RUNNING) {
@@ -116,8 +116,8 @@ public class LoaderThread extends Thread {
 		    }
 		}
 
-		waitTime += 10;
-		Utils.waitMillisecond(10);
+		waitTime += loaderHandle.getParams().getKafkaCDC().getSleepTime();
+		Utils.waitMillisecond(loaderHandle.getParams().getKafkaCDC().getSleepTime());
 	    } else {
 		log.info("loader thread stoped via close.");
 		break;

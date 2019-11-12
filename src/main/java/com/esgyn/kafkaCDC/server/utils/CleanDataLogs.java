@@ -39,11 +39,8 @@ public class CleanDataLogs extends Thread {
 
             log.info("clean [" + kafkaCDC.getKafkaDir() + "] dir files num [" + cleanKafkaLogNum 
                     +"] , ["+kafkaCDC.getLoadDir()+"] dir files num [ " + cleanLoadLogNum + "]");
-            try {
-                Thread.sleep(cleanLogInterval);
-            } catch (InterruptedException e) {
-                break;
-            }
+
+	    Utils.waitMillisecond(cleanLogInterval);
         }
         if (log.isTraceEnabled()) {
             log.trace("exit");

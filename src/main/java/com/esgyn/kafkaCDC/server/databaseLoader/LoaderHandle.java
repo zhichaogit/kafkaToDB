@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
+import com.esgyn.kafkaCDC.server.utils.Utils;
 
 import lombok.Getter;
 
@@ -63,10 +64,7 @@ public class LoaderHandle {
 	                + "] tasks, more than the maxWaitTasksSize [ " + maxWaitTasksSize
 	                + "], consumer [" + consumerID_ + "] need wait 10ms to continue");
             }
-	    try {
-		Thread.sleep(10);
-	    } catch (Exception e) {
-	    }
+	    Utils.waitMillisecond(params.getKafkaCDC().getSleepTime());
 	    size = tasks.size();
 	}
 

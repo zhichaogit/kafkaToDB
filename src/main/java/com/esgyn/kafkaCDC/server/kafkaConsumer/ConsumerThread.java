@@ -67,12 +67,9 @@ public class ConsumerThread extends Thread {
 		if (log.isDebugEnabled()) { 
 		    log.debug("ConsumeThread haven't tasks to do, consumer goto sleep 1s");
 		}
-		try {
-		    checkTimeOut();
-		    Thread.sleep(1000);
-		} catch (Exception e) {
-		    log.error("throw exception when call Thread.sleep");
-		}
+
+		checkTimeOut();
+		Utils.waitMillisecond(consumerTasks.getSleepTime());
 	    }
 	} // while true
 

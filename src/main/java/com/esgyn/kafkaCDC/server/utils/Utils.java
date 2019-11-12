@@ -157,7 +157,7 @@ public class Utils {
 	return name;
     }
 
-    public static void waitMillisecond(int milliseconds) {
+    public static void waitMillisecond(long milliseconds) {
 	try {
 	    Thread.sleep(milliseconds);
 	} catch (Exception e) {

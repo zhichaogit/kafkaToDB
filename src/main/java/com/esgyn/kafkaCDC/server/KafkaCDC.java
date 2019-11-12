@@ -29,14 +29,8 @@ public class KafkaCDC {
 
 	log.info("consumers exited, waiting for loader finish the tasks");
 	while (consumerTasks.getLoaderTasks().getRunning() > 0) {
-	    try {
-		Thread.sleep(consumerTasks.getParams().getKafkaCDC().getInterval());
-
-		show(consumerTasks);
-	    } catch (Exception e) {
-		log.error("show statistics throw Exception:", e);
-		break;
-	    }
+	    Utils.waitMillisecond(consumerTasks.getParams().getKafkaCDC().getInterval());
+	    show(consumerTasks);
 	}
 
 	// show the latest statistics
@@ -72,14 +66,8 @@ public class KafkaCDC {
 
 	// show statistics
         while (consumerTasks.getRunning() > 0) {
-            try {
-                Thread.sleep(params.getKafkaCDC().getInterval());
-
-		show(consumerTasks);
-            } catch (Exception e) {
-                log.error("show statistics throw Exception:", e);
-                break;
-            }
+	    Utils.waitMillisecond(params.getKafkaCDC().getInterval());
+	    show(consumerTasks);
         }
 
 	wait_loader_stop(consumerTasks, Constants.KAFKA_CDC_NORMAL);

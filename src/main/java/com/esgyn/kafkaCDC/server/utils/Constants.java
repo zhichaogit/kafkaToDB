@@ -19,6 +19,9 @@ public class Constants {
     public final static long         DEFAULT_INTERVAL_S    = 10;
     public final static long         DEFAULT_CLEAN_I_S     = 60;
 
+    // the unit is millsecond
+    public final static long         DEFAULT_SLEEP_TIME    = 10;
+
     public final static long         DEFAULT_BATCH_SIZE    = 5000;
     public final static long         DEFAULT_FETCH_SIZE    = 10000;
     public final static long         DEFAULT_PARALLE       = 16;
@@ -128,6 +131,7 @@ public class Constants {
 	{"",   "showSpeed",   false, false, "print the tables run speed info, not need arg, default:false"},
 	{"",   "loaddir",     false,  true, "dump process data file path,default: null"},
 	{"",   "kafkadir",    false,  true, "dump consumer data file path,default: null"},
+	{"",   "sleepTime",   false,  true, "thread sleep time when free, default: 10ms"},
 
 	// system info
         {"h",  "help",        false, false, "show help information"},

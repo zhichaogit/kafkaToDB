@@ -30,12 +30,15 @@ public class ConsumerTasks<T> {
     private volatile long               running       = 0;
     @Getter
     private long  maxFreeTime = Constants.DEFAULT_STREAM_TO_S * 1000;
+    @Getter
+    private long  sleepTime   = Constants.DEFAULT_SLEEP_TIME;
 
     public ConsumerTasks(Parameters params_) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
 	params      = params_;
 	maxFreeTime = params.getKafka().getStreamTO();
+	sleepTime   = params.getKafkaCDC().getSleepTime();
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
     }
