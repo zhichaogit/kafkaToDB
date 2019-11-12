@@ -52,6 +52,7 @@ public class LoaderThread extends Thread {
 	    // remove the task from the queue
 	    loaderTask = loaderHandle.poll();
 	    if (loaderTask != null){
+		waitTime = 0;
 		while (loaderTask != null) {
 		    try {
 			if (dbConn == null) {
