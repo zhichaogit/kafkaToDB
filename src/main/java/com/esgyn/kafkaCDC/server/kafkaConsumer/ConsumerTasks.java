@@ -8,6 +8,8 @@ import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.databaseLoader.LoaderHandle;
 import com.esgyn.kafkaCDC.server.databaseLoader.LoaderTasks;
+import com.esgyn.kafkaCDC.server.logCleaner.LogCleaner;
+import com.esgyn.kafkaCDC.server.clientServer.KCServer;
 import com.esgyn.kafkaCDC.server.utils.Constants;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
 import com.esgyn.kafkaCDC.server.utils.TopicParams;
@@ -19,7 +21,12 @@ public class ConsumerTasks<T> {
     private static Logger log = Logger.getLogger(ConsumerTasks.class);
     private ConcurrentLinkedQueue<ConsumerTask> tasks = null;
     private List<ConsumerTask>          taskArray     = null;
+    @Getter
     private List<ConsumerThread>        consumers     = null;
+    @Getter
+    private LogCleaner                  logCleaner    = null;
+    @Getter
+    private KCServer                    kcServer      = null;
 
     @Getter
     private Parameters                  params        = null;
@@ -64,18 +71,22 @@ public class ConsumerTasks<T> {
 
 	consumeStates = new ConsumeStates(this, loaderTasks.getLoadStates());
 
-	if (!initTopics(topics))
+	if (!init_topics(topics))
 	    return false;
 
-	if (!initConsumers())
+	if (!init_consumers())
 	    return false;
+
+	init_log_cleaner();
+
+	init_client_server();
 
 	if (log.isTraceEnabled()) { log.trace("exit"); }
 
 	return true;
     }
 
-    private boolean initTopics(List<TopicParams> topics){
+    private boolean init_topics(List<TopicParams> topics){
         if (log.isTraceEnabled()) { log.trace("enter"); }
 	int          loaderID     = 0;
 	LoaderHandle loaderHandle = null;
@@ -115,7 +126,7 @@ public class ConsumerTasks<T> {
 	return true;
     }
 
-    private boolean initConsumers(){
+    private boolean init_consumers(){
 	if (log.isTraceEnabled()) { log.trace("enter"); }
 
 	running = params.getKafkaCDC().getConsumers();
@@ -133,6 +144,18 @@ public class ConsumerTasks<T> {
 	if (log.isTraceEnabled()) { log.trace("exit"); }
 
 	return true;
+    }
+
+    private void init_log_cleaner() {
+        logCleaner= new LogCleaner(params);
+        logCleaner.setName("LogCleaner");
+        logCleaner.start();
+    }
+
+    private void init_client_server() {
+	kcServer = new KCServer(this, params.getKafkaCDC().getPort());
+        kcServer.setName("KafkaCDC Server");
+	kcServer.start();
     }
 
     public ConsumerTask poll() { 
@@ -154,6 +177,11 @@ public class ConsumerTasks<T> {
     }
 
     public void show(StringBuffer strBuffer) { 
+	strBuffer.append("\n  KafkaCDC states:\n")
+	    .append("  There are [" + getRunning())
+	    .append("] consumers and [" + loaderTasks.getRunning())
+	    .append("] loaders running, ");
+
 	consumeStates.show(strBuffer);
 
 	if (params.getKafkaCDC().isShowConsumers()) {
@@ -196,6 +224,22 @@ public class ConsumerTasks<T> {
     public void close(int signal_) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
+	log.info("consumers exited, waiting for loader finish the tasks,running:"
+		 + loaderTasks.getRunning());
+	while (loaderTasks.getRunning() > 0) {
+	    for (int i = 0; i < params.getKafkaCDC().getInterval()*100; i++) {
+	        if (loaderTasks.getRunning() == 0) {
+	            break;
+	        }
+	        Utils.waitMillisecond(10);
+	    }
+
+	    log.info("consumers exited show state");
+	    StringBuffer strBuffer = new StringBuffer();
+	    show(strBuffer);
+	    log.info(strBuffer.toString());
+	}
+
 	for (ConsumerThread consumer : consumers) {
 	    try {
 		if (consumer.getRunning()) {
@@ -210,6 +254,8 @@ public class ConsumerTasks<T> {
 	    }
 	}
  
+	kcServer.stopServer();
+        logCleaner.interrupt();
 	loaderTasks.close(signal_);
 
         if (log.isTraceEnabled()) { log.trace("exit"); }

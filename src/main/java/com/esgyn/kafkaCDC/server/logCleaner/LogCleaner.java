@@ -1,16 +1,21 @@
-package com.esgyn.kafkaCDC.server.utils;
+package com.esgyn.kafkaCDC.server.logCleaner;
 
 import java.util.Date;
 
+import com.esgyn.kafkaCDC.server.utils.Utils;
+import com.esgyn.kafkaCDC.server.utils.FileUtils;
+import com.esgyn.kafkaCDC.server.utils.Parameters;
+import com.esgyn.kafkaCDC.server.utils.KafkaCDCParams;
+
 import org.apache.log4j.Logger;
 
-public class CleanDataLogs extends Thread {
-    private static Logger  log        = Logger.getLogger(CleanDataLogs.class);
+public class LogCleaner extends Thread {
+    private static Logger  log        = Logger.getLogger(LogCleaner.class);
     
     private KafkaCDCParams kafkaCDC         = null;
     private long           cleanLogInterval = 0L;
 
-    public CleanDataLogs(Parameters params_) {
+    public LogCleaner(Parameters params_) {
         kafkaCDC = params_.getKafkaCDC();
     }
 
@@ -19,7 +24,7 @@ public class CleanDataLogs extends Thread {
         if (log.isTraceEnabled()) {
             log.trace("enter");
         }
-        log.info("start cleanDataLogs thread");
+        log.info("start LogCleaner thread");
         long cleanDelayTime     = kafkaCDC.getCleanDelayTime();
         cleanLogInterval = kafkaCDC.getCleanInterval();
         while (cleanLogInterval >= 0) {
@@ -46,6 +51,6 @@ public class CleanDataLogs extends Thread {
         if (log.isTraceEnabled()) {
             log.trace("exit");
         }
-        log.info("stop cleanDataLogs thread");
+        log.info("stop LogCleaner thread");
     }
 }

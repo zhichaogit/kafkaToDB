@@ -102,18 +102,49 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-					<archive>
-						<manifest>
-							<mainClass>com.esgyn.kafkaCDC.server.KafkaCDC</mainClass>
-						</manifest>
-					</archive>
-					<classesDirectory>
-					</classesDirectory>
-				</configuration>
+				<executions>
+					<execution>
+						<id>server</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<phase>package</phase>
+						<configuration>
+							<classifier>server</classifier>
+							<includes>
+								<include>**/server/**</include>
+							</includes>
+							<archive>
+								<manifest>
+									<mainClass>com.esgyn.kafkaCDC.server.KafkaCDC</mainClass>
+								</manifest>
+							</archive>
+						</configuration>
+					</execution>
+
+					<execution>
+						<id>client</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<phase>package</phase>
+						<configuration>
+							<classifier>client</classifier>
+							<includes>
+								<include>**/client/**</include>
+								<include>**/message/**</include>
+							</includes>
+							<archive>
+								<manifest>
+									<mainClass>com.esgyn.kafkaCDC.client.KCClient</mainClass>
+								</manifest>
+							</archive>
+						</configuration>
+					</execution>
+				</executions>
+
 			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>

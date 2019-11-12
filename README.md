@@ -63,6 +63,7 @@ usage: Consumer Server
                       a. -p "1,4-5,8" : means process the partition 1,4,5 and 8
                       b. -p  4 : means process the partition 0,1,2 and 3
                       c. -p "2-2" : means process the partition 2
+*    --port <arg>        kafkaCDC server listener port,default:8889
 *    --reqto <arg>      request.timeout.ms, default: 305s
 * -s,--schema <arg>     default database schema, use the schema from data
                         without this option, you should write like this

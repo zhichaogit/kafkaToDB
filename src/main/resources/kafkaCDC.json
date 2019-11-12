@@ -38,6 +38,7 @@
 		"zookeeper": null
 	},
 	"kafkaCDC": {
+		"port" : 8889,
 		"consumers" : 4,
 		"bigEndian": false,
 		"delimiter": ",",
@@ -60,8 +61,8 @@
 		"showSpeed": false
 	},
 	"mappings": [{
-		"srcSchemaName": "T1SRC",
-		"srcTableName": "SEABASESRC",
+		"srcSchemaName": "SEABASESRC",
+		"srcTableName": "T1SRC",
 		"schemaName": "SEABASE",
 		"tableName": "T1"
 	}, {

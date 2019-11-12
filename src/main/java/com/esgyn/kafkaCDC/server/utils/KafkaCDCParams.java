@@ -4,6 +4,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class KafkaCDCParams {
+    @Setter
+    @Getter
+    private int             port          = Constants.DEFAULT_KC_PORT;
     @Setter 
     @Getter 
     private long            consumers     = Constants.DEFAULT_CONSUMERS;
@@ -95,6 +98,7 @@ public class KafkaCDCParams {
 
 	strBuffer.append("\n\nKafkaCDC options:")
 	    .append("\n\tconsumers     = "    + consumers)
+	    .append("\n\tport          = "    + port)
 	    .append("\n\tbigendian     = "    + bigEndian)
 	    .append("\n\tdelimiter     = \""  + delimiter + "\"")
 	    .append("\n\tdumpbinary    = "    + dumpBinary)

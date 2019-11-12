@@ -41,7 +41,7 @@ if [ -d $BASEPATH/logs ];then
   . $BASEPATH/bin/droplogs.sh
 fi
 #3 analy parameters
-execCommand="java -Djava.ext.dirs=${LIBSPATH}:$JAVA_HOME/jre/lib/ext -jar $LIBSPATH/KafkaCDC.jar"
+execCommand="java -Djava.ext.dirs=${LIBSPATH}:$JAVA_HOME/jre/lib/ext -jar $LIBSPATH/KafkaCDC-server.jar"
 
 if [ $# = 0 ]; then
   execCommand="$execCommand -h"

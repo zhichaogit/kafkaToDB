@@ -72,6 +72,7 @@ public class Parameters {
      *         No parameters specified: not write the err message
      *         "-o /tmp/mypath" or "--outpath /tmp/mypath" : user-defined path
      * -p --partition <arg>the partition number (default is 16) 
+     *    --port      kafkaCDC server listener port
      * -s --schema <arg> schema 
      * -t --topic <arg> topic 
      * -v --version print version info 
@@ -277,6 +278,7 @@ public class Parameters {
     private void setKafkaCDCOptions()
     {
 	kafkaCDC = new KafkaCDCParams();
+	kafkaCDC.setPort(getIntParam("consumers", Constants.DEFAULT_KC_PORT));
 	kafkaCDC.setConsumers(getLongParam("consumers", Constants.DEFAULT_CONSUMERS));
 	kafkaCDC.setBigEndian(getBoolParam("bigendian", false));
         kafkaCDC.setDelimiter(getStringParam("delim", Constants.DEFAULT_DELIMITER));

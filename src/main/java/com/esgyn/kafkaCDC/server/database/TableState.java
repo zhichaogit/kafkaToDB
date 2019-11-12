@@ -676,7 +676,7 @@ public class TableState {
 
 	long startTime = Utils.getTime();
 
-	if (state == ERROR || state_ == Constants.KAFKA_CDC_ABORT) {
+	if (state == ERROR || state_ == Constants.KAFKA_CDC_IMMEDIATE) {
 	    boolean isDumpToFile = dump_data_to_file(true);
 	    if (isDumpToFile) {
 	            errInsert = insertRows.size();

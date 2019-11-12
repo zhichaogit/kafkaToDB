@@ -53,7 +53,7 @@ public class LoaderThread extends Thread {
 
 	startTime = Utils.getTime();
 	// exit when finished the tasks
-	while (true) {
+	while (getLoaderState() != Constants.KAFKA_CDC_ABORT) {
 	    // remove the task from the queue
 	    loaderTask = loaderHandle.poll();
 	    if (loaderTask != null){

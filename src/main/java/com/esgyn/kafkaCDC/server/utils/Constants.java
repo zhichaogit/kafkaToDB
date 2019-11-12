@@ -6,6 +6,7 @@ public class Constants {
     public final static String       DEFAULT_LOG_PATH      = "logs/";
     public final static String       DEFAULT_UNLOAD_PATH   = "unload/";
     public final static String       KafkaCDC_VERSION      = "KafkaCDC-2.0.0";
+    public final static int          DEFAULT_KC_PORT       = 8889;
 
     // the unit is second
     public final static long         DEFAULT_NETWORK_TO_S  = 120;
@@ -64,7 +65,8 @@ public class Constants {
     public final static int          KAFKA_CDC_INIT        = 0;
     public final static int          KAFKA_CDC_RUNNING     = 1;
     public final static int          KAFKA_CDC_NORMAL      = 2;
-    public final static int          KAFKA_CDC_ABORT       = 3;
+    public final static int          KAFKA_CDC_IMMEDIATE   = 3;
+    public final static int          KAFKA_CDC_ABORT       = 4;
 
     public static String getState(int state) {
 	String strState = "";
@@ -79,6 +81,10 @@ public class Constants {
 
 	case KAFKA_CDC_NORMAL:
 	    strState = "NORMAL";
+	    break;
+
+	case KAFKA_CDC_IMMEDIATE:
+	    strState = "IMMEDIATE";
 	    break;
 
 	case KAFKA_CDC_ABORT:
@@ -135,6 +141,7 @@ public class Constants {
         {"z",  "zook",        false,  true, "zookeeper connection list, ex: <node>:port[/kafka],..."},
 
 	// KafkaCDC information
+        {"",   "port",        false,  true, "kafkaCDC server listener port,default:8889"},
         {"",   "consumers",   false,  true, "specify connection number to kafka, default: 4."},
 	{"",   "cleanDelayTime",   false,  true, "clean the log delay time,default: 3600s"},
 	{"",   "cleanInterval",false,  true, "clean log interval time,-1 will not clean.default: 10s"},
@@ -161,5 +168,16 @@ public class Constants {
 	// system info
         {"h",  "help",        false, false, "show help information"},
         {"v",  "version",     false, false, "print the version of KafkaCDC"}
+    };   
+
+    public final static Object[][]   CLIENT_CONFIG_PARAMS = {
+        {"",   "host",        false,  true, "database server ip, default: \"localhost\""},
+        {"",   "port",        false,  true, "kafkaCDC server listener port, default:8889"},
+        {"t",  "type",        false,  true, "the type of command"},
+        {"s",  "subtype",     false,  true, "the sub type of type command"},
+
+	// system info
+        {"h",  "help",        false, false, "show help information"},
+        {"v",  "version",     false, false, "print the version of KafkaCDC Client"}
     };   
 }

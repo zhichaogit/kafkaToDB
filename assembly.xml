@@ -43,9 +43,9 @@
 	<files>
 		<!-- target/KafKaCDC.jar move to KafkaCDC/libs and rename  KafkaCDC.jar -->
 		 <file>
-   			 <source>target/KafkaCDC.jar</source>
+                    <source>target/KafkaCDC-server.jar</source>
                          <outputDirectory>KafkaCDC/libs</outputDirectory>
-   			 <destName>KafkaCDC.jar</destName>
+                    <destName>KafkaCDC-server.jar</destName>
    		 </file>
    		 <!-- READE moven to tar.gz for users -->
 		<file>
