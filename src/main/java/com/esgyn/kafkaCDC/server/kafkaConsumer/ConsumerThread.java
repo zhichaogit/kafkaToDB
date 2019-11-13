@@ -41,12 +41,16 @@ public class ConsumerThread extends Thread {
 
 	log.info("consumer server started.");
 	ConsumerTask consumerTask = null;
-	while (running.get()) {
+	while (getRunning()) {
 	    // remove the task from the queue
 	    consumerTask = consumerTasks.poll();
 	    if (consumerTask != null){
 		// poll data from kafka
 		long pollNumber = consumerTask.work(consumerID);
+		if (log.isDebugEnabled()) { 
+		    log.debug("ConsumeThread pulled " + pollNumber + " msgs");
+		}
+
 		if (pollNumber > 0) {
 		    preConsumeTime = Utils.getTime();
 		    // update the consumer tasks statistics
@@ -65,7 +69,8 @@ public class ConsumerThread extends Thread {
 	    } else {
 		// there are no work to do, go to sleep a while
 		if (log.isDebugEnabled()) { 
-		    log.debug("ConsumeThread haven't tasks to do, consumer goto sleep 1s");
+		    log.debug("ConsumeThread haven't tasks to do, consumer goto sleep "
+			      + consumerTasks.getSleepTime() + "ms");
 		}
 
 		checkTimeOut();
@@ -88,7 +93,7 @@ public class ConsumerThread extends Thread {
 	    log.info("ConsumeThread free time [" + freeTime/1000 
 		     + "s] had more than the max free time [" 
 		     + consumerTasks.getMaxFreeTime()/1000 + "s]");
-	    running.set(false);
+	    stopConsumer();
 	    return true;
 	}
 
@@ -98,9 +103,9 @@ public class ConsumerThread extends Thread {
     public void show(StringBuffer strBuffer) { 
 	Long  freeTime = Utils.getTime() - preConsumeTime;
 	String consumerThreadStr =
-	    String.format("  -> consumer [id:%3d, msgs:%12d, free:%8ds, looping:%s, running:%s]\n",
-			  consumerID, consumedNumber, freeTime/1000, 
-			  String.valueOf(looping), String.valueOf(running));
+	    String.format("  -> consumer [id:%3d, msgs:%12d, free:%12dms, max free: %8dms, looping:%s, running:%s]\n",
+			  consumerID, consumedNumber, freeTime, consumerTasks.getMaxFreeTime(),
+			  String.valueOf(looping), String.valueOf(getRunning()));
 
 	strBuffer.append(consumerThreadStr);
     }

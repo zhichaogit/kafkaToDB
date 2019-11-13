@@ -132,10 +132,11 @@ public class LoaderTask {
 	loadStates.addTransTotal(1);
 	loadStates.addDoneTasks(1);
 
-	log.info("loader task [totle time: " + (endCommitTime - startTime)/1000
-		 + "s, process time: " + (endProcessTime - startTime)/1000 
-		 + "s, commit time: " + (endCommitTime - endProcessTime)/1000 
-		 + "s, speed: " + (rows.size() * 1000/(endCommitTime - startTime)) 
+	log.info("loader task [totle time: " + (endCommitTime - startTime)
+		 + "ms, process time: " + (endProcessTime - startTime) 
+		 + "ms, commit time: " + (endCommitTime - endProcessTime)
+		 + "ms, count: " + rows.size() 
+		 + "speed: " + (rows.size() * 1000/(endCommitTime - startTime)) 
 		 + "(n/s)]"); 
 
         if (log.isTraceEnabled()) { log.trace("exit"); }

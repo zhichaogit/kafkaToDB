@@ -65,6 +65,29 @@ public class Constants {
     public final static int          KAFKA_CDC_NORMAL      = 2;
     public final static int          KAFKA_CDC_ABORT       = 3;
 
+    public static String getState(int state) {
+	String strState = "";
+	switch (state){
+	case KAFKA_CDC_INIT:
+	    strState = "INIT";
+	    break;
+
+	case KAFKA_CDC_RUNNING:
+	    strState = "RUNNING";
+	    break;
+
+	case KAFKA_CDC_NORMAL:
+	    strState = "NORMAL";
+	    break;
+
+	case KAFKA_CDC_ABORT:
+	    strState = "ABORT";
+	    break;
+	}
+
+	return strState;
+    }
+
     public final static Object[][]   CONFIG_PARAMS = {
 	// database information
         {"",   "batchSize",   false,  true, "batch means update operate will batch execute,"

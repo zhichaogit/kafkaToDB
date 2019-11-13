@@ -15,7 +15,8 @@ import com.esgyn.kafkaCDC.server.utils.Constants;
 
 public class LoaderThread extends Thread {
     private long                loadedNumber   = 0;
-    private long                waitTime       = 0;
+    private long                preLoadTime    = 0;
+    private long                sleepTime      = 0;
     private boolean             looping        = true;
 
     private LoaderHandle        loaderHandle   = null;
@@ -34,6 +35,7 @@ public class LoaderThread extends Thread {
 	loaderHandle   = loaderHandle_;
 
 	loaderTasks    = loaderHandle.getLoaderTasks();
+	sleepTime      = loaderHandle.getParams().getKafkaCDC().getSleepTime();
         loadedNumber   = 0;
 
 	tables         = new HashMap<String, TableState>(0);
@@ -42,6 +44,7 @@ public class LoaderThread extends Thread {
     }
 
     public void run() {
+	int waitLoops = 0;
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
 	log.info("loader thread started.");
@@ -52,7 +55,7 @@ public class LoaderThread extends Thread {
 	    // remove the task from the queue
 	    loaderTask = loaderHandle.poll();
 	    if (loaderTask != null){
-		waitTime = 0;
+		preLoadTime = 0;
 		while (loaderTask != null) {
 		    try {
 			if (dbConn == null) {
@@ -67,7 +70,7 @@ public class LoaderThread extends Thread {
 					  + "fix the database error as soon as possable please, "
 					  + "loader thread will wait 1000ms and continue");
 				loaderTask.getLoadStates().addTransFails(1);
-				Utils.waitMillisecond(loaderHandle.getParams().getKafkaCDC().getSleepTime());
+				Utils.waitMillisecond(sleepTime);
 
 				Database.CloseConnection(dbConn);
 				dbConn = null;
@@ -83,7 +86,7 @@ public class LoaderThread extends Thread {
 				      + "fix the database error as soon as possable please, "
 				      + "loader thread will wait 1000ms and continue");
 			    loaderTask.clean();
-			    Utils.waitMillisecond(loaderHandle.getParams().getKafkaCDC().getSleepTime());
+			    Utils.waitMillisecond(sleepTime);
 			}
 		    } catch (SQLException se) {
 			log.error("loader thread throw exception when execute work:", se);
@@ -100,24 +103,25 @@ public class LoaderThread extends Thread {
 				  + "fix the database error as soon as possable please, "
 				  + "loader thread will wait 1000ms and continue");
 			loaderTask.clean();
-			Utils.waitMillisecond(loaderHandle.getParams().getKafkaCDC().getSleepTime());
+			Utils.waitMillisecond(sleepTime);
 		    }
 		}
-	    } else if (state == Constants.KAFKA_CDC_RUNNING) {
+	    } else if (getLoaderState() == Constants.KAFKA_CDC_RUNNING) {
 		// there are no work to do, go to sleep a while
 		if (log.isDebugEnabled()) {
-		    log.debug("loader thread haven't task to do, loader goto sleep 1000ms");
+		    log.debug("loader thread haven't task to do, loader goto sleep "
+			      + sleepTime + "ms");
 		}
 
-		if ((waitTime % 10000) == 0) {
+		if (sleepTime * waitLoops++ > 60000) {
+		    waitLoops = 0;
 		    try {
 			dbConn.commit();
 		    } catch (Exception e) {
 		    }
 		}
 
-		waitTime += loaderHandle.getParams().getKafkaCDC().getSleepTime();
-		Utils.waitMillisecond(loaderHandle.getParams().getKafkaCDC().getSleepTime());
+		Utils.waitMillisecond(sleepTime);
 	    } else {
 		log.info("loader thread stoped via close.");
 		break;
@@ -136,10 +140,11 @@ public class LoaderThread extends Thread {
     }
 
     public void show(StringBuffer strBuffer) {
+	Long  freeTime = Utils.getTime() - preLoadTime;
 	String loaderThreadStr =
-	    String.format("  -> loader   [id:%3d, loaded:%12d, wait:%12ds, looping:%s, state:%s]\n", 
-			  loaderHandle.getLoaderID(), loadedNumber, waitTime/1000,
-			  String.valueOf(looping), String.valueOf(state));
+	    String.format("  -> loader   [id:%3d, loaded:%12d, free:%12dms, looping:%s, state:%s]\n", 
+			  loaderHandle.getLoaderID(), loadedNumber, freeTime,
+			  String.valueOf(looping), Constants.getState(getLoaderState()));
 
 	strBuffer.append(loaderThreadStr);
     }
