@@ -15,7 +15,7 @@ import com.esgyn.kafkaCDC.server.utils.Constants;
 
 public class LoaderThread extends Thread {
     private long                loadedNumber   = 0;
-    private long                preLoadTime    = 0;
+    private long                waitTime       = 0;
     private long                sleepTime      = 0;
     private boolean             looping        = true;
 
@@ -55,7 +55,7 @@ public class LoaderThread extends Thread {
 	    // remove the task from the queue
 	    loaderTask = loaderHandle.poll();
 	    if (loaderTask != null){
-		preLoadTime = Utils.getTime();
+		waitTime = 0;
 		while (loaderTask != null) {
 		    try {
 			if (dbConn == null) {
@@ -86,6 +86,7 @@ public class LoaderThread extends Thread {
 				      + "fix the database error as soon as possable please, "
 				      + "loader thread will wait 1000ms and continue");
 			    loaderTask.clean();
+			    waitTime = sleepTime;
 			    Utils.waitMillisecond(sleepTime);
 			}
 		    } catch (SQLException se) {
@@ -103,6 +104,7 @@ public class LoaderThread extends Thread {
 				  + "fix the database error as soon as possable please, "
 				  + "loader thread will wait 1000ms and continue");
 			loaderTask.clean();
+			waitTime = sleepTime;
 			Utils.waitMillisecond(sleepTime);
 		    }
 		}
@@ -121,6 +123,7 @@ public class LoaderThread extends Thread {
 		    }
 		}
 
+		waitTime = sleepTime;
 		Utils.waitMillisecond(sleepTime);
 	    } else {
 		log.info("loader thread stoped via close.");
@@ -140,10 +143,9 @@ public class LoaderThread extends Thread {
     }
 
     public void show(StringBuffer strBuffer) {
-	Long  freeTime = Utils.getTime() - preLoadTime;
 	String loaderThreadStr =
-	    String.format("  -> loader   [id:%3d, loaded:%12d, free:%12dms, looping:%s, state:%s]\n", 
-			  loaderHandle.getLoaderID(), loadedNumber, freeTime,
+	    String.format("  -> loader   [id:%3d, loaded:%12d, wait:%12dms, looping:%s, state:%s]\n", 
+			  loaderHandle.getLoaderID(), loadedNumber, waitTime,
 			  String.valueOf(looping), Constants.getState(getLoaderState()));
 
 	strBuffer.append(loaderThreadStr);

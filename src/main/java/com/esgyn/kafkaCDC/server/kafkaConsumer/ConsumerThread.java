@@ -16,7 +16,7 @@ public class ConsumerThread extends Thread {
     @Getter
     private long                consumedNumber = 0;
     @Getter
-    private long                freeTime       = 0;
+    private long                waitTime       = 0;
     @Getter
     private long                preLoaderTime  = 0;
 
@@ -53,7 +53,7 @@ public class ConsumerThread extends Thread {
 		}
 
 		if (pollNumber > 0) {
-		    freeTime = 0;
+		    waitTime = 0;
 		    // update the consumer tasks statistics
 		    consumedNumber += pollNumber;
 		    // return the task to the queue
@@ -64,7 +64,7 @@ public class ConsumerThread extends Thread {
 			// if not timeout, need to return the task to the queue
 			consumerTasks.offer(consumerTask);
 		    }
-		    freeTime += consumerTasks.getSleepTime();
+		    waitTime += consumerTasks.getSleepTime();
 		    Utils.waitMillisecond(consumerTasks.getSleepTime());
 		}
 		// reset the task null
@@ -76,7 +76,7 @@ public class ConsumerThread extends Thread {
 			      + consumerTasks.getSleepTime() + "ms");
 		}
 		checkTimeOut();
-		freeTime += consumerTasks.getSleepTime();
+		waitTime += consumerTasks.getSleepTime();
 		Utils.waitMillisecond(consumerTasks.getSleepTime());
 	    }
 	} // while true
@@ -90,10 +90,10 @@ public class ConsumerThread extends Thread {
     }
 
     public boolean checkTimeOut() { 
-	if ((consumerTasks.getMaxFreeTime() >=0) && (freeTime > consumerTasks.getMaxFreeTime())) {
-	    log.warn("ConsumeThread free time [" + freeTime
+	if ((consumerTasks.getMaxWaitTime() >=0) && (waitTime > consumerTasks.getMaxWaitTime())) {
+	    log.warn("ConsumeThread free time [" + waitTime
 		     + "ms] had more than the max free time [" 
-		     + consumerTasks.getMaxFreeTime() + "ms]");
+		     + consumerTasks.getMaxWaitTime() + "ms]");
 	    stopConsumer();
 	    return true;
 	}
@@ -102,12 +102,12 @@ public class ConsumerThread extends Thread {
     }
 
     public void show(StringBuffer strBuffer) { 
-	Long  waitTime = Utils.getTime() - preLoaderTime;
+	Long  waitLoaderTime = Utils.getTime() - preLoaderTime;
 	String consumerThreadStr =
-	    String.format("  -> consumer [id:%3d, msgs:%12d, free:%12dms, wait: %12dms,"
+	    String.format("  -> consumer [id:%3d, msgs:%12d, wait:%12dms, wait loader: %12dms,"
 			  + " max free: %8dms, looping:%-5s, running:%-5s]\n",
-			  consumerID, consumedNumber, freeTime, waitTime, 
-			  consumerTasks.getMaxFreeTime(),
+			  consumerID, consumedNumber, waitTime, waitLoaderTime, 
+			  consumerTasks.getMaxWaitTime(),
 			  String.valueOf(looping), String.valueOf(getRunning()));
 
 	strBuffer.append(consumerThreadStr);
