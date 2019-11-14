@@ -1,6 +1,6 @@
 {
 	"database": {
-		"batchSize": 5000,
+		"batchSize": 500,
 		"batchUpdate":true,
 		"DBIP": "localhost",
 		"DBPort": "23400",
@@ -16,7 +16,7 @@
 	"kafka": {
 		"broker": "localhost:9092",
 		"fetchBytes": 104857600,
-		"fetchSize": 10000,
+		"fetchSize": 1000,
 		"mode": "start",
 		"topics": [{
 		 	  "topic":"g_ad",
@@ -54,9 +54,9 @@
 		"showConsumers": true,
 		"showLoaders": true,
 		"showTasks": true,
-		"showTables": true,
+		"showTables": false,
 		"sleepTime": 10,
-		"showSpeed": true
+		"showSpeed": false
 	},
 	"mappings": [{
 		"srcSchemaName": "T1SRC",

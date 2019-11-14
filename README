@@ -3,7 +3,7 @@ usage: Consumer Server
 -b,--broker <arg>   bootstrap.servers setting, ex: <node>:9092,
                         default: "localhost:9092"
     --batchSize <arg>   batch means update operate will batch execute,
-                        default: 5000
+                        default: 500
     --batchUpdate       update operate will use batch, default: false
     --bigendian         the data format is big endian, default: little endian
     --cleanInterval <arg>   clean log interval time,-1 will not clean.default: 10s
@@ -22,7 +22,7 @@ usage: Consumer Server
  -f,--format <arg>      format of data, support "Unicom" "UnicomJson"
                         "HongQuan"  "Json" "Protobuf" and "user-defined"
                         default: "",
-    --fetchSize <arg>   num message per Kakfa synch/pull, default: 10000
+    --fetchSize <arg>   num message per Kakfa synch/pull, default: 1000
  -g,--group <arg>       group for this consumer, default: 0
  -h,--help              show help information
     --hbto <arg>        heartbeat.interval.ms, default: 10s
@@ -66,8 +66,8 @@ usage: Consumer Server
     --showLoaders       show the loader thread details, default: true
     --showSpeed         print the tables run speed info, not need arg,
                         default:false
-    --showTables        show the tables details, default: true
-    --showTasks         show the consumers task details, default: false
+    --showTables        show the tables details, default: false
+    --showTasks         show the consumers task details, default: true
     --skip              skip all errors of data, default: false
     --sto <arg>         consumer free TimeOut,-1 not TO forever, default: -1
  -t,--topic <arg>       REQUIRED. topic of subscription

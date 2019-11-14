@@ -68,7 +68,7 @@ public class LoaderThread extends Thread {
 			    if (loadNumber < 0) {
 				log.error("loader thread load data to database fail! "
 					  + "fix the database error as soon as possable please, "
-					  + "loader thread will wait 1000ms and continue");
+					  + "loader thread will wait " + sleepTime + "ms and continue");
 				loaderTask.getLoadStates().addTransFails(1);
 				Utils.waitMillisecond(sleepTime);
 
@@ -86,7 +86,7 @@ public class LoaderThread extends Thread {
 				      + "fix the database error as soon as possable please, "
 				      + "loader thread will wait 1000ms and continue");
 			    loaderTask.clean();
-			    waitTime = sleepTime;
+			    waitTime += sleepTime;
 			    Utils.waitMillisecond(sleepTime);
 			}
 		    } catch (SQLException se) {
@@ -104,7 +104,7 @@ public class LoaderThread extends Thread {
 				  + "fix the database error as soon as possable please, "
 				  + "loader thread will wait 1000ms and continue");
 			loaderTask.clean();
-			waitTime = sleepTime;
+			waitTime += sleepTime;
 			Utils.waitMillisecond(sleepTime);
 		    }
 		}
@@ -123,7 +123,7 @@ public class LoaderThread extends Thread {
 		    }
 		}
 
-		waitTime = sleepTime;
+		waitTime += sleepTime;
 		Utils.waitMillisecond(sleepTime);
 	    } else {
 		log.info("loader thread stoped via close.");

@@ -292,8 +292,8 @@ public class Parameters {
 	kafkaCDC.setKafkaDir(getStringParam("kafkaDir", null));
 	kafkaCDC.setShowConsumers(getBoolParam("showConsumers", true));
 	kafkaCDC.setShowLoaders(getBoolParam("showLoaders", true));
-	kafkaCDC.setShowTasks(getBoolParam("showTasks", false));
-	kafkaCDC.setShowTables(getBoolParam("showTables", true));
+	kafkaCDC.setShowTasks(getBoolParam("showTasks", true));
+	kafkaCDC.setShowTables(getBoolParam("showTables", false));
 	kafkaCDC.setShowSpeed(getBoolParam("showSpeed", false));
 	kafkaCDC.setSleepTime(getLongParam("sleepTime", Constants.DEFAULT_SLEEP_TIME));
     }

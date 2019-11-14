@@ -22,8 +22,8 @@ public class Constants {
     // the unit is millsecond
     public final static long         DEFAULT_SLEEP_TIME    = 10;
 
-    public final static long         DEFAULT_BATCH_SIZE    = 5000;
-    public final static long         DEFAULT_FETCH_SIZE    = 10000;
+    public final static long         DEFAULT_BATCH_SIZE    = 500;
+    public final static long         DEFAULT_FETCH_SIZE    = 1000;
     public final static long         DEFAULT_PARALLE       = 16;
     public final static int          DEFAULT_MAX_PARTITION = 1000;
     public final static int          DEFAULT_FETCH_BYTES   = 104857600;
@@ -43,7 +43,7 @@ public class Constants {
     // Kafka information
     public final static String       DEFAULT_BROKER        = "localhost:9092";
     public final static long         DEFAULT_LOADERS       = 4;
-    public final static long         DEFAULT_MAXWAITTASKS  = 2;
+    public final static long         DEFAULT_MAXWAITTASKS  = 4;
     public final static long         DEFAULT_CONSUMERS     = 4;
     public final static String       DEFAULT_KEY           =
 	"org.apache.kafka.common.serialization.StringDeserializer";
@@ -91,7 +91,7 @@ public class Constants {
     public final static Object[][]   CONFIG_PARAMS = {
 	// database information
         {"",   "batchSize",   false,  true, "batch means update operate will batch execute,"
-	 + " default: 5000 "},
+	 + " default: 500 "},
 	{"",   "batchUpdate", false, false, "update operate will use batch, default: true"},
 	{"",   "conf",        false,  true, "specified configuration parameter file"},
 	{"",   "cleanDelayTime",   false,  true, "clean the log delay time,default: 3600s"},
@@ -108,7 +108,7 @@ public class Constants {
 
 	// kafka information
         {"b",  "broker",      false,  true, "bootstrap.servers setting, ex: <node>:9092, default: \"localhost:9092\""},
-        {"",   "fetchSize",   false,  true, "num message per Kakfa synch/pull, default: 10000"},
+        {"",   "fetchSize",   false,  true, "num message per Kakfa synch/pull, default: 1000"},
         {"",   "mode",        false,  true, "pull data from beginning or End or specify the offset, default: offset submitted last time.\n"
 	 + "\ta. --mode start : means pull the all data from the beginning(earliest)\n"
 	 + "\tb. --mode end   : means pull the data from the end(latest)\n"
@@ -149,8 +149,8 @@ public class Constants {
 	{"",   "logDelay",    false,  true, "Dynamically load log4j.xml conf files interval time, default:10s"},
 	{"",   "showConsumers",false, false, "show the consumer thread details, default: true"},
 	{"",   "showLoaders", false, false, "show the loader thread details, default: true"},
-	{"",   "showTasks",   false, false, "show the consumers task details, default: false"},
-	{"",   "showTables",  false, false, "show the tables details, default: true"},
+	{"",   "showTasks",   false, false, "show the consumers task details, default: true"},
+	{"",   "showTables",  false, false, "show the tables details, default: false"},
 	{"",   "showSpeed",   false, false, "print the tables run speed info, not need arg, default:false"},
 	{"",   "loaddir",     false,  true, "dump process data file path,default: null"},
 	{"",   "kafkadir",    false,  true, "dump consumer data file path,default: null"},
