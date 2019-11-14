@@ -8,7 +8,7 @@ public class Constants {
     public final static String       KafkaCDC_VERSION      = "KafkaCDC-2.0.0";
 
     // the unit is second
-    public final static long         DEFAULT_NETWORK_TO_S  = 5;
+    public final static long         DEFAULT_NETWORK_TO_S  = 120;
     public final static long         DEFAULT_LOGDELAY_TO_S = 10;
     public final static long         DEFAULT_STREAM_TO_S   = -1;
     public final static long         DEFAULT_WAIT_TO_S     = 1;

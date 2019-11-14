@@ -304,6 +304,11 @@ public class Parameters {
 	String defSchema = database.getDefSchema();
 	String defTable = database.getDefTable();
 
+	if (database.getNetworkTO() <= 60) {
+	    log.warn("network timeout is too small, it's greater than 60, changed to the min value: 60.");
+	    database.setNetworkTO(60);
+	}
+
 	String format = kafkaCDC.getFormat();
         if (format.equals("HongQuan")
 	    && (kafka.getKey() == null || kafka.getValue() == null)) {
