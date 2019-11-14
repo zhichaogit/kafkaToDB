@@ -38,7 +38,6 @@ public class ConsumeStates {
     private long                        maxSpeed      = 0;
 
     private Date                        startTime     = null;
-    private Map<String, Long>           latestTimeMap = null;
 
     private static Logger log = Logger.getLogger(ConsumeStates.class);
 
@@ -50,7 +49,6 @@ public class ConsumeStates {
 	params        = consumerTasks.getParams();
 
         startTime     = new Date();
-        latestTimeMap = new HashMap<String, Long>();
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
     }
@@ -92,24 +90,8 @@ public class ConsumeStates {
 	incMsgNum   += kafkaMsgNum_;
     }
 
-    public synchronized void setLatestTime(String topic,long latestTime_) {
-        if (latestTimeMap.get(topic) == null || (latestTime_ > latestTimeMap.get(topic))) {
-            latestTimeMap.put(topic, latestTime_);
-        }
-    }
-
     public synchronized void addKafkaErrNum(long kafkaErrNum_) {
         kafkaErrNum += kafkaErrNum_;
-    }
-
-    public String mapToStr(Map<String, Long> latestTimeMap) {
-        StringBuffer strBuf = new StringBuffer();
-        for(Map.Entry<String, Long> entry : latestTimeMap.entrySet()){
-            String topic = entry.getKey();
-            String latstTimeStr = Utils.stampToDateStr(entry.getValue());
-            strBuf.append("  latestTime:[" + topic + "=" + latstTimeStr +"]\n");
-        }
-        return strBuf.toString();
     }
 
     public void show(StringBuffer strBuffer) {
@@ -138,8 +120,7 @@ public class ConsumeStates {
 	    .append(", D: " + delErrNum + "]")
 	    .append(", Speed(n/s) [max: " + maxSpeed)
 	    .append(", avg: " + avgSpeed)
-	    .append(", cur: " + curSpeed + "]\n")
-	    .append(mapToStr(latestTimeMap));
+	    .append(", cur: " + curSpeed + "]\n");
 
 	incMsgNum = 0;
     }

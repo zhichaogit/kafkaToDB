@@ -360,7 +360,6 @@ public class ConsumerTask<T> {
 
 	consumeStates.addKafkaMsgNum(records.count());
 	consumeStates.addKafkaErrNum(insErrs + updErrs + keyErrs + delErrs);
-	consumeStates.setLatestTime(topic, curTime);
 
 	if (log.isTraceEnabled()) { log.trace("exit"); }
 

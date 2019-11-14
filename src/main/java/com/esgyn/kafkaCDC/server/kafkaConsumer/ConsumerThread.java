@@ -19,6 +19,7 @@ public class ConsumerThread extends Thread {
     private long                waitTime       = 0;
     @Getter
     private long                preLoaderTime  = 0;
+    private long                startTime      = 0;
 
     private boolean             looping        = true;
     @Getter
@@ -41,6 +42,8 @@ public class ConsumerThread extends Thread {
 
 	log.info("consumer server started.");
 	ConsumerTask consumerTask = null;
+	startTime = Utils.getTime();
+
 	while (getRunning()) {
 	    // remove the task from the queue
 	    preLoaderTime = Utils.getTime();
@@ -103,11 +106,15 @@ public class ConsumerThread extends Thread {
 
     public void show(StringBuffer strBuffer) { 
 	Long  waitLoaderTime = Utils.getTime() - preLoaderTime;
+	Long  consumeTime    = Utils.getTime() - startTime;
+	if (consumeTime <= 0)
+	    consumeTime = (long)1;
+
 	String consumerThreadStr =
-	    String.format("  -> consumer [id:%3d, msgs:%12d, wait:%12dms, wait loader: %12dms,"
-			  + " max free: %8dms, looping:%-5s, running:%-5s]\n",
-			  consumerID, consumedNumber, waitTime, waitLoaderTime, 
-			  consumerTasks.getMaxWaitTime(),
+	    String.format("  -> consumer [id:%3d, msgs:%12d, speed: %6d, wait:%12dms,"
+			  + " wait loader: %12dms, max free: %8dms, looping:%5s, running:%5s]\n",
+			  consumerID, consumedNumber, consumedNumber/consumeTime, 
+			  waitTime, waitLoaderTime, consumerTasks.getMaxWaitTime(),
 			  String.valueOf(looping), String.valueOf(getRunning()));
 
 	strBuffer.append(consumerThreadStr);

@@ -8,6 +8,7 @@ public class Constants {
     public final static String       KafkaCDC_VERSION      = "KafkaCDC-2.0.0";
 
     // the unit is second
+    public final static long         DEFAULT_NETWORK_TO_S  = 5;
     public final static long         DEFAULT_LOGDELAY_TO_S = 10;
     public final static long         DEFAULT_STREAM_TO_S   = -1;
     public final static long         DEFAULT_WAIT_TO_S     = 1;
@@ -94,8 +95,7 @@ public class Constants {
 	 + " default: 500 "},
 	{"",   "batchUpdate", false, false, "update operate will use batch, default: true"},
 	{"",   "conf",        false,  true, "specified configuration parameter file"},
-	{"",   "cleanDelayTime",   false,  true, "clean the log delay time,default: 3600s"},
-	{"",   "cleanInterval",false,  true, "clean log interval time,-1 will not clean.default: 10s"},
+	{"",   "networkTO",   false,  true, "Sets a time limit that the driver waits for a reply, default: 5s"},
         {"d",  "dbip",        false,  true, "database server ip, default: \"localhost\""},
         {"",   "dbport",      false,  true, "database server port, default: 23400"},
         {"",   "dbuser",      false,  true, "database server user, default: db__root"},
@@ -136,6 +136,8 @@ public class Constants {
 
 	// KafkaCDC information
         {"",   "consumers",   false,  true, "specify connection number to kafka, default: 4."},
+	{"",   "cleanDelayTime",   false,  true, "clean the log delay time,default: 3600s"},
+	{"",   "cleanInterval",false,  true, "clean log interval time,-1 will not clean.default: 10s"},
         {"",   "bigendian",   false, false, "the data format is big endian, default: little endian"},
         {"",   "delim",       false,  true, "field delimiter, default: ','(comma)"},
         {"e",  "encode",      false,  true, "character encoding of data, default: \"utf8\""},

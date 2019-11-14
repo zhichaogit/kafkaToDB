@@ -23,6 +23,9 @@ public class DatabaseParams {
     private long            batchSize   = Constants.DEFAULT_BATCH_SIZE;
     @Setter
     @Getter 
+    private long            networkTO   = Constants.DEFAULT_NETWORK_TO_S;
+    @Setter
+    @Getter 
     private boolean         batchUpdate = false;
     @Setter
     @Getter
@@ -70,8 +73,10 @@ public class DatabaseParams {
     private static Logger   log         = Logger.getLogger(DatabaseParams.class);
 
     public void init(Parameters params_) {
-        DBUrl = "jdbc:t4jdbc://" + DBIP + ":" + DBPort 
-	    + "/catelog=Trafodion;applicationName=KafkaCDC;connectionTimeout=0";
+        DBUrl = "jdbc:t4jdbc://" + DBIP + ":" + DBPort + "/catelog=Trafodion;"
+	    + "applicationName=KafkaCDC;connectionTimeout=0"
+	    + ";networkTimeout=" + networkTO;
+
         if (DBTenant != null)
             DBUrl += ";tenantName=" + DBTenant;
 

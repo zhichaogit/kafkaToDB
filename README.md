@@ -44,6 +44,7 @@ usage: Consumer Server
 *    --loaddir <arg>    dump process data file path,default:null
 *    --loader <arg>     processer number, default:4
 *    --maxWaitTasks<arg> max wait Tasks size, default:2
+*    --networkTO <arg>  Sets a time limit that the driver waits for a reply, default:5
 *    --logDelay <arg>   Dynamically load log4j.xml conf files interval
                         time, default:10s
 *    --mode <arg>       pull data from beginning or End or specify the

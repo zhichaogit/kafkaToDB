@@ -15,6 +15,7 @@ import com.esgyn.kafkaCDC.server.utils.Constants;
 
 public class LoaderThread extends Thread {
     private long                loadedNumber   = 0;
+    private long                startTime      = 0;
     private long                waitTime       = 0;
     private long                sleepTime      = 0;
     private boolean             looping        = true;
@@ -50,6 +51,7 @@ public class LoaderThread extends Thread {
 	log.info("loader thread started.");
 	LoaderTask loaderTask = null;
 
+	startTime = Utils.getTime();
 	// exit when finished the tasks
 	while (true) {
 	    // remove the task from the queue
@@ -143,10 +145,14 @@ public class LoaderThread extends Thread {
     }
 
     public void show(StringBuffer strBuffer) {
+	Long  loadedTime    = Utils.getTime() - startTime;
+	if (loadedTime <= 0)
+	    loadedTime = (long)1;
 	String loaderThreadStr =
-	    String.format("  -> loader   [id:%3d, loaded:%12d, wait:%12dms, looping:%s, state:%s]\n", 
-			  loaderHandle.getLoaderID(), loadedNumber, waitTime,
-			  String.valueOf(looping), Constants.getState(getLoaderState()));
+	    String.format("  -> loader   [id:%3d, loaded:%12d, speed: %6d, wait:%12dms, "
+			  + "looping:%5s, state:%s]\n", 
+			  loaderHandle.getLoaderID(), loadedNumber, loadedNumber/loadedTime, 
+			  waitTime, String.valueOf(looping), Constants.getState(getLoaderState()));
 
 	strBuffer.append(loaderThreadStr);
     }

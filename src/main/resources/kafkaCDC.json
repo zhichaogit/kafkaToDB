@@ -1,6 +1,7 @@
 {
 	"database": {
 		"batchSize": 500,
+		"networkTO": 5,
 		"batchUpdate":true,
 		"DBIP": "localhost",
 		"DBPort": "23400",

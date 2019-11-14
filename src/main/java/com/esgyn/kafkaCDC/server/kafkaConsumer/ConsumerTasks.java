@@ -11,6 +11,7 @@ import com.esgyn.kafkaCDC.server.databaseLoader.LoaderTasks;
 import com.esgyn.kafkaCDC.server.utils.Constants;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
 import com.esgyn.kafkaCDC.server.utils.TopicParams;
+import com.esgyn.kafkaCDC.server.utils.Utils;
 
 import lombok.Getter;
 
@@ -163,10 +164,28 @@ public class ConsumerTasks<T> {
 	}
 
 	if (params.getKafkaCDC().isShowTasks()) {
-	    strBuffer.append("  The detail of consumer tasks:\n");
+	    StringBuffer tempBuffer = new StringBuffer();
+	    long oldestTime = -1;
+	    long newestTime = -1;
+
 	    for (ConsumerTask task : taskArray) {
-		task.show(strBuffer);
+		if (oldestTime == -1)
+		    task.getCurTime();
+		else if (oldestTime > task.getCurTime())
+		    oldestTime = task.getCurTime();
+
+		if (newestTime == -1)
+		    task.getCurTime();
+		else if (newestTime < task.getCurTime())
+		    newestTime = task.getCurTime();
+		
+		task.show(tempBuffer);
 	    }
+
+	    strBuffer.append("  The detail of consumer tasks(oldest: "
+			     + Utils.stampToDateStr(oldestTime) + ", newest: "
+			     + Utils.stampToDateStr(newestTime) + "):\n");
+	    strBuffer.append(tempBuffer.toString());
 	}
 
 	loaderTasks.show(strBuffer);
