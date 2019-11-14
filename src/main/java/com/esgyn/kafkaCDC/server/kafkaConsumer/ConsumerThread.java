@@ -64,7 +64,7 @@ public class ConsumerThread extends Thread {
 			// if not timeout, need to return the task to the queue
 			consumerTasks.offer(consumerTask);
 		    }
-		    waitTime += consumerTasks.getSleepTime();
+		    waitTime += consumerTasks.getSleepTime() + consumerTasks.getWaitTO();
 		    Utils.waitMillisecond(consumerTasks.getSleepTime());
 		}
 		// reset the task null

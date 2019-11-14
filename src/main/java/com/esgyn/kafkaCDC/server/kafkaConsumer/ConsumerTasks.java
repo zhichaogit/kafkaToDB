@@ -31,6 +31,8 @@ public class ConsumerTasks<T> {
     @Getter
     private long  maxWaitTime = Constants.DEFAULT_STREAM_TO_S * 1000;
     @Getter
+    private long  waitTO      = Constants.DEFAULT_WAIT_TO_S * 1000;
+    @Getter
     private long  sleepTime   = Constants.DEFAULT_SLEEP_TIME;
 
     public ConsumerTasks(Parameters params_) {
@@ -38,6 +40,7 @@ public class ConsumerTasks<T> {
 
 	params      = params_;
 	maxWaitTime = params.getKafka().getStreamTO();
+	waitTO      = params.getKafka().getWaitTO();
 	sleepTime   = params.getKafkaCDC().getSleepTime();
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
