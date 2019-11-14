@@ -27,6 +27,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
     private static Logger log                      = Logger.getLogger(ProtobufRowMessage.class);
 
     private int           offset                   = 0;
+    private int           updateColumns            = 0;
     private Record        messagePro               = null;
 
 
@@ -71,6 +72,8 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         int sourceType      = messagePro.getSourceType(); //message source oracle/DRDS
         int keyColNum       = messagePro.getKeyColumnList().size(); // keycol size
         int colNum          = messagePro.getColumnList().size(); //col size
+	
+	updateColumns   = 0;
 
         String[] names = tableNamePro.split("[.]");
         if (names.length == 3) {
@@ -125,7 +128,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 strBuffer.append("\tColumn: " + column);
             }
             // "K" or "U"
-            if (operationType==UPDATE_DRDS) {
+            if (operationType == UPDATE_DRDS) {
                 String oldValue = null;
                 String newValue = null;
                 try {
@@ -136,8 +139,9 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 } catch (Exception e) {
                     return false;
                 }
+
                 if (!newValue.equals(oldValue)) {
-                    operationType=UPDATE_COMP_PK_SQL_VAL;
+                    operationType = UPDATE_COMP_PK_SQL_VAL;
                 }
             }
 
@@ -150,6 +154,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 
             columns.put(columnvalue.getColumnID(), columnvalue);
         }
+
         // get column
         for (int i = 0; i < colNum; i++) {
             Column column = messagePro.getColumnList().get(i);
@@ -173,13 +178,38 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 break;
             }
 
-            case DELETE_DRDS: 
+	    case DELETE_DRDS: {
+		ColumnInfo columnInfo = tableInfo.getColumn("delete_tag");
+		if (columnInfo != null) {
+		    ColumnValue columnValue = columns.get(columnInfo.getColumnID());
+		    String     oldValue = columnValue.getOldValue();
+
+		    // special filter for unicom
+		    if (oldValue != null && oldValue.equals("2")){
+			schemaName += "_NO_SYNC_";
+			tableName += "_NO_SYNC_";
+		    }
+		}
+	    }
             case DELETE_VAL: {
                 operatorType = "D";
                 break;
             }
 
-            case UPDATE_DRDS: 
+	    case UPDATE_DRDS: {
+		ColumnInfo columnInfo = tableInfo.getColumn("delete_tag");
+		if (updateColumns == 1 && columnInfo != null){
+		    ColumnValue columnValue = columns.get(columnInfo.getColumnID());
+		    String     oldValue = columnValue.getOldValue();
+		    String     curValue = columnValue.getCurValue();
+		    // special filter for unicom
+		    if (curValue != null && oldValue != null && 
+			curValue.equals("2") && oldValue.equals("1")){
+			schemaName += "_NO_SYNC_";
+			tableName += "_NO_SYNC_";
+		    }
+		}
+	    } 
             case UPDATE_COMP_SQL_VAL: {
                 operatorType = "U";
                 break;
@@ -251,6 +281,8 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 index    = colInfo.getColumnID();
                 newValue = covertValue2(newNull,newValuebs,colTypeName,messagePro,index,colname);
                 oldValue = covertValue2(oldNull,oldValuebs,colTypeName,messagePro,index,colname);
+		if (!newValue.equals(oldValue))
+		    updateColumns++;
                 break;
 
             default:
@@ -259,7 +291,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 
                 break;
         }
-        ColumnValue columnvalue = new ColumnValue(index, newValue, oldValue,colTypeName);
+        ColumnValue columnvalue = new ColumnValue(index, newValue, oldValue, colTypeName);
 
         if (log.isDebugEnabled()) {
             log.debug("colindex [" + index + "] ,colname [" + colname + "]"
