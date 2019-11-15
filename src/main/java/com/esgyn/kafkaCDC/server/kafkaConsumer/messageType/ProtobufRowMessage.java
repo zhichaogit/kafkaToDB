@@ -149,6 +149,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             try {
                 columnvalue = get_column(messagePro,column,tableInfo,true);
             } catch (Exception e) {
+                log.error("get_keyColumn has error." ,e);
                 return false;
             }
 
@@ -165,6 +166,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             try {
                 columnvalue = get_column(messagePro,column,tableInfo,false);
             } catch (Exception e) {
+                log.error("get_column has error." ,e);
                 return false;
             }
 
@@ -281,7 +283,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
                 index    = colInfo.getColumnID();
                 newValue = covertValue2(newNull,newValuebs,colTypeName,messagePro,index,colname);
                 oldValue = covertValue2(oldNull,oldValuebs,colTypeName,messagePro,index,colname);
-		if (!newValue.equals(oldValue))
+		if (newValue != null && !newValue.equals(oldValue))
 		    updateColumns++;
                 break;
 
