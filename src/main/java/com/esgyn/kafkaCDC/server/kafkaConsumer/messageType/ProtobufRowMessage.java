@@ -181,13 +181,13 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             }
 
 	    case DELETE_DRDS: {
-		ColumnInfo columnInfo = tableInfo.getColumn("delete_tag");
+		ColumnInfo columnInfo = tableInfo.getColumn("\"DELETE_TAG\"");
 		if (columnInfo != null) {
 		    ColumnValue columnValue = columns.get(columnInfo.getColumnID());
 		    String     oldValue = columnValue.getOldValue();
 
-		    // special filter for unicom
-		    if (oldValue != null && oldValue.equals("2")){
+		    // special filter for unicom (oldvalue=2 || 3)
+		    if (oldValue != null && (oldValue.equals("2") ||oldValue.equals("3"))){
 			schemaName += "_NO_SYNC_";
 			tableName += "_NO_SYNC_";
 		    }
@@ -199,14 +199,14 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
             }
 
 	    case UPDATE_DRDS: {
-		ColumnInfo columnInfo = tableInfo.getColumn("delete_tag");
+		ColumnInfo columnInfo = tableInfo.getColumn("\"DELETE_TAG\"");
 		if (updateColumns == 1 && columnInfo != null){
 		    ColumnValue columnValue = columns.get(columnInfo.getColumnID());
 		    String     oldValue = columnValue.getOldValue();
 		    String     curValue = columnValue.getCurValue();
-		    // special filter for unicom
-		    if (curValue != null && oldValue != null && 
-			curValue.equals("2") && oldValue.equals("1")){
+		    // special filter for unicom (null-->2 || 1-->3)
+		    if ((curValue != null && curValue.equals("2") && oldValue == null) ||
+		        (curValue != null && oldValue != null && curValue.equals("3") && oldValue.equals("1"))){
 			schemaName += "_NO_SYNC_";
 			tableName += "_NO_SYNC_";
 		    }
@@ -227,6 +227,9 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
         }
 
         if (log.isDebugEnabled()) {
+            if (schemaName.contains("_NO_SYNC_")) {
+                log.debug("cur message will ignore, the table[" + schemaName + "." + tableName +"]");
+            }
             strBuffer.append("operatorType:[" + operatorType + "]\n");
             log.debug(strBuffer.toString());
         }
