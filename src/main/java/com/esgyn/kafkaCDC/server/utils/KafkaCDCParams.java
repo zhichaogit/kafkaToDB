@@ -70,6 +70,12 @@ public class KafkaCDCParams {
     @Setter
     @Getter
     private long            maxWaitTasks  = Constants.DEFAULT_MAXWAITTASKS;
+    @Setter
+    @Getter
+    private int             maxFileSize   = Constants.DEFAULT_MAXFILESIZE;
+    @Setter
+    @Getter
+    private int             maxBackupIndex= Constants.DEFAULT_MAXBACKUPINDEX;
 
     public void init(String startTime) {
 	loadDir = getFullPath(loadDir, startTime);
@@ -79,6 +85,7 @@ public class KafkaCDCParams {
 	interval       *= 1000;
 	cleanDelayTime *= 1000;
 	cleanInterval  *= 1000;
+	maxFileSize    *= 1024*1024;
 	msgClass = "com.esgyn.kafkaCDC.server.kafkaConsumer.messageType." 
 	    + format + "RowMessage";
     }
@@ -106,6 +113,8 @@ public class KafkaCDCParams {
 	    .append("\n\tskip          = "    + skip)
 	    .append("\n\tloaders       = "    + loaders)
 	    .append("\n\tmaxWaitTasks  = "    + maxWaitTasks)
+	    .append("\n\tmaxFileSize   = "    + maxFileSize)
+	    .append("\n\tmaxBackupIndex= "    + maxBackupIndex)
 	    .append("\n\tloadDir       = "    + loadDir)
 	    .append("\n\tunloadDir     = "    + unloadDir)
 	    .append("\n\tkafkaDir      = "    + kafkaDir)

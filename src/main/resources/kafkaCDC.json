@@ -50,6 +50,8 @@
 		"skip": false,
 		"loaders": 4,
 		"maxWaitTasks":2,
+		"maxFileSize": 1024,
+		"maxBackupIndex": 10,
 		"loadDir": null,
 		"kafkaDir": null,
 		"showConsumers": true,

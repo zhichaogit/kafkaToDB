@@ -1341,7 +1341,9 @@ public class TableState {
 	allList.addAll(updateList);
 	allList.addAll(deleteList);
 
-	String rootPath = tableInfo.getParams().getKafkaCDC().getLoadDir();
+	int maxFileSize       = tableInfo.getParams().getKafkaCDC().getMaxFileSize();
+	int maxBackupIndex    = tableInfo.getParams().getKafkaCDC().getMaxBackupIndex();
+	String rootPath       = tableInfo.getParams().getKafkaCDC().getLoadDir();
 	String UnloadRootPath = tableInfo.getParams().getKafkaCDC().getUnloadDir();
 	rootPath = withError ? UnloadRootPath : rootPath;
 
@@ -1353,7 +1355,8 @@ public class TableState {
 					    lastMsg.getTopic(), 
 					    lastMsg.getPartitionID());
 	    filePath = rootPath + filePath;
-	    if (!FileUtils.dumpDataToFile(allList, filePath, FileUtils.SQL_STRING)) {
+	    if (!FileUtils.dumpDataToFile(allList, filePath, FileUtils.SQL_STRING,
+	            maxFileSize, maxBackupIndex)) {
 		log.error("dump sql data to file fail.");
 		return false;
 	    }
