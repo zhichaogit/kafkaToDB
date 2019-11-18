@@ -233,28 +233,29 @@ public class KCServer extends Thread{
     }
 
     public Message processPrint(Message kcMessage) {
-	Message retMsg  = SUCCEED;
-	int     subType = kcMessage.getSubType();
+	Message      retMsg    = SUCCEED;
+	int          subType   = kcMessage.getSubType();
+	StringBuffer strBuffer = new StringBuffer();
 
         switch (subType) {
             case Message.CONSUMER:
                 log.info("print consumer state with client command");
-		// TODO
+		consumerTasks.showConsumer(strBuffer);
                 break;
 
             case Message.LOADER:
                 log.info("print loader state with client command");
-		// TODO
+		consumerTasks.getLoaderTasks().showLoaders(strBuffer);
                 break;
 
             case Message.TABLES:
                 log.info("print tables state with client command");
-		// TODO
+		consumerTasks.getLoaderTasks().getLoaderStates().showTables(strBuffer);
                 break;
 
             case Message.TASKS:
                 log.info("print tasks with client command");
-		// TODO
+		consumerTasks.showTasks(strBuffer);
                 break;
 
             default:
@@ -262,6 +263,8 @@ public class KCServer extends Thread{
                 retMsg = FAIL;
                 break;
         }
+
+	retMsg.setMsgs(strBuffer.toString());
 
 	return retMsg;
     }

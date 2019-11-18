@@ -27,7 +27,7 @@ public class Message implements Serializable {
     // req msg type
     public final static int  SHUTDOWN   = 1;
     public final static int  START      = 2;
-    public final static int  STOP    = 3;
+    public final static int  STOP       = 3;
     public final static int  PRINT      = 4;
     
     // feedback msg type

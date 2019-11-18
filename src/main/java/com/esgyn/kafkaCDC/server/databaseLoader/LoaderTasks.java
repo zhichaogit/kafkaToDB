@@ -14,13 +14,13 @@ public class LoaderTasks<T> {
     private List<LoaderThread>          loaders       = null;
 
     @Getter
-    private long                        running       = 0;
+	private long                        running       = 0;
     @Getter
-    private Parameters                  params        = null;
+	private Parameters                  params        = null;
     @Getter
-    private LoadStates                  loadStates    = null;
+	private LoadStates                  loadStates    = null;
     @Getter
-    private List<LoaderHandle>          loaderHandles = null;
+	private List<LoaderHandle>          loaderHandles = null;
 
     public LoaderTasks(Parameters params_) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
@@ -53,12 +53,16 @@ public class LoaderTasks<T> {
 	return true;
     }
 
+    public void showLoaders(StringBuffer strBuffer) {
+	for (LoaderThread loader : loaders) {
+	    loader.show(strBuffer);
+	}
+    }
+
     public void show(StringBuffer strBuffer) {
 	if (params.getKafkaCDC().isShowLoaders()) {
 	    strBuffer.append("  The detail of loader threads:\n");
-	    for (LoaderThread loader : loaders) {
-		loader.show(strBuffer);
-	    }
+	    showLoaders(strBuffer);
 	}
 	loadStates.show(strBuffer);
     }

@@ -22,26 +22,26 @@ public class ConsumerTasks<T> {
     private ConcurrentLinkedQueue<ConsumerTask> tasks = null;
     private List<ConsumerTask>          taskArray     = null;
     @Getter
-    private List<ConsumerThread>        consumers     = null;
+	private List<ConsumerThread>        consumers     = null;
     @Getter
-    private LogCleaner                  logCleaner    = null;
+	private LogCleaner                  logCleaner    = null;
     @Getter
-    private KCServer                    kcServer      = null;
+	private KCServer                    kcServer      = null;
 
     @Getter
-    private Parameters                  params        = null;
+	private Parameters                  params        = null;
     @Getter
-    private LoaderTasks                 loaderTasks   = null;
+	private LoaderTasks                 loaderTasks   = null;
     @Getter
-    private ConsumeStates               consumeStates = null;
+	private ConsumeStates               consumeStates = null;
     @Getter
-    private volatile long               running       = 0;
+	private volatile long               running       = 0;
     @Getter
-    private long  maxWaitTime = Constants.DEFAULT_STREAM_TO_S * 1000;
+	private long  maxWaitTime = Constants.DEFAULT_STREAM_TO_S * 1000;
     @Getter
-    private long  waitTO      = Constants.DEFAULT_WAIT_TO_S * 1000;
+	private long  waitTO      = Constants.DEFAULT_WAIT_TO_S * 1000;
     @Getter
-    private long  sleepTime   = Constants.DEFAULT_SLEEP_TIME;
+	private long  sleepTime   = Constants.DEFAULT_SLEEP_TIME;
 
     public ConsumerTasks(Parameters params_) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
@@ -176,6 +176,31 @@ public class ConsumerTasks<T> {
 	if (log.isTraceEnabled()) { log.trace("exit"); }
     }
 
+    public void showConsumers(StringBuffer strBuffer) { 
+	for (ConsumerThread consumer : consumers) {
+	    consumer.show(strBuffer);
+	}
+    }
+
+    public void showTasks(StringBuffer strBuffer) { 
+	long oldestTime = -1;
+	long newestTime = -1;
+
+	for (ConsumerTask task : taskArray) {
+	    if (oldestTime == -1)
+		task.getCurTime();
+	    else if (oldestTime > task.getCurTime())
+		oldestTime = task.getCurTime();
+
+	    if (newestTime == -1)
+		task.getCurTime();
+	    else if (newestTime < task.getCurTime())
+		newestTime = task.getCurTime();
+		
+	    task.show(strBuffer);
+	}
+    }
+
     public void show(StringBuffer strBuffer) { 
 	strBuffer.append("\n  KafkaCDC states:\n")
 	    .append("  There are [" + getRunning())
@@ -186,30 +211,12 @@ public class ConsumerTasks<T> {
 
 	if (params.getKafkaCDC().isShowConsumers()) {
 	    strBuffer.append("  The detail of consumer threads:\n");
-	    for (ConsumerThread consumer : consumers) {
-		consumer.show(strBuffer);
-	    }
+	    showConsumers(strBuffer);
 	}
 
 	if (params.getKafkaCDC().isShowTasks()) {
 	    StringBuffer tempBuffer = new StringBuffer();
-	    long oldestTime = -1;
-	    long newestTime = -1;
-
-	    for (ConsumerTask task : taskArray) {
-		if (oldestTime == -1)
-		    task.getCurTime();
-		else if (oldestTime > task.getCurTime())
-		    oldestTime = task.getCurTime();
-
-		if (newestTime == -1)
-		    task.getCurTime();
-		else if (newestTime < task.getCurTime())
-		    newestTime = task.getCurTime();
-		
-		task.show(tempBuffer);
-	    }
-
+	    showTasks(tempBuffer);
 	    strBuffer.append("  The detail of consumer tasks(oldest: "
 			     + Utils.stampToDateStr(oldestTime) + ", newest: "
 			     + Utils.stampToDateStr(newestTime) + "):\n");
@@ -259,5 +266,5 @@ public class ConsumerTasks<T> {
 	loaderTasks.close(signal_);
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
-   }
+    }
 }

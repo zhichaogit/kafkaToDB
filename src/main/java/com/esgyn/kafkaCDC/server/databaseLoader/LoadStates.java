@@ -86,23 +86,36 @@ public class LoadStates {
         transFails += transFails_;
     }
 
-    public void show(StringBuffer strBuffer) {	
-        strBuffer.append("  Database loader states")
-	    .append(", Transactions [total: " + transTotal)
+    public void showTables(StringBuffer strBuffer) {
+	Map<String, TableInfo> tableHashMap = params.getDatabase().getTableHashMap();
+	for (String tableName : tableHashMap.keySet()) {
+	    TableInfo tableInfo = tableHashMap.get(tableName);
+	    String mapTableName = tableInfo.getSchemaName() + "." + tableInfo.getTableName();
+	    if (tableName.equals(mapTableName))
+		tableInfo.show(strBuffer);
+	}
+    }
+
+    public void showDatabase(StringBuffer strBuffer) {
+	strBuffer.append("Transactions [total: " + transTotal)
 	    .append(", Fails: " + transFails + "]")
-	    .append(", Tasks [total: " + totalTasks + ", done: " + doneTasks + "]")
-	    .append(", DMLs [insert: " + insertNum + ", update: " + updateNum + ", delete: " + deleteNum + "]")
-	    .append(", Fails [insert: " + errInsertNum + ", update: " + errUpdateNum + ", delete: " + errDeleteNum + "]\n");
+	    .append(", Tasks [total: " + totalTasks)
+	    .append(", done: " + doneTasks + "]")
+	    .append(", DMLs [insert: " + insertNum)
+	    .append(", update: " + updateNum)
+	    .append(", delete: " + deleteNum + "]")
+	    .append(", Fails [insert: " + errInsertNum)
+	    .append(", update: " + errUpdateNum)
+	    .append(", delete: " + errDeleteNum + "]\n");
+    }
+
+    public void show(StringBuffer strBuffer) {	
+        strBuffer.append("  Database loader states, ");
+	showDatabase(strBuffer);
 
 	if (params.getKafkaCDC().isShowTables()) {
 	    strBuffer.append("  The detail of table loaded:\n");
-	    Map<String, TableInfo> tableHashMap = params.getDatabase().getTableHashMap();
-	    for (String tableName : tableHashMap.keySet()) {
-		TableInfo tableInfo = tableHashMap.get(tableName);
-		String mapTableName = tableInfo.getSchemaName() + "." + tableInfo.getTableName();
-		if (tableName.equals(mapTableName))
-		    tableInfo.show(strBuffer);
-	    }
+	    showTables(strBuffer);
 	}
     }
 }
