@@ -47,6 +47,11 @@
                          <outputDirectory>KafkaCDC/libs</outputDirectory>
                     <destName>KafkaCDC-server.jar</destName>
    		 </file>
+		 <file>
+                    <source>target/KafkaCDC-client.jar</source>
+                         <outputDirectory>KafkaCDC/libs</outputDirectory>
+                    <destName>KafkaCDC-client.jar</destName>
+   		 </file>
    		 <!-- READE moven to tar.gz for users -->
 		<file>
 			<source>README</source>
