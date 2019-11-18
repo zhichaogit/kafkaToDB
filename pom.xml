@@ -132,7 +132,9 @@
 							<classifier>client</classifier>
 							<includes>
 								<include>**/client/**</include>
-								<include>**/message/**</include>
+								<include>**/server/clientServer/KCConnection.*</include>
+								<include>**/server/clientServer/Message.*</include>
+								<include>**/server/utils/Constants.*</include>
 							</includes>
 							<archive>
 								<manifest>

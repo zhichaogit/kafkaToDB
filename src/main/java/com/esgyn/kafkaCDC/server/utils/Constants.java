@@ -174,7 +174,7 @@ public class Constants {
         {"",   "host",        false,  true, "database server ip, default: \"localhost\""},
         {"",   "port",        false,  true, "kafkaCDC server listener port, default:8889"},
         {"t",  "type",        false,  true, "the type of command"},
-        {"s",  "subtype",     false,  true, "the sub type of type command"},
+        {"s",  "subType",     false,  true, "the sub type of type command"},
 
 	// system info
         {"h",  "help",        false, false, "show help information"},
