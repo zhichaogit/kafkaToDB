@@ -263,7 +263,6 @@ public class ConsumerTasks<T> {
 	    }
 	}
  
-	kcServer.stopServer();
         logCleaner.interrupt();
 	loaderTasks.close(signal_);
 
@@ -282,6 +281,8 @@ public class ConsumerTasks<T> {
 	    show(strBuffer);
 	    log.info(strBuffer.toString());
 	}
+
+	kcServer.stopServer();
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
     }
