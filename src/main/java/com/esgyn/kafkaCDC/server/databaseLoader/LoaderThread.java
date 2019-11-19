@@ -148,27 +148,27 @@ public class LoaderThread extends Thread {
 	Long  loadedTime    = Utils.getTime() - startTime;
 	if (loadedTime <= 0)
 	    loadedTime = (long)1;
-	String loaderThreadStr = null;
 
 	switch(format){
 	case Constants.KAFKA_STRING_FORMAT:
-	    loaderThreadStr = 
-		String.format("  -> loader   [id:%3d, loaded:%12d, speed: %6d, wait:%12dms, "
-			      + "looping:%5s, state:%s]", 
+	    String loaderThreadStr = 
+		String.format("  -> Loader   [ID:%3d, Loaded:%12d, Speed(n/s): %6d, Wait:%12dms, "
+			      + "Looping:%5s, State:%s]", 
 			      loaderHandle.getLoaderID(), loadedNumber, loadedNumber/loadedTime, 
 			      waitTime, String.valueOf(looping), Constants.getState(getLoaderState()));
+	    strBuffer.append(loaderThreadStr);
 	    break;
 	    
 	case Constants.KAFKA_JSON_FORMAT:
-	    loaderThreadStr = 
-		String.format("\"loader\": {\"id\":%3d, \"loaded\":%12d, \"speed\": %6d, \"wait\":%12dms, "
-			      + "\"looping\":%5s, \"state\":%s}", 
-			      loaderHandle.getLoaderID(), loadedNumber, loadedNumber/loadedTime, 
-			      waitTime, String.valueOf(looping), Constants.getState(getLoaderState()));
+	    strBuffer.append("{\"Loader\": {\"ID\": " + loaderHandle.getLoaderID())
+		.append(", \"Loaded\": " + loadedNumber)
+		.append(", \"Speed(n/s)\": " + loadedNumber/loadedTime)
+		.append(", \"Wait\": \"" + waitTime + "ms\"")
+		.append(", \"Looping\": " + looping)
+		.append(", \"state\": " + Constants.getState(getLoaderState()) + "}");
 	    break;
 	}
 
-	strBuffer.append(loaderThreadStr);
     }
 
     public synchronized int getLoaderState() { return state; }

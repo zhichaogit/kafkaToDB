@@ -298,8 +298,8 @@ public class Parameters {
 	kafkaCDC.setShowConsumers(getBoolParam("showConsumers", true));
 	kafkaCDC.setShowLoaders(getBoolParam("showLoaders", true));
 	kafkaCDC.setShowTasks(getBoolParam("showTasks", true));
-	kafkaCDC.setShowTables(getBoolParam("showTables", false));
-	kafkaCDC.setShowSpeed(getBoolParam("showSpeed", false));
+	kafkaCDC.setShowTables(getBoolParam("showTables", true)); // TODO ,rollback
+	kafkaCDC.setShowSpeed(getBoolParam("showSpeed", false)); // TODO ,rollback
 	kafkaCDC.setSleepTime(getLongParam("sleepTime", Constants.DEFAULT_SLEEP_TIME));
     }
 

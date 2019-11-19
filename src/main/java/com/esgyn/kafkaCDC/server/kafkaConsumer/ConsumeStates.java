@@ -107,10 +107,10 @@ public class ConsumeStates {
 
 	switch(format){
 	case Constants.KAFKA_STRING_FORMAT:
-	    strBuffer.append("  running time: {" + df.format(useTime) + "s")
-		.append(", start: " + Utils.dateToStr(startTime))
-		.append(", cur: " + Utils.dateToStr(endTime) + "}\n")
-		.append("  Consumers states:\n")
+	    strBuffer.append(" Running Rime: {" + df.format(useTime) + "s")
+		.append(", Start: " + Utils.dateToStr(startTime))
+		.append(", Cur: " + Utils.dateToStr(endTime) + "}\n")
+		.append("  Consumers States:")
 		.append("  {Total: " + kafkaMsgNum+", Err: " + kafkaErrNum)
 		.append(", Inc: " + incMsgNum + "}")
 		.append(", Messages: {I: " + insMsgNum)
@@ -123,14 +123,14 @@ public class ConsumeStates {
 		.append(", D: " + delErrNum + "}")
 		.append(", Speed(n/s) {Max: " + maxSpeed)
 		.append(", Avg: " + avgSpeed)
-		.append(", Cur: " + curSpeed + "}");
+		.append(", Cur: " + curSpeed + "}\n");
 	    break;
 
 	case Constants.KAFKA_JSON_FORMAT:
-	    strBuffer.append("{\"running time\":\"" + df.format(useTime) + "s\"")
+	    strBuffer.append("{\"Running Rime\":\"" + df.format(useTime) + "s\"")
 		.append(", \"Start\": \"" + Utils.dateToStr(startTime) + "\"")
-		.append(", \"Cur\": \"" + Utils.dateToStr(endTime) + ",")
-		.append("  \"Consumers states\": ")
+		.append(", \"Cur\": \"" + Utils.dateToStr(endTime) + "\",")
+		.append("  \"Consumers States\": ")
 		.append("  {\"Total\": " + kafkaMsgNum)
 		.append(", \"Err\": " + kafkaErrNum)
 		.append(", \"Inc\": " + incMsgNum + "}")
@@ -150,7 +150,7 @@ public class ConsumeStates {
     }
 
     public void show(StringBuffer strBuffer) {
-	showStates(strBuffer, Constants.KAFKA_JSON_FORMAT);
+	showStates(strBuffer, Constants.KAFKA_STRING_FORMAT);
 	incMsgNum = 0;
     }
 }

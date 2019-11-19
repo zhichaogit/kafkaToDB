@@ -55,9 +55,16 @@ public class LoaderTasks<T> {
     }
 
     public void showLoaders(StringBuffer strBuffer, int format) {
+	boolean first = true;
+
+	strBuffer.append(Constants.getFormatStart(format));
 	for (LoaderThread loader : loaders) {
+	    if (!first)
+		strBuffer.append(Constants.getFormatEntry(format));
+	    first = false;
 	    loader.show(strBuffer, format);
 	}
+	strBuffer.append(Constants.getFormatEnd(format));
     }
 
     public void show(StringBuffer strBuffer) {

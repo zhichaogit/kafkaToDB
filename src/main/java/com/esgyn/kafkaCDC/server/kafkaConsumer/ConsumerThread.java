@@ -111,29 +111,29 @@ public class ConsumerThread extends Thread {
 	if (consumeTime <= 0)
 	    consumeTime = (long)1;
 
-	String consumerThreadStr = null;
-
 	switch(format){
 	case Constants.KAFKA_STRING_FORMAT:
-	    consumerThreadStr = 
-		String.format("  -> consumer [id:%3d, msgs:%12d, speed: %6d, wait:%12dms,"
-			      + " wait loader: %12dms, max free: %8dms, looping:%5s, running:%5s]",
+	    String consumerThreadStr = 
+		String.format("  -> Consumer {ID:%3d, Msgs:%12d, Speed: %6d, Wait:%12dms,"
+			      + " Wait Loader: %12dms, Max Free: %8dms, Looping:%5s, Running:%5s}",
 			      consumerID, consumedNumber, consumedNumber/consumeTime, 
 			      waitTime, waitLoaderTime, consumerTasks.getMaxWaitTime(),
 			      String.valueOf(looping), String.valueOf(getRunning()));
+	    strBuffer.append(consumerThreadStr);
 	    break;
 	    
 	case Constants.KAFKA_JSON_FORMAT:
-	    consumerThreadStr = 
-		String.format("\"consumer\":{\"id\":%3d, \"msgs\":%12d, \"speed\": %6d, \"wait\":%12dms,"
-			      + " \"wait loader\": %12d, \"max free\": %8dms, \"looping\":%5s, \"running\":%5s}",
-			      consumerID, consumedNumber, consumedNumber/consumeTime, 
-			      waitTime, waitLoaderTime, consumerTasks.getMaxWaitTime(),
-			      String.valueOf(looping), String.valueOf(getRunning()));
+	    strBuffer.append("{\"Consumer\": {\"ID\": " + consumerID)
+		.append(", \"Msgs\": " + consumedNumber)
+		.append(", \"Speed(n/s)\": " + consumedNumber/consumeTime)
+		.append(", \"Wait\": \"" + waitTime + "ms\"")
+		.append(", \"Wait Loader\": \"" + waitLoaderTime + "ms\"")
+		.append(", \"Max Free\": \"" + consumerTasks.getMaxWaitTime() + "ms\"")
+		.append(", \"Looping\":" + looping)
+		.append(", \"Running\": " + getRunning() + "}}");
 	    break;
 	}
 
-	strBuffer.append(consumerThreadStr);
     }
 
     public synchronized boolean getRunning() { return running.get(); }

@@ -222,7 +222,7 @@ public class ConsumerTasks<T> {
 	strBuffer.append("\n  KafkaCDC states:\n")
 	    .append("  There are [" + getRunning())
 	    .append("] consumers and [" + loaderTasks.getRunning())
-	    .append("] loaders running, ");
+	    .append("] loaders running\n");
 
 	consumeStates.show(strBuffer);
 
@@ -248,22 +248,6 @@ public class ConsumerTasks<T> {
     public void close(int signal_) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
-	log.info("consumers exited, waiting for loader finish the tasks,running:"
-		 + loaderTasks.getRunning());
-	while (loaderTasks.getRunning() > 0) {
-	    for (int i = 0; i < params.getKafkaCDC().getInterval()*100; i++) {
-	        if (loaderTasks.getRunning() == 0) {
-	            break;
-	        }
-	        Utils.waitMillisecond(10);
-	    }
-
-	    log.info("consumers exited show state");
-	    StringBuffer strBuffer = new StringBuffer();
-	    show(strBuffer);
-	    log.info(strBuffer.toString());
-	}
-
 	for (ConsumerThread consumer : consumers) {
 	    try {
 		if (consumer.getRunning()) {
@@ -281,6 +265,22 @@ public class ConsumerTasks<T> {
 	kcServer.stopServer();
         logCleaner.interrupt();
 	loaderTasks.close(signal_);
+
+	log.info("consumers exited, waiting for loader finish the tasks,running:"
+		 + loaderTasks.getRunning());
+	while (loaderTasks.getRunning() > 0) {
+	    for (int i = 0; i < params.getKafkaCDC().getInterval()*100; i++) {
+	        if (loaderTasks.getRunning() == 0) {
+	            break;
+	        }
+	        Utils.waitMillisecond(10);
+	    }
+
+	    log.info("consumers exited show state");
+	    StringBuffer strBuffer = new StringBuffer();
+	    show(strBuffer);
+	    log.info(strBuffer.toString());
+	}
 
         if (log.isTraceEnabled()) { log.trace("exit"); }
     }

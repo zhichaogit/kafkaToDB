@@ -94,10 +94,10 @@ public class Constants {
     public static String getFormatEnd(int format) {
 	switch(format) {
 	case KAFKA_JSON_FORMAT:
-	    return "}";
+	    return "}\n";
 	}
 
-	return "";
+	return "\n";
     }
 
     public static String getState(int state) {
