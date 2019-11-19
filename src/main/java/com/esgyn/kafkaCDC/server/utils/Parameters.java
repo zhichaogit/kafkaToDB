@@ -291,6 +291,8 @@ public class Parameters {
 	kafkaCDC.setSkip(getBoolParam("skip", false));
 	kafkaCDC.setLoaders(getLongParam("loader", Constants.DEFAULT_LOADERS));
 	kafkaCDC.setMaxWaitTasks(getLongParam("maxWaitTasks", Constants.DEFAULT_MAXWAITTASKS));
+	kafkaCDC.setMaxFileSize(getIntParam("maxFileSize", Constants.DEFAULT_MAXFILESIZE));
+	kafkaCDC.setMaxBackupIndex(getIntParam("maxBackupIndex", Constants.DEFAULT_MAXBACKUPINDEX));
 	kafkaCDC.setLoadDir(getStringParam("loadDir", null));
 	kafkaCDC.setKafkaDir(getStringParam("kafkaDir", null));
 	kafkaCDC.setShowConsumers(getBoolParam("showConsumers", true));
@@ -346,7 +348,11 @@ public class Parameters {
             reportErrorAndExit("if table is specified, schema must be specified too.");
         }
 
-        // maxWaitTasks || interval ||CleanDelayTime||zkTO || hbTO || seTO ||reqTo can't be "0"
+        // maxFileSize || maxWaitTasks || interval ||CleanDelayTime||zkTO || hbTO || seTO ||reqTo can't be "0"
+        if (kafkaCDC.getMaxFileSize() < 0) {
+            reportErrorAndExit("the maxFileSize parameter can't less \"0\" ");
+        }
+
         if (kafkaCDC.getMaxWaitTasks() < 0) {
             reportErrorAndExit("the maxWaitTasks parameter can't less \"0\" ");
         }

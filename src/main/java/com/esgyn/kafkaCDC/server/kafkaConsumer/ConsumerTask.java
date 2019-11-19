@@ -369,19 +369,23 @@ public class ConsumerTask<T> {
     public boolean dumpDataToFile(List<RowMessage> rows) {
 	if (log.isTraceEnabled()) { log.trace("enter"); }
 
-	String rootPath = params.getKafkaCDC().getKafkaDir();
+	int    maxFileSize    = params.getKafkaCDC().getMaxFileSize();
+        int    maxBackupIndex = params.getKafkaCDC().getMaxBackupIndex();
+        String rootPath       = params.getKafkaCDC().getKafkaDir();
 	if (rootPath != null) {
 	    String fileName = topic + "_" + partitionID;
 	    String filePath = rootPath + fileName;
 	    if (params.getKafkaCDC().isDumpBinary() &&
-		!FileUtils.dumpDataToFile(rows, filePath, FileUtils.BYTE_STRING)) {
+		!FileUtils.dumpDataToFile(rows, filePath, FileUtils.BYTE_STRING,
+		        maxFileSize, maxBackupIndex)) {
 		state = STATE_DUMP_DATA_FAIL;
 		log.error("dump banirt data to file fail.");
 		return false;
 	    }
 
 	    filePath = rootPath + fileName + ".sql";
-	    if (!FileUtils.dumpDataToFile(rows, filePath, FileUtils.SQL_STRING)) {
+	    if (!FileUtils.dumpDataToFile(rows, filePath, FileUtils.SQL_STRING,
+	            maxFileSize, maxBackupIndex)) {
 		state = STATE_DUMP_DATA_FAIL;
 		log.error("dump sql data to file fail.");
 		return false;

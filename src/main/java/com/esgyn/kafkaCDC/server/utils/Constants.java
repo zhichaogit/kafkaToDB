@@ -62,6 +62,8 @@ public class Constants {
     public final static String       SEC_PLAIN_STRING      =
 	"org.apache.kafka.common.security.plain.PlainLoginModule required username=";
 
+    public final static int          DEFAULT_MAXFILESIZE   = 1024;
+    public final static int          DEFAULT_MAXBACKUPINDEX= 10;
     public final static int          KAFKA_CDC_INIT        = 0;
     public final static int          KAFKA_CDC_RUNNING     = 1;
     public final static int          KAFKA_CDC_NORMAL      = 2;
@@ -155,6 +157,8 @@ public class Constants {
         {"",   "skip",        false, false, "skip all errors of data, default: false"},
 	{"",   "loader",      false,  true, "processer number, default:4"},
 	{"",   "maxWaitTasks",false,  true, "max wait Tasks size, default:2"},
+	{"",   "maxFileSize",false,  true,  "maxFileSize for dump to file, default:1024MB"},
+	{"",   "maxBackupIndex",false,  true, "maxBackupIndex for dump to file,-1 is the Integer.MAX_VALUE. default:10"},
 	{"",   "logDelay",    false,  true, "Dynamically load log4j.xml conf files interval time, default:10s"},
 	{"",   "showConsumers",false, false, "show the consumer thread details, default: true"},
 	{"",   "showLoaders", false, false, "show the loader thread details, default: true"},

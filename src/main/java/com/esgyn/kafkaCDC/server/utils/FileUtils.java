@@ -89,9 +89,8 @@ public class FileUtils {
 	return true;
     }
 
-    public static boolean dumpDataToFile(List<RowMessage> rows, 
-					 String filePath,
-					 int    type){
+    public static boolean dumpDataToFile(List<RowMessage> rows, String filePath , int type,
+            int maxFileSize , int maxBackupIndex){
 	FileOutputStream            output   = null;
 	BufferedOutputStream        buffer   = null;
 	boolean                     dumped   = true;
@@ -107,6 +106,10 @@ public class FileUtils {
 	    if(!file.exists()) {
 		file.createNewFile();
 	    }
+
+	    if (file.length() > maxFileSize) {
+                rolloverFile(filePath,maxBackupIndex);
+            }
 
 	    output = new FileOutputStream(file, true);
 	    buffer = new BufferedOutputStream(output);
@@ -177,6 +180,56 @@ public class FileUtils {
 
 	    return dumped;
 	}
+    }
+    /**
+     * Rollover the current file to a new file.
+     * @param filePath
+     */
+    public static void rolloverFile(String filePath,int maxBackupIndex){
+        File target;
+        File file;
+        if (log.isTraceEnabled()) { log.trace("enter"); }
+        if (maxBackupIndex > 0) {
+            // Delete the oldest file
+            file = new File(filePath + ".bak" + maxBackupIndex);
+            if (file.exists())
+                file.delete();
+
+            for (int i = maxBackupIndex - 1; i >= 1; i--) {
+                file = new File(filePath + ".bak" + i);
+                if (file.exists()) {
+                    target = new File(filePath + ".bak" + (i + 1));
+                    if (log.isDebugEnabled()) {
+                        log.debug("Renaming file [" + file + "] to [" + target + "]");
+                    }
+                    file.renameTo(target);
+                }
+            }
+
+            // Rename fileName to filename.bak1
+            target = new File(filePath + ".bak" + 1);
+
+            file = new File(filePath);
+            if (log.isDebugEnabled()) {
+                log.debug("Renaming file [" + file + "] to [" + target + "]");
+            }
+            file.renameTo(target);
+        }else if (maxBackupIndex < 0){
+            //find the max backup index
+            for (int i = 1; i < Integer.MAX_VALUE; i++) {
+                target = new File(filePath + ".bak" + i);
+                if (! target.exists()) {
+                    //Rename fileName to next index
+                    file = new File(filePath);
+                    file.renameTo(target);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Renaming file [" + file + "] to [" + target + "]");
+                    }
+                    break;
+                }
+            }
+        }
+        if (log.isTraceEnabled()) { log.trace("exit"); }
     }
     /**
      * @param rootPathStr
