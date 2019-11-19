@@ -113,7 +113,7 @@ public class KafkaCDCParams {
 	    .append("\n\tskip          = "    + skip)
 	    .append("\n\tloaders       = "    + loaders)
 	    .append("\n\tmaxWaitTasks  = "    + maxWaitTasks)
-	    .append("\n\tmaxFileSize   = "    + maxFileSize)
+	    .append("\n\tmaxFileSize   = "    + maxFileSize/(1024*1024) + "MB")
 	    .append("\n\tmaxBackupIndex= "    + maxBackupIndex)
 	    .append("\n\tloadDir       = "    + loadDir)
 	    .append("\n\tunloadDir     = "    + unloadDir)
