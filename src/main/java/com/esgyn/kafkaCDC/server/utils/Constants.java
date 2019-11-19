@@ -207,8 +207,10 @@ public class Constants {
     public final static Object[][]   CLIENT_CONFIG_PARAMS = {
         {"",   "host",        false,  true, "database server ip, default: \"localhost\""},
         {"",   "port",        false,  true, "kafkaCDC server listener port, default:8889"},
-        {"t",  "type",        false,  true, "the type of command"},
-        {"s",  "subType",     false,  true, "the sub type of type command"},
+        {"t",  "type",        false,  true, "the type of command: SHUTDOWN, PRINT"},
+        {"s",  "subType",     false,  true, "the sub type of type command:"
+	 + "\n  SHUTDOWN: NORMAL, IMMEDIATE, ABORT"
+	 + "\n  PRINT: CONSUMER, LOADER, TABLES, TASKS"},
 
 	// system info
         {"h",  "help",        false, false, "show help information"},
