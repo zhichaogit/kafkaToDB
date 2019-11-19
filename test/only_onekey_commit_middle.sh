@@ -92,10 +92,10 @@ $KAFKA/bin/kafka-console-producer.sh --broker-list $BROKER --topic $TOPIC < $DAT
 #$KAFKA/bin/kafka-console-consumer.sh --zookeeper $ZOOKEEPER --topic $TOPIC --from-beginning
 
 KAFKA_CDC="$KAFKA_CDC"
-cd $KAFKA_CDC/bin;
+cd $KAFKA_CDC;
 
-echo "./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f Unicom --mode start --sto 5 --interval 2 --batchSize 3"
-./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f Unicom --mode start --sto 5 --interval 2 --batchSize 3
+echo "./bin/KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f Unicom --mode start --sto 5 --interval 2 --batchSize 3"
+./bin/KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA --table $TABLE -t $TOPIC -f Unicom --mode start --sto 5 --interval 2 --batchSize 3
 
 expect<<-EOF
   set timeout 300

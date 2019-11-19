@@ -189,10 +189,10 @@ $KAFKA/bin/kafka-topics.sh --list --zookeeper $ZOOKEEPER
 $KAFKA/bin/kafka-console-producer.sh --broker-list $BROKER --topic $TOPIC < $DATAFILE
 #$KAFKA/bin/kafka-console-consumer.sh --zookeeper $ZOOKEEPER --topic $TOPIC --from-beginning
 KAFKA_CDC="$KAFKA_CDC"
-cd $KAFKA_CDC/bin;
+cd $KAFKA_CDC;
 
-echo "./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA -t $TOPIC -f Json --mode start --sto 5 --interval 10 "
-./KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA -t $TOPIC -f Json --mode start --sto 5 --interval 10 
+echo "./bin/KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA -t $TOPIC -f Json --mode start --sto 5 --interval 10 "
+./bin/KafkaCDC-server.sh -p $PARTITION -b $BROKER -d $DBIP -s $DESTSCHEMA -t $TOPIC -f Json --mode start --sto 5 --interval 10 
 #get result file from $DBUSER
 expect <<-EOF
   set timeout 300
