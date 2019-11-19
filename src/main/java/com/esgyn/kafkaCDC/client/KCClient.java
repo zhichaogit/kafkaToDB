@@ -78,7 +78,7 @@ public class KCClient {
         boolean getHelp = cmdLine.hasOption("help") ? true : false;
         if (getHelp) {
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("kafkaCDC client", exeOptions);
+            formatter.printHelp("KafkaCDC Client", exeOptions);
             System.exit(0);
         }
 

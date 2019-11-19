@@ -210,7 +210,7 @@ public class Constants {
         {"t",  "type",        false,  true, "the type of command: SHUTDOWN, PRINT"},
         {"s",  "subType",     false,  true, "the sub type of type command:"
 	 + "\n  SHUTDOWN: NORMAL, IMMEDIATE, ABORT"
-	 + "\n  PRINT: CONSUMERS, LOADERS, TABLES, TASKS"},
+	 + "\n  PRINT: CONSUMERS, LOADERS, TABLES, TASKS, KAFKA, DATABASE"},
 
 	// system info
         {"h",  "help",        false, false, "show help information"},

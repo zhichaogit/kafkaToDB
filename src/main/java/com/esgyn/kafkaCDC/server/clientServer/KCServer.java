@@ -295,6 +295,18 @@ public class KCServer extends Thread{
 	    result = "print tasks with client command and succeed!";
 	    consumerTasks.showTasks(strBuffer, Constants.KAFKA_JSON_FORMAT);
 	    break;
+
+	case Message.KAFKA:
+	    result = "print kafka state with client command and succeed!";
+	    consumerTasks.getConsumeStates()
+		.showStates(strBuffer, Constants.KAFKA_JSON_FORMAT);
+	    break;
+
+	case Message.DATABASE:
+	    result = "print database state with client command and succeed!";
+	    consumerTasks.getLoaderTasks().getLoadStates()
+		.showDatabase(strBuffer, Constants.KAFKA_JSON_FORMAT);
+	    break;
 	    
 	default:
 	    String errMsg = "Unexpected kind of message sub type: " + subType;

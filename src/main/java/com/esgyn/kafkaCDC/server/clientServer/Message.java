@@ -38,18 +38,20 @@ public class Message implements Serializable {
     public final static int  ABORT      = 103;
 
     // start and STOP sub type 
-    public final static int  CONSUMER   = 104;
-    public final static int  LOADER     = 105;
+    public final static int  CONSUMER   = 201;
+    public final static int  LOADER     = 202;
 
     // print sub type 
-    public final static int  CONSUMERS  = 106;
-    public final static int  LOADERS    = 107;
-    public final static int  TABLES     = 108;
-    public final static int  TASKS      = 109;
+    public final static int  CONSUMERS  = 301;
+    public final static int  LOADERS    = 302;
+    public final static int  TABLES     = 303;
+    public final static int  TASKS      = 304;
+    public final static int  KAFKA      = 305;
+    public final static int  DATABASE   = 306;
 
     // the return values
-    public final static int  SUCCEED    = 110;
-    public final static int  FAIL       = 111;
+    public final static int  SUCCEED    = 900;
+    public final static int  FAIL       = 901;
 
     public Message() {}
 
@@ -107,6 +109,8 @@ public class Message implements Serializable {
 	    case LOADERS:
 	    case TABLES:
 	    case TASKS:
+	    case KAFKA:
+	    case DATABASE:
 		break;
 
 	    default:
@@ -174,6 +178,12 @@ public class Message implements Serializable {
 
 	case "TASKS":
 	    return TASKS;
+
+	case "KAFKA":
+	    return KAFKA;
+
+	case "DATABASE":
+	    return DATABASE;
 
 	case "SUCCEED":
 	    return SUCCEED;
