@@ -129,16 +129,41 @@ public class TableInfo {
     public synchronized void incErrUpdNum(long rows) { errUpdNum += rows; }
     public synchronized void incErrDelNum(long rows) { errDelNum += rows; }
 
-    public void show(StringBuffer strBuffer) {
+    public void showTable(StringBuffer strBuffer, int format) {
+	switch(format){
+	case Constants.KAFKA_STRING_FORMAT:
+	    String tableString = 
+		String.format("  -> %-60s Msgs [%12d,%12d,%12d,%12d]"
+			      + ", DMLs [%12d,%12d,%12d]"
+			      + ", Fails [ %d, %d, %d]"
+			      , schemaName + "." + tableName
+			      , insMsgNum, updMsgNum, keyMsgNum, delMsgNum
+			      , insertNum, updateNum, deleteNum
+			      , errInsNum, errUpdNum, errDelNum);
+	    strBuffer.append(tableString);
+	    break;
+	   
+	case Constants.KAFKA_JSON_FORMAT:
+	    strBuffer.append("{\"tableName\":\"" + schemaName)
+		.append("\".\"" + tableName)
+		.append(", \"info\":{\"Msgs\":{\"insert\":" + insMsgNum)
+		.append(", \"update\":" + updMsgNum)
+		.append(", \"updkey\":" + keyMsgNum)
+		.append(", \"delete\":" + delMsgNum + "}")
+		.append(", \"DMLs\": {\"insert\":" + insertNum)
+		.append(", \"update\":" + updateNum)
+		.append(", \"delete\":" + deleteNum + "}")
+		.append(", \"Fails\": {\"insert\":" + errInsNum)
+		.append(", \"update\":" + errUpdNum)
+		.append(", \"delete\":" + errDelNum + "}}}");
+	    break;
+	}	    
+    }
+
+    public void show(StringBuffer strBuffer, int format) {
 	long interval = params.getKafkaCDC().getInterval();
 
-        String tableString = 
-	    String.format("  -> %-60s Msgs [%12d,%12d,%12d,%12d] DMLs [%12d,%12d,%12d]"
-			  + " Fails [ %d, %d, %d]\n",
-			  schemaName + "." + tableName, insMsgNum, updMsgNum, 
-			  keyMsgNum, delMsgNum, insertNum, updateNum, deleteNum,
-			  errInsNum, errUpdNum, errDelNum);
-        strBuffer.append(tableString);
+        showTable(strBuffer, format);
 
         if (params.getKafkaCDC().isShowSpeed()) {
             Long end = new Date().getTime();
@@ -175,7 +200,7 @@ public class TableInfo {
             if (curDSpeed > maxDSpeed)
                 maxDSpeed = curDSpeed;
             String tableSpeedStr =
-                    String.format("%-66s"
+                    String.format("\n%-66s"
                             + "tableSpee(dn/s) [max: %d, avg: %d, cur: %d] "
                             + "IS(n/s) [ %d, %d, %d] "
                             + "US(n/s) [ %d, %d, %d] "

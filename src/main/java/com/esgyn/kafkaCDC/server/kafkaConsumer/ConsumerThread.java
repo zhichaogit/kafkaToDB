@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.utils.Utils;
+import com.esgyn.kafkaCDC.server.utils.Constants;
 
 import lombok.Getter;
 
@@ -104,18 +105,33 @@ public class ConsumerThread extends Thread {
 	return false;
     }
 
-    public void show(StringBuffer strBuffer) { 
+    public void show(StringBuffer strBuffer, int format) { 
 	Long  waitLoaderTime = Utils.getTime() - preLoaderTime;
 	Long  consumeTime    = Utils.getTime() - startTime;
 	if (consumeTime <= 0)
 	    consumeTime = (long)1;
 
-	String consumerThreadStr =
-	    String.format("  -> consumer [id:%3d, msgs:%12d, speed: %6d, wait:%12dms,"
-			  + " wait loader: %12dms, max free: %8dms, looping:%5s, running:%5s]\n",
-			  consumerID, consumedNumber, consumedNumber/consumeTime, 
-			  waitTime, waitLoaderTime, consumerTasks.getMaxWaitTime(),
-			  String.valueOf(looping), String.valueOf(getRunning()));
+	String consumerThreadStr = null;
+
+	switch(format){
+	case Constants.KAFKA_STRING_FORMAT:
+	    consumerThreadStr = 
+		String.format("  -> consumer [id:%3d, msgs:%12d, speed: %6d, wait:%12dms,"
+			      + " wait loader: %12dms, max free: %8dms, looping:%5s, running:%5s]",
+			      consumerID, consumedNumber, consumedNumber/consumeTime, 
+			      waitTime, waitLoaderTime, consumerTasks.getMaxWaitTime(),
+			      String.valueOf(looping), String.valueOf(getRunning()));
+	    break;
+	    
+	case Constants.KAFKA_JSON_FORMAT:
+	    consumerThreadStr = 
+		String.format("\"consumer\":{\"id\":%3d, \"msgs\":%12d, \"speed\": %6d, \"wait\":%12dms,"
+			      + " \"wait loader\": %12d, \"max free\": %8dms, \"looping\":%5s, \"running\":%5s}",
+			      consumerID, consumedNumber, consumedNumber/consumeTime, 
+			      waitTime, waitLoaderTime, consumerTasks.getMaxWaitTime(),
+			      String.valueOf(looping), String.valueOf(getRunning()));
+	    break;
+	}
 
 	strBuffer.append(consumerThreadStr);
     }

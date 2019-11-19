@@ -488,14 +488,27 @@ public class ConsumerTask<T> {
         }
     }
 
-    public void show(StringBuffer strBuffer) {
-	String consumerTaskStr =
-	    String.format("  -> msg task [loader:%3d, topic:%16s, partition:%3d"
-			  + ", group:%16s, number:%12d, time:%15s, offset:%12d]\n",
-			  loaderHandle.getLoaderID(), topic, partitionID, group, 
-			  consumeNumber, Utils.stampToDateStr(curTime), curOffset);
+    public void show(StringBuffer strBuffer, int format) {
+	switch(format){
+	case Constants.KAFKA_STRING_FORMAT:
+	    String consumerTaskStr =
+		String.format("  -> Msg Task {Loader:%3d, Topic:%16s, Partition:%3d"
+			      + ", Group:%16s, Number:%12d, Time:%15s, Offset:%12d}",
+			      loaderHandle.getLoaderID(), topic, partitionID, group, 
+			      consumeNumber, Utils.stampToDateStr(curTime), curOffset);
+	    strBuffer.append(consumerTaskStr);
+	    break;
 
-	strBuffer.append(consumerTaskStr);
+	case Constants.KAFKA_JSON_FORMAT:
+	    strBuffer.append("{\"Msg Task\": {\"Loader\":" + loaderHandle.getLoaderID())
+		.append(", \"Topic\":" + topic)
+		.append(", \"Partition\":" + partitionID)
+		.append(", \"Group\": " + group)
+		.append(", \"Number\":" + consumeNumber)
+		.append(", \"Time\":" + Utils.stampToDateStr(curTime))
+		.append(", \"Offset:" + curOffset + "}}");
+	    break;
+	}
     }
 
     public void close() {

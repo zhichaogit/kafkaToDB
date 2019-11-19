@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.utils.Parameters;
+import com.esgyn.kafkaCDC.server.utils.Constants;
 
 import lombok.Getter;
 
@@ -53,16 +54,16 @@ public class LoaderTasks<T> {
 	return true;
     }
 
-    public void showLoaders(StringBuffer strBuffer) {
+    public void showLoaders(StringBuffer strBuffer, int format) {
 	for (LoaderThread loader : loaders) {
-	    loader.show(strBuffer);
+	    loader.show(strBuffer, format);
 	}
     }
 
     public void show(StringBuffer strBuffer) {
 	if (params.getKafkaCDC().isShowLoaders()) {
 	    strBuffer.append("  The detail of loader threads:\n");
-	    showLoaders(strBuffer);
+	    showLoaders(strBuffer, Constants.KAFKA_STRING_FORMAT);
 	}
 	loadStates.show(strBuffer);
     }

@@ -240,22 +240,24 @@ public class KCServer extends Thread{
         switch (subType) {
             case Message.CONSUMER:
                 log.info("print consumer state with client command");
-		consumerTasks.showConsumer(strBuffer);
+		consumerTasks.showConsumers(strBuffer, Constants.KAFKA_JSON_FORMAT);
                 break;
 
             case Message.LOADER:
                 log.info("print loader state with client command");
-		consumerTasks.getLoaderTasks().showLoaders(strBuffer);
+		consumerTasks.getLoaderTasks()
+		    .showLoaders(strBuffer, Constants.KAFKA_JSON_FORMAT);
                 break;
 
             case Message.TABLES:
                 log.info("print tables state with client command");
-		consumerTasks.getLoaderTasks().getLoaderStates().showTables(strBuffer);
+		consumerTasks.getLoaderTasks().getLoadStates()
+		    .showTables(strBuffer, Constants.KAFKA_JSON_FORMAT);
                 break;
 
             case Message.TASKS:
                 log.info("print tasks with client command");
-		consumerTasks.showTasks(strBuffer);
+		consumerTasks.showTasks(strBuffer, Constants.KAFKA_JSON_FORMAT);
                 break;
 
             default:

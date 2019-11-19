@@ -70,6 +70,36 @@ public class Constants {
     public final static int          KAFKA_CDC_IMMEDIATE   = 3;
     public final static int          KAFKA_CDC_ABORT       = 4;
 
+    public final static int          KAFKA_STRING_FORMAT   = 1;
+    public final static int          KAFKA_JSON_FORMAT     = 2;
+
+    public static String getFormatEntry(int format) {
+	switch(format) {
+	case KAFKA_JSON_FORMAT:
+	    return ",\n";
+	}
+	
+	return "\n";
+    }
+
+    public static String getFormatStart(int format) {
+	switch(format) {
+	case KAFKA_JSON_FORMAT:
+	    return "{";
+	}
+
+	return "";
+    }
+
+    public static String getFormatEnd(int format) {
+	switch(format) {
+	case KAFKA_JSON_FORMAT:
+	    return "}";
+	}
+
+	return "";
+    }
+
     public static String getState(int state) {
 	String strState = "";
 	switch (state){

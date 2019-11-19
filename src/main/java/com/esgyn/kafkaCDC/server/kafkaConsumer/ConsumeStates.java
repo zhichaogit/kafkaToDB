@@ -9,6 +9,7 @@ import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.databaseLoader.LoadStates;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
+import com.esgyn.kafkaCDC.server.utils.Constants;
 import com.esgyn.kafkaCDC.server.utils.Utils;
 
 import lombok.Getter;
@@ -94,7 +95,7 @@ public class ConsumeStates {
         kafkaErrNum += kafkaErrNum_;
     }
 
-    public void show(StringBuffer strBuffer) {
+    public void showStates(StringBuffer strBuffer, int format) {
 	long interval = params.getKafkaCDC().getInterval();
         Date endTime = new Date();
         Float useTime = ((float) (endTime.getTime() - startTime.getTime())) / 1000;
@@ -104,24 +105,52 @@ public class ConsumeStates {
             maxSpeed = curSpeed;
         DecimalFormat df = new DecimalFormat("####0.000");
 
-	strBuffer.append("  running time [" + df.format(useTime) + "s")
-	    .append(", start: " + Utils.dateToStr(startTime))
-	    .append(", cur: " + Utils.dateToStr(endTime) + "]\n")
-	    .append("  Consumers states:\n")
-	    .append("  [total: " + kafkaMsgNum+", err: " + kafkaErrNum)
-	    .append(", inc: " + incMsgNum + "]")
-	    .append(", messages [I: " + insMsgNum)
-	    .append(", U: " + updMsgNum)
-	    .append(", K: " + keyMsgNum)
-	    .append(", D: " + delMsgNum + "]")
-	    .append(", errors [I: " + insErrNum)
-	    .append(", U: " + updErrNum)
-	    .append(", K: " + keyErrNum)
-	    .append(", D: " + delErrNum + "]")
-	    .append(", Speed(n/s) [max: " + maxSpeed)
-	    .append(", avg: " + avgSpeed)
-	    .append(", cur: " + curSpeed + "]\n");
+	switch(format){
+	case Constants.KAFKA_STRING_FORMAT:
+	    strBuffer.append("  running time: {" + df.format(useTime) + "s")
+		.append(", start: " + Utils.dateToStr(startTime))
+		.append(", cur: " + Utils.dateToStr(endTime) + "}\n")
+		.append("  Consumers states:\n")
+		.append("  {Total: " + kafkaMsgNum+", Err: " + kafkaErrNum)
+		.append(", Inc: " + incMsgNum + "}")
+		.append(", Messages: {I: " + insMsgNum)
+		.append(", U: " + updMsgNum)
+		.append(", K: " + keyMsgNum)
+		.append(", D: " + delMsgNum + "}")
+		.append(", Errors {I: " + insErrNum)
+		.append(", U: " + updErrNum)
+		.append(", K: " + keyErrNum)
+		.append(", D: " + delErrNum + "}")
+		.append(", Speed(n/s) {Max: " + maxSpeed)
+		.append(", Avg: " + avgSpeed)
+		.append(", Cur: " + curSpeed + "}");
+	    break;
 
+	case Constants.KAFKA_JSON_FORMAT:
+	    strBuffer.append("{\"running time\":\"" + df.format(useTime) + "s\"")
+		.append(", \"Start\": \"" + Utils.dateToStr(startTime) + "\"")
+		.append(", \"Cur\": \"" + Utils.dateToStr(endTime) + ",")
+		.append("  \"Consumers states\": ")
+		.append("  {\"Total\": " + kafkaMsgNum)
+		.append(", \"Err\": " + kafkaErrNum)
+		.append(", \"Inc\": " + incMsgNum + "}")
+		.append(", \"Messages\": {\"I\": " + insMsgNum)
+		.append(", \"U\": " + updMsgNum)
+		.append(", \"K\": " + keyMsgNum)
+		.append(", \"D\": " + delMsgNum + "}")
+		.append(", \"Errors\": {\"I\": " + insErrNum)
+		.append(", \"U\": " + updErrNum)
+		.append(", \"K\": " + keyErrNum)
+		.append(", \"D\": " + delErrNum + "}")
+		.append(", \"Speed(n/s)\": {\"Max\": " + maxSpeed)
+		.append(", \"Avg\": " + avgSpeed)
+		.append(", \"Cur\": " + curSpeed + "}}");
+	    break;
+	}
+    }
+
+    public void show(StringBuffer strBuffer) {
+	showStates(strBuffer, Constants.KAFKA_JSON_FORMAT);
 	incMsgNum = 0;
     }
 }
