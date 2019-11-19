@@ -25,7 +25,7 @@ public class Constants {
     public final static long         DEFAULT_SLEEP_TIME    = 10;
 
     public final static long         DEFAULT_BATCH_SIZE    = 500;
-    public final static long         DEFAULT_FETCH_SIZE    = 1000;
+    public final static long         DEFAULT_FETCH_SIZE    = 500;
     public final static long         DEFAULT_PARALLE       = 16;
     public final static int          DEFAULT_MAX_PARTITION = 1000;
     public final static int          DEFAULT_FETCH_BYTES   = 104857600;
@@ -45,7 +45,7 @@ public class Constants {
     // Kafka information
     public final static String       DEFAULT_BROKER        = "localhost:9092";
     public final static long         DEFAULT_LOADERS       = 4;
-    public final static long         DEFAULT_MAXWAITTASKS  = 4;
+    public final static long         DEFAULT_MAXWAITTASKS  = 10;
     public final static long         DEFAULT_CONSUMERS     = 4;
     public final static String       DEFAULT_KEY           =
 	"org.apache.kafka.common.serialization.StringDeserializer";

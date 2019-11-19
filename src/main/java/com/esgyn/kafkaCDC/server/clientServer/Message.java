@@ -209,7 +209,7 @@ public class Message implements Serializable {
 	msgBytes[1] = (byte)((buffer.length >> 16) & 0xFF);
 	msgBytes[2] = (byte)((buffer.length >> 8) & 0xFF);
 	msgBytes[3] = (byte)((buffer.length) & 0xFF);
-	System.arraycopy(msgBytes, 0, buffer, 4, buffer.length);
+	System.arraycopy(buffer, 0, msgBytes, 4, buffer.length);
 
 	return msgBytes;
     }
