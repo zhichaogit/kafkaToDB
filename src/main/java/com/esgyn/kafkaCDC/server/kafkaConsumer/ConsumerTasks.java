@@ -222,7 +222,7 @@ public class ConsumerTasks<T> {
 	strBuffer.append("\n  KafkaCDC states:\n")
 	    .append("  There are [" + getRunning())
 	    .append("] consumers and [" + loaderTasks.getRunning())
-	    .append("] loaders running\n");
+	    .append("] loaders running,");
 
 	consumeStates.show(strBuffer);
 
