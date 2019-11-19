@@ -2,7 +2,6 @@ package com.esgyn.kafkaCDC.server;
 
 import org.apache.log4j.Logger;
 
-import com.esgyn.kafkaCDC.server.databaseLoader.LoaderTasks;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerTasks;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
 import com.esgyn.kafkaCDC.server.utils.Constants;

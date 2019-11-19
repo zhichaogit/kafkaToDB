@@ -11,7 +11,7 @@ import java.nio.channels.SocketChannel;
 public class KCConnection {
     private static Logger LOG = Logger.getLogger(KCConnection.class);
     
-    public static int LM_TRYCONNECT_TIMES = 3;
+    public static int KC_TRYCONNECT_TIMES = 3;
 
     private String        host;
     private int           port;
@@ -42,7 +42,7 @@ public class KCConnection {
     private void checkConnection() throws Exception {
         if (!bConnected) {
             bConnected = ch.connect(new InetSocketAddress(host, port));
-            int waitCount = LM_TRYCONNECT_TIMES;
+            int waitCount = KC_TRYCONNECT_TIMES;
             while (!bConnected) {
                 if (waitCount >= 0 && waitCount-- == 0) {
                     throw new Exception("Failed to connect IP:" + host + ", PORT:" + port);

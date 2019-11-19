@@ -3,9 +3,7 @@ package com.esgyn.kafkaCDC.server.clientServer;
 import java.nio.channels.*;
 import java.io.IOException;
 import java.util.Set;
-import java.util.List;
 import java.util.Iterator;
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import java.net.InetSocketAddress;
@@ -54,7 +52,7 @@ public class KCServer extends Thread{
 	    // register interest in Connection Attempts by clients
 	    channel.register(selector, SelectionKey.OP_ACCEPT);
         } catch (Exception e) {
-            log.error("failed to start Lock Manager Listener!", e);
+            log.error("failed to start KafkaCDC Listener!", e);
         }
     }
 
