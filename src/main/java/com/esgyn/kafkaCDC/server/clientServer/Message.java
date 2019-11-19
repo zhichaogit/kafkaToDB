@@ -40,16 +40,19 @@ public class Message implements Serializable {
     public final static int  IMMEDIATE  = 102;
     public final static int  ABORT      = 103;
 
-    // print start and STOP sub type 
+    // start and STOP sub type 
     public final static int  CONSUMER   = 104;
-    public final static int  LOADER     = 205;
+    public final static int  LOADER     = 105;
 
-    public final static int  TABLES     = 106;
-    public final static int  TASKS      = 107;
+    // print sub type 
+    public final static int  CONSUMERS  = 106;
+    public final static int  LOADERS    = 107;
+    public final static int  TABLES     = 108;
+    public final static int  TASKS      = 109;
 
     // the return values
-    public final static int  SUCCEED    = 108;
-    public final static int  FAIL       = 109;
+    public final static int  SUCCEED    = 110;
+    public final static int  FAIL       = 111;
 
     public Message() {}
 
@@ -103,8 +106,8 @@ public class Message implements Serializable {
 
 	case PRINT:
 	    switch (this.subType) {
-	    case CONSUMER:
-	    case LOADER:
+	    case CONSUMERS:
+	    case LOADERS:
 	    case TABLES:
 	    case TASKS:
 		break;
@@ -163,6 +166,12 @@ public class Message implements Serializable {
 	case "LOADER":
 	    return LOADER;
 
+	case "CONSUMERS":
+	    return CONSUMERS;
+
+	case "LOADERS":
+	    return LOADERS;
+
 	case "TABLES":
 	    return TABLES;
 
@@ -219,7 +228,7 @@ public class Message implements Serializable {
 	ObjectInputStream    ois  = null;
 
         try {
-	    bais = new ByteArrayInputStream(bytes, 0, bytes.length - 1);
+	    bais = new ByteArrayInputStream(bytes, 0, bytes.length);
 	    ois  = new ObjectInputStream(bais);
 	    return(Message) ois.readObject();
         } finally {

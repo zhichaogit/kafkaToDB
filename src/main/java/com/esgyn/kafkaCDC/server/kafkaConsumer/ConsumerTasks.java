@@ -115,8 +115,9 @@ public class ConsumerTasks<T> {
 		    loaderID = 0;
 		loaderHandle = loaderHandles.get(loaderID++);
 		ConsumerTask consumerTask = 
-		    new ConsumerTask(consumeStates, topicName, desSchema, topic.getGroup(),
-				     partitionID, loaderHandle);
+		    new ConsumerTask(taskArray.size(), consumeStates, topicName, 
+				     desSchema, topic.getGroup(),partitionID, 
+				     loaderHandle);
 		if (!consumerTask.init())
 		    return false;
 
@@ -183,7 +184,7 @@ public class ConsumerTasks<T> {
     public void showConsumers(StringBuffer strBuffer, int format) {
 	boolean first = true;
 
-	strBuffer.append(Constants.getFormatStart(format));
+	strBuffer.append(Constants.getFormatStart("Consumers", format));
 	for (ConsumerThread consumer : consumers) {
 	    if (!first)
 		strBuffer.append(Constants.getFormatEntry(format));
@@ -196,7 +197,7 @@ public class ConsumerTasks<T> {
     public void showTasks(StringBuffer strBuffer, int format) { 
 	boolean first = true;
 
-	strBuffer.append(Constants.getFormatStart(format));
+	strBuffer.append(Constants.getFormatStart("Tasks", format));
 	for (ConsumerTask task : taskArray) {
 	    if (oldestTime == -1)
 		task.getCurTime();

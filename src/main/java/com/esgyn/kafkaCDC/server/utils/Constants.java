@@ -9,7 +9,7 @@ public class Constants {
     public final static int          DEFAULT_KC_PORT       = 8889;
 
     // the unit is second
-    public final static long         DEFAULT_NETWORK_TO_S  = 120;
+    public final static long         DEFAULT_NETWORK_TO_S  = 20;
     public final static long         DEFAULT_LOGDELAY_TO_S = 10;
     public final static long         DEFAULT_STREAM_TO_S   = -1;
     public final static long         DEFAULT_WAIT_TO_S     = 1;
@@ -82,10 +82,10 @@ public class Constants {
 	return "\n";
     }
 
-    public static String getFormatStart(int format) {
+    public static String getFormatStart(String start, int format) {
 	switch(format) {
 	case KAFKA_JSON_FORMAT:
-	    return "{";
+	    return "{\"" + start + "\": [";
 	}
 
 	return "";
@@ -94,7 +94,7 @@ public class Constants {
     public static String getFormatEnd(int format) {
 	switch(format) {
 	case KAFKA_JSON_FORMAT:
-	    return "}\n";
+	    return "]}\n";
 	}
 
 	return "\n";
@@ -210,7 +210,7 @@ public class Constants {
         {"t",  "type",        false,  true, "the type of command: SHUTDOWN, PRINT"},
         {"s",  "subType",     false,  true, "the sub type of type command:"
 	 + "\n  SHUTDOWN: NORMAL, IMMEDIATE, ABORT"
-	 + "\n  PRINT: CONSUMER, LOADER, TABLES, TASKS"},
+	 + "\n  PRINT: CONSUMERS, LOADERS, TABLES, TASKS"},
 
 	// system info
         {"h",  "help",        false, false, "show help information"},

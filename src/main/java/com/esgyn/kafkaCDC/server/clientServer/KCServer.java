@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerTasks;
 import com.esgyn.kafkaCDC.server.utils.Constants;
+import com.esgyn.kafkaCDC.server.utils.Utils;
 
 public class KCServer extends Thread{
     private static Logger log = Logger.getLogger(KCServer.class);
@@ -77,6 +78,8 @@ public class KCServer extends Thread{
     }
 
     private void process(Iterator<SelectionKey> readyIter) throws IOException {
+	String msg = null;
+
 	while (readyIter.hasNext()) {
 	    // get the key
 	    SelectionKey key = (SelectionKey) readyIter.next();
@@ -86,7 +89,11 @@ public class KCServer extends Thread{
 
 	    if (key.isAcceptable()) {
 		// new connection attempt
-		SocketChannel xServer = getSocketChannel(key);
+		SocketChannel xServer  = getSocketChannel(key);
+		KCConnection  kcConn   = null;
+		Message       feedback = null;
+
+		SUCCEED.setMsgs("");
 		if (log.isDebugEnabled()) {
 		    log.debug("client connection request arrived");
 		}
@@ -96,16 +103,23 @@ public class KCServer extends Thread{
 			xServer.finishConnect();
 		    }
 
-		    KCConnection kcConn = new KCConnection(xServer);
+		    kcConn = new KCConnection(xServer);
 		    Message require   = kcConn.receive();
-		    Message feedback  = processKCMessage(require);
-		    kcConn.send(feedback);
+		    feedback  = processKCMessage(require);
 
 		    if (log.isDebugEnabled()) {
 			log.debug("client connection request established");
 		    }
 		} catch (Exception e) {
+		    feedback = FAIL;
+		    msg = e.toString();
+		    feedback.setMsgs(msg);
+		} finally {
 		    try {
+			kcConn.send(feedback);
+
+			Utils.waitMillisecond(1000);
+
 			xServer.close();
 		    } catch (IOException ioe) {
 			log.error(ioe);
@@ -131,25 +145,28 @@ public class KCServer extends Thread{
 	int     msgType = kcMessage.getMsgType();
 
         switch (msgType) {
-            case Message.SHUTDOWN:
-		retMsg = processShutdown(kcMessage);
-                break;
+	case Message.SHUTDOWN:
+	    retMsg = processShutdown(kcMessage);
+	    break;
 
-            case Message.START:
-		retMsg = processStart(kcMessage);
-                break;
+	case Message.START:
+	    retMsg = processStart(kcMessage);
+	    break;
 
-            case Message.STOP:
-		retMsg = processStop(kcMessage);
-                break;
+	case Message.STOP:
+	    retMsg = processStop(kcMessage);
+	    break;
 
-            case Message.PRINT:
-		retMsg = processPrint(kcMessage);
-                break;
+	case Message.PRINT:
+	    retMsg = processPrint(kcMessage);
+	    break;
 
-            default:
-                log.error("Unexpected kind of message type: " + msgType);
-		break;
+	default:
+	    String errMsg = "Unexpected kind of message type: " + msgType;
+	    log.error(errMsg);
+	    retMsg = FAIL;
+	    retMsg.setMsgs(errMsg);
+	    break;
         }
 
 	return retMsg;
@@ -157,116 +174,141 @@ public class KCServer extends Thread{
 
     public Message processShutdown(Message kcMessage) {
 	Message retMsg  = SUCCEED;
+	String  result  = null;
 	int     subType = kcMessage.getSubType();
 
         switch (subType) {
-            case Message.NORMAL:
-                log.info("shutdown with client normal command");
-                consumerTasks.close(Constants.KAFKA_CDC_NORMAL);
-                break;
+	case Message.NORMAL:
+	    consumerTasks.close(Constants.KAFKA_CDC_NORMAL);
+	    result = "Shutdown with client normal command and succeed!";
+	    break;
 
-            case Message.IMMEDIATE:
-                log.info("shutdown with client immediate command");
-                consumerTasks.close(Constants.KAFKA_CDC_IMMEDIATE);
-                break;
+	case Message.IMMEDIATE:
+	    consumerTasks.close(Constants.KAFKA_CDC_IMMEDIATE);
+	    result = "Shutdown with client immediate command and succeed!";
+	    break;
 
-            case Message.ABORT:
-                log.info("shutdown with client abort command");
-                consumerTasks.close(Constants.KAFKA_CDC_ABORT);
-                break;
+	case Message.ABORT:
+	    consumerTasks.close(Constants.KAFKA_CDC_ABORT);
+	    result = "Shutdown with client abort command and succeed!";
+	    break;
 
-            default:
-                log.error("Unexpected kind of message sub type: " + subType);
-                retMsg = FAIL;
-                break;
+	default:
+	    result = "Unexpected kind of message sub type: " + subType;
+	    retMsg = FAIL;
+	    retMsg.setMsgs(result);
+	    log.error(result);
+
+	    return retMsg;
         }
+
+	log.info(result);
+	retMsg.setMsgs(result);
 
 	return retMsg;
     }
 
     public Message processStart(Message kcMessage) {
 	Message retMsg  = SUCCEED;
+	String  result  = null;
 	int     subType = kcMessage.getSubType();
 
         switch (subType) {
-            case Message.CONSUMER:
-                log.info("start consumer with client command");
-		// TODO
-                break;
+	case Message.CONSUMER:
+	    result = "start consumer with client command and succeed!";
+	    // TODO
+	    break;
 
-            case Message.LOADER:
-                log.info("start loader with client command");
-		// TODO
-                break;
+	case Message.LOADER:
+	    result = "start loader with client command and succeed!";
+	    // TODO
+	    break;
 
-            default:
-                log.error("Unexpected kind of message sub type: " + subType);
-                retMsg = FAIL;
-                break;
+	default:
+	    result = "Unexpected kind of message sub type: " + subType;
+	    retMsg = FAIL;
+	    retMsg.setMsgs(result);
+	    log.error(result);
+	    return retMsg;
         }
+
+	retMsg.setMsgs(result);
+	log.info(result);
 
 	return retMsg;
     }
 
     public Message processStop(Message kcMessage) {
 	Message retMsg  = SUCCEED;
+	String  result  = null;
 	int     subType = kcMessage.getSubType();
 
         switch (subType) {
-            case Message.CONSUMER:
-                log.info("start consumer with client command");
-		// TODO
-                break;
+	case Message.CONSUMER:
+	    result = "start consumer with client command and succeed!";
+	    // TODO
+	    break;
 
-            case Message.LOADER:
-                log.info("start loader with client command");
-		// TODO
-                break;
+	case Message.LOADER:
+	    result = "start loader with client command and succeed!";
+	    // TODO
+	    break;
 
-            default:
-                log.error("Unexpected kind of message sub type: " + subType);
-                retMsg = FAIL;
-                break;
+	default:
+	    result = "Unexpected kind of message sub type: " + subType;
+	    retMsg = FAIL;
+	    retMsg.setMsgs(result);
+	    log.error(result);
+	    
+	    return retMsg;
         }
+	
+	retMsg.setMsgs(result);
+	log.info(result);
 
 	return retMsg;
     }
 
     public Message processPrint(Message kcMessage) {
 	Message      retMsg    = SUCCEED;
+	String       result    = null;
 	int          subType   = kcMessage.getSubType();
 	StringBuffer strBuffer = new StringBuffer();
 
         switch (subType) {
-            case Message.CONSUMER:
-                log.info("print consumer state with client command");
-		consumerTasks.showConsumers(strBuffer, Constants.KAFKA_JSON_FORMAT);
-                break;
+	case Message.CONSUMERS:
+	    consumerTasks.showConsumers(strBuffer, Constants.KAFKA_JSON_FORMAT);
+	    result = "print consumer state with client command and succeed!";
+	    break;
 
-            case Message.LOADER:
-                log.info("print loader state with client command");
-		consumerTasks.getLoaderTasks()
-		    .showLoaders(strBuffer, Constants.KAFKA_JSON_FORMAT);
-                break;
+	case Message.LOADERS:
+	    consumerTasks.getLoaderTasks()
+		.showLoaders(strBuffer, Constants.KAFKA_JSON_FORMAT);
+	    result = "print loader state with client command and succeed!";
+	    break;
 
-            case Message.TABLES:
-                log.info("print tables state with client command");
-		consumerTasks.getLoaderTasks().getLoadStates()
-		    .showTables(strBuffer, Constants.KAFKA_JSON_FORMAT);
-                break;
-
-            case Message.TASKS:
-                log.info("print tasks with client command");
-		consumerTasks.showTasks(strBuffer, Constants.KAFKA_JSON_FORMAT);
-                break;
-
-            default:
-                log.error("Unexpected kind of message sub type: " + subType);
-                retMsg = FAIL;
-                break;
+	case Message.TABLES:
+	    consumerTasks.getLoaderTasks().getLoadStates()
+		.showTables(strBuffer, Constants.KAFKA_JSON_FORMAT);
+	    result = "print tables state with client command and succeed!";
+	    break;
+	    
+	case Message.TASKS:
+	    result = "print tasks with client command and succeed!";
+	    consumerTasks.showTasks(strBuffer, Constants.KAFKA_JSON_FORMAT);
+	    break;
+	    
+	default:
+	    String errMsg = "Unexpected kind of message sub type: " + subType;
+	    log.error(errMsg);
+	    retMsg = FAIL;
+	    retMsg.setMsgs(errMsg);
+            
+	    return retMsg;
         }
 
 	retMsg.setMsgs(strBuffer.toString());
+	log.info(result);
 
 	return retMsg;
     }

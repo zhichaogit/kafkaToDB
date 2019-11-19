@@ -39,6 +39,7 @@ public class ConsumerTask<T> {
     public final static int          STATE_PARTITION_ERROR   = 6;
     public final static int          STATE_TOPIC_ERROR       = 7;
 
+    private int                 taskid                       = -1;
     @Setter
     @Getter
     private String              topic                        = null;
@@ -78,10 +79,12 @@ public class ConsumerTask<T> {
 
     private static Logger       log     = Logger.getLogger(ConsumerTask.class);
 
-    public ConsumerTask(ConsumeStates consumeStates_, String topic_,String desSchema_, String group_,
-			int partitionID_, LoaderHandle loaderHandle_) {
+    public ConsumerTask(int taskid_, ConsumeStates consumeStates_, String topic_,
+			String desSchema_, String group_, int partitionID_, 
+			LoaderHandle loaderHandle_) {
         if (log.isTraceEnabled()) { log.trace("enter"); }
 
+	taskid         = taskid_;
 	consumeStates  = consumeStates_;
 	topic          = topic_;
 	desSchema      = desSchema_;
@@ -492,21 +495,22 @@ public class ConsumerTask<T> {
 	switch(format){
 	case Constants.KAFKA_STRING_FORMAT:
 	    String consumerTaskStr =
-		String.format("  -> Msg Task {Loader:%3d, Topic:%16s, Partition:%3d"
-			      + ", Group:%16s, Number:%12d, Time:%15s, Offset:%12d}",
+		String.format("  -> Msg Task: {Loader: %3d, Topic: %16s, Partition: %3d"
+			      + ", Group: %16s, Number: %12d, Time: %15s, Offset: %12d}",
 			      loaderHandle.getLoaderID(), topic, partitionID, group, 
 			      consumeNumber, Utils.stampToDateStr(curTime), curOffset);
 	    strBuffer.append(consumerTaskStr);
 	    break;
 
 	case Constants.KAFKA_JSON_FORMAT:
-	    strBuffer.append("{\"Msg Task\": {\"Loader\":" + loaderHandle.getLoaderID())
-		.append(", \"Topic\":" + topic)
+	    strBuffer.append("{\"Msg Task\": " + taskid)
+		.append(", \"Loader\":" + loaderHandle.getLoaderID())
+		.append(", \"Topic\": \"" + topic + "\"")
 		.append(", \"Partition\":" + partitionID)
-		.append(", \"Group\": " + group)
-		.append(", \"Number\":" + consumeNumber)
-		.append(", \"Time\":" + Utils.stampToDateStr(curTime))
-		.append(", \"Offset:" + curOffset + "}}");
+		.append(", \"Group\": \"" + group + "\"")
+		.append(", \"Number\": " + consumeNumber)
+		.append(", \"Time\": \"" + Utils.stampToDateStr(curTime) + "\"")
+		.append(", \"Offset\":" + curOffset + "}");
 	    break;
 	}
     }

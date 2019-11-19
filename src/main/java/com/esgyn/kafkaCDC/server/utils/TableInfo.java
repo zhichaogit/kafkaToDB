@@ -145,8 +145,8 @@ public class TableInfo {
 	   
 	case Constants.KAFKA_JSON_FORMAT:
 	    strBuffer.append("{\"tableName\":\"" + schemaName)
-		.append("\".\"" + tableName)
-		.append(", \"info\":{\"Msgs\":{\"insert\":" + insMsgNum)
+		.append("." + tableName + "\"")
+		.append(", \"Msgs\":{\"insert\":" + insMsgNum)
 		.append(", \"update\":" + updMsgNum)
 		.append(", \"updkey\":" + keyMsgNum)
 		.append(", \"delete\":" + delMsgNum + "}")
@@ -155,7 +155,7 @@ public class TableInfo {
 		.append(", \"delete\":" + deleteNum + "}")
 		.append(", \"Fails\": {\"insert\":" + errInsNum)
 		.append(", \"update\":" + errUpdNum)
-		.append(", \"delete\":" + errDelNum + "}}}");
+		.append(", \"delete\":" + errDelNum + "}}");
 	    break;
 	}	    
     }

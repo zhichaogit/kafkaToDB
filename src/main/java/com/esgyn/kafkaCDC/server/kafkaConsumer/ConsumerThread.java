@@ -123,14 +123,14 @@ public class ConsumerThread extends Thread {
 	    break;
 	    
 	case Constants.KAFKA_JSON_FORMAT:
-	    strBuffer.append("{\"Consumer\": {\"ID\": " + consumerID)
+	    strBuffer.append("{\"Consumer ID\": " + consumerID)
 		.append(", \"Msgs\": " + consumedNumber)
 		.append(", \"Speed(n/s)\": " + consumedNumber/consumeTime)
 		.append(", \"Wait\": \"" + waitTime + "ms\"")
 		.append(", \"Wait Loader\": \"" + waitLoaderTime + "ms\"")
 		.append(", \"Max Free\": \"" + consumerTasks.getMaxWaitTime() + "ms\"")
-		.append(", \"Looping\":" + looping)
-		.append(", \"Running\": " + getRunning() + "}}");
+		.append(", \"Looping\": \"" + looping + "\"")
+		.append(", \"Running\": \"" + getRunning() + "\"}");
 	    break;
 	}
 

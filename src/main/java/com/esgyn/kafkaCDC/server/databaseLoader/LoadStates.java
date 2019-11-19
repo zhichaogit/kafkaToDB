@@ -91,7 +91,7 @@ public class LoadStates {
 	boolean first = true;
 	Map<String, TableInfo> tableHashMap = params.getDatabase().getTableHashMap();
 
-	strBuffer.append(Constants.getFormatStart(format));
+	strBuffer.append(Constants.getFormatStart("Tables", format));
 	for (String tableName : tableHashMap.keySet()) {
 	    TableInfo tableInfo = tableHashMap.get(tableName);
 	    String mapTableName = tableInfo.getSchemaName() + "." + tableInfo.getTableName();

@@ -29,15 +29,10 @@ bin=`cd "$bin"; pwd`
 BASEPATH=$(cd $bin ; cd ../; pwd)
 LIBSPATH=$(cd $BASEPATH/libs ; pwd)
 
-echo "bin:${bin}"
-echo "java_home:$JAVA_HOME"
-echo "BASEPATH:${BASEPATH}"
-echo "LIBSPATH:${LIBSPATH}"
-
 #2 drop logs just reserve 3
 if [ -d $BASEPATH/logs ];then
   LOGSPATH="$BASEPATH/logs"
-  echo "LOGSPATH:${LOGSPATH}"
+  #echo "LOGSPATH:${LOGSPATH}"
   . $BASEPATH/bin/droplogs.sh
 fi
 #3 analy parameters

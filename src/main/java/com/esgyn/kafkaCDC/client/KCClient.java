@@ -97,9 +97,9 @@ public class KCClient {
 	    if (reqMessage.init(type, subType)) {
 		kcConnection.send(reqMessage);
 
-		Message feedback = kcConnection.receive();
-		System.out.println("the result: " + feedback.toString());
-		// TODO, the operator is succeed or not?
+		Message msg = kcConnection.receive();
+
+		System.out.println(msg.getMsgs());
 	    }
         } catch (Exception e) {
             e.printStackTrace();
