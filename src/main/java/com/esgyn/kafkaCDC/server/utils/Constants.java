@@ -5,7 +5,7 @@ public class Constants {
     public final static String       DEFAULT_JSONCONFPATH  = "conf/kafkaCDC.json";
     public final static String       DEFAULT_LOG_PATH      = "logs/";
     public final static String       DEFAULT_UNLOAD_PATH   = "unload/";
-    public final static String       KafkaCDC_VERSION      = "KafkaCDC-2.0.0";
+    public final static String       KafkaCDC_VERSION      = "KafkaCDC-2.0.3";
     public final static int          DEFAULT_KC_PORT       = 8889;
 
     // the unit is second
