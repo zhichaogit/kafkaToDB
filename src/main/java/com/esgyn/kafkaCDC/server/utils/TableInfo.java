@@ -201,7 +201,7 @@ public class TableInfo {
                 maxDSpeed = curDSpeed;
             String tableSpeedStr =
                     String.format("\n%-66s"
-                            + "tableSpee(dn/s) [max: %d, avg: %d, cur: %d] "
+                            + "tableSpeed(n/s) [max: %d, avg: %d, cur: %d] "
                             + "IS(n/s) [ %d, %d, %d] "
                             + "US(n/s) [ %d, %d, %d] "
                             + "KS(n/s) [ %d, %d, %d] "

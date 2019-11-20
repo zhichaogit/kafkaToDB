@@ -59,7 +59,7 @@ public class Message implements Serializable {
 
     public Message() {}
 
-    public Message(int msgTYpe, int subType) {
+    public Message(int msgType, int subType) {
 	this.msgType = msgType;
 	this.subType = subType;
     }
