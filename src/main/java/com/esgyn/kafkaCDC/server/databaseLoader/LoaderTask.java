@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 import com.esgyn.kafkaCDC.server.database.TableState;
 import com.esgyn.kafkaCDC.server.kafkaConsumer.messageType.RowMessage;
 import com.esgyn.kafkaCDC.server.utils.Parameters;
+import com.esgyn.kafkaCDC.server.utils.Constants;
 import com.esgyn.kafkaCDC.server.utils.TableInfo;
 import com.esgyn.kafkaCDC.server.utils.Utils;
 
@@ -161,7 +162,12 @@ public class LoaderTask {
 		log.debug("there are [" + tableState.getCacheTotal() + "] rows in cache"); 
 	    }
 
-	    if (!tableState.flushData(dbConn, state))
+	    if (state == Constants.STATE_RUNNING)
+		tableState.setState(TableState.EMPTY);
+	    else
+		tableState.setState(TableState.ERROR);
+
+	    if (!tableState.flushData(dbConn))
 	        return false;
 
 	    loadStates.addErrInsertNum(tableState.getErrInsert());

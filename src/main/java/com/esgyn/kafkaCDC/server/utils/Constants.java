@@ -73,6 +73,17 @@ public class Constants {
     public final static int          KAFKA_STRING_FORMAT   = 1;
     public final static int          KAFKA_JSON_FORMAT     = 2;
 
+    // the states
+    public final static int          STATE_RUNNING           = 0;
+    public final static int          STATE_INIT_FAIL         = 1;
+    public final static int          STATE_ARRAY_OVERRUN     = 2;
+    public final static int          STATE_CLONE_NOT_SUPPORT = 3;
+    public final static int          STATE_NORMAL_EXCEPTION  = 4;
+    public final static int          STATE_DUMP_DATA_FAIL    = 5;
+    public final static int          STATE_PARTITION_ERROR   = 6;
+    public final static int          STATE_TOPIC_ERROR       = 7;
+    public final static int          STATE_EXITING           = 8;
+
     public static String getFormatEntry(int format) {
 	switch(format) {
 	case KAFKA_JSON_FORMAT:

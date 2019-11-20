@@ -52,26 +52,32 @@ public class LoaderThread extends Thread {
 	LoaderTask loaderTask = null;
 
 	startTime = Utils.getTime();
+
 	// exit when finished the tasks
-	while (getLoaderState() != Constants.KAFKA_CDC_ABORT) {
+	while (loaderTask == null) {
 	    // remove the task from the queue
 	    loaderTask = loaderHandle.poll();
 	    if (loaderTask != null){
 		waitTime = 0;
 		while (loaderTask != null) {
+		    if (getLoaderState() == Constants.KAFKA_CDC_IMMEDIATE
+			|| getLoaderState() == Constants.KAFKA_CDC_ABORT) {
+			break;
+		    }
 		    try {
 			if (dbConn == null) {
 			    dbConn = Database.CreateConnection(loaderHandle.getParams().getDatabase());
 			}
 
 			if (dbConn != null) {
-			    long loadNumber = loaderTask.work(loaderHandle.getLoaderID(), 
-							      dbConn, tables, state);
+			    long loadNumber = loaderTask.work(loaderHandle.getLoaderID(), dbConn, 
+							      tables, Constants.STATE_RUNNING);
 			    if (loadNumber < 0) {
 				log.error("loader thread load data to database fail! "
 					  + "fix the database error as soon as possable please, "
 					  + "loader thread will wait " + sleepTime + "ms and continue");
-				loaderTask.getLoadStates().addTransFails(1);
+				// we try it again, it's not fail
+				// loaderTask.getLoadStates().addTransFails(1);
 				Utils.waitMillisecond(sleepTime);
 
 				Database.CloseConnection(dbConn);
@@ -94,7 +100,8 @@ public class LoaderThread extends Thread {
 		    } catch (SQLException se) {
 			log.error("loader thread throw exception when execute work:", se);
 			try {
-			    loaderTask.getLoadStates().addTransFails(1);
+			    // we are try again, it's not fail
+			    // loaderTask.getLoadStates().addTransFails(1);
 			    dbConn.rollback();
 			} catch (Exception e) {
 			}
@@ -110,7 +117,11 @@ public class LoaderThread extends Thread {
 			Utils.waitMillisecond(sleepTime);
 		    }
 		}
-	    } else if (getLoaderState() == Constants.KAFKA_CDC_RUNNING) {
+	    } else if (getLoaderState() != Constants.KAFKA_CDC_RUNNING) {
+		log.info("loader thread exit via state [" 
+			 + Constants.getState(getLoaderState()) + "]");
+		break;
+	    } else {
 		// there are no work to do, go to sleep a while
 		if (log.isDebugEnabled()) {
 		    log.debug("loader thread haven't task to do, loader goto sleep "
@@ -127,11 +138,31 @@ public class LoaderThread extends Thread {
 
 		waitTime += sleepTime;
 		Utils.waitMillisecond(sleepTime);
-	    } else {
-		log.info("loader thread stoped via close.");
-		break;
 	    }
 	} // while true
+
+	while (loaderTask != null) {
+	    switch (getLoaderState()) {
+	    case Constants.KAFKA_CDC_RUNNING:
+	    case Constants.KAFKA_CDC_NORMAL:
+		log.error("loader cann't exit with tasks in RUNNING and NORMAL state.");
+	    case Constants.KAFKA_CDC_IMMEDIATE:
+		try {
+		    // dump data to file
+		    loaderTask.work(loaderHandle.getLoaderID(), dbConn,
+				    tables, Constants.STATE_EXITING);
+		} catch (Exception e) {
+		    log.error("throw exception when dump data to file:", e);
+		}
+		loaderTask.getLoadStates().addTransFails(1);
+		break;
+
+	    case Constants.KAFKA_CDC_ABORT:
+		// do nothing when abort, remove the task
+		break;
+	    }
+	    loaderTask = loaderHandle.poll();	    
+	}
 
 	if (dbConn != null) {
 	    Database.CloseConnection(dbConn);
@@ -168,7 +199,6 @@ public class LoaderThread extends Thread {
 		.append(", \"state\": \"" + Constants.getState(getLoaderState()) + "\"}");
 	    break;
 	}
-
     }
 
     public synchronized int getLoaderState() { return state; }

@@ -39,7 +39,7 @@ public class KafkaCDC {
     }
 
     public static void showStatistics(ConsumerTasks consumerTasks) {
-        while (consumerTasks.getRunning() > 0) {
+        while (consumerTasks.getLoaderTasks().getRunning() > 0) {
 	    Utils.waitMillisecond(consumerTasks.getParams().getKafkaCDC().getInterval());
 
 	    show(consumerTasks);

@@ -21,11 +21,13 @@ import com.esgyn.kafkaCDC.server.utils.Constants;
 import com.esgyn.kafkaCDC.server.utils.Utils;
 
 import lombok.Getter;
+import lombok.Setter;
 
 public class TableState {
     public final static int                ERROR       = -1;
     public final static int                EMPTY       = 0;
 
+    @Setter
     @Getter
     private int                            state       = EMPTY;
     @Getter
@@ -667,7 +669,7 @@ public class TableState {
         errDelete = 0;
     }
 
-    public boolean flushData(Connection dbConn_, int state_) throws SQLException {
+    public boolean flushData(Connection dbConn_) throws SQLException {
         if (log.isTraceEnabled()) {
             log.trace("commit table [" + schemaName + "." + tableName + ", insert: "
 		      + insertRows.size() + ", update: " + updateRows.size() + ", delete: "
@@ -676,7 +678,7 @@ public class TableState {
 
 	long startTime = Utils.getTime();
 
-	if (state == ERROR || state_ == Constants.KAFKA_CDC_IMMEDIATE) {
+	if (state == ERROR) {
 	    boolean isDumpToFile = dump_data_to_file(true);
 	    if (isDumpToFile) {
 	            errInsert = insertRows.size();

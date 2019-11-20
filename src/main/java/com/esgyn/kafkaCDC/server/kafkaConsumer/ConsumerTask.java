@@ -30,15 +30,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class ConsumerTask<T> {
-    // the states
-    public final static int          STATE_INIT_FAIL         = 1;
-    public final static int          STATE_ARRAY_OVERRUN     = 2;
-    public final static int          STATE_CLONE_NOT_SUPPORT = 3;
-    public final static int          STATE_NORMAL_EXCEPTION  = 4;
-    public final static int          STATE_DUMP_DATA_FAIL    = 5;
-    public final static int          STATE_PARTITION_ERROR   = 6;
-    public final static int          STATE_TOPIC_ERROR       = 7;
-
     private int                 taskid                       = -1;
     @Setter
     @Getter
@@ -238,13 +229,13 @@ public class ConsumerTask<T> {
         } catch (WakeupException we) {
             log.warn("wakeup exception");
 	} catch (ArrayIndexOutOfBoundsException aiooe) {
-	    state = STATE_ARRAY_OVERRUN;
+	    state = Constants.STATE_ARRAY_OVERRUN;
 	    log.error("table schema is not matched with data", aiooe);
 	} catch (CloneNotSupportedException cnse) {
-	    state = STATE_CLONE_NOT_SUPPORT;
+	    state = Constants.STATE_CLONE_NOT_SUPPORT;
 	    log.error("clone the RowMessage failed.", cnse);
 	} catch (Exception e) {
-	    state = STATE_NORMAL_EXCEPTION;
+	    state = Constants.STATE_NORMAL_EXCEPTION;
 	    log.error("consume RowMessage failed.", e);
         } finally {
 	    if (log.isDebugEnabled()) {
@@ -288,7 +279,7 @@ public class ConsumerTask<T> {
 			  + "], timestamp [" + curTime + "], partition ["
 			  + "], topic [" + topic + "], message [" 
 			  + urm.getMsgString() + "]");
-		state = STATE_INIT_FAIL;
+		state = Constants.STATE_INIT_FAIL;
 		return false;
 	    }
 
@@ -381,7 +372,7 @@ public class ConsumerTask<T> {
 	    if (params.getKafkaCDC().isDumpBinary() &&
 		!FileUtils.dumpDataToFile(rows, filePath, FileUtils.BYTE_STRING,
 		        maxFileSize, maxBackupIndex)) {
-		state = STATE_DUMP_DATA_FAIL;
+		state = Constants.STATE_DUMP_DATA_FAIL;
 		log.error("dump banirt data to file fail.");
 		return false;
 	    }
@@ -389,7 +380,7 @@ public class ConsumerTask<T> {
 	    filePath = rootPath + fileName + ".sql";
 	    if (!FileUtils.dumpDataToFile(rows, filePath, FileUtils.SQL_STRING,
 	            maxFileSize, maxBackupIndex)) {
-		state = STATE_DUMP_DATA_FAIL;
+		state = Constants.STATE_DUMP_DATA_FAIL;
 		log.error("dump sql data to file fail.");
 		return false;
 	    }
@@ -430,7 +421,7 @@ public class ConsumerTask<T> {
 		      + partitionID + "] recv the error partition ["
 		      + record.partition() 
 		      + "], check the kafka server please!");
-	    state = STATE_PARTITION_ERROR;
+	    state = Constants.STATE_PARTITION_ERROR;
 	    return false;
 	}
 
@@ -439,7 +430,7 @@ public class ConsumerTask<T> {
 		      + partitionID + "] recv the error topic ["
 		      + record.topic() 
 		      + "], check the kafka server please!");
-	    state = STATE_TOPIC_ERROR;
+	    state = Constants.STATE_TOPIC_ERROR;
 	    return false;
 	}
 
