@@ -2,8 +2,6 @@ package com.esgyn.kafkaCDC.server.kafkaConsumer;
 
 import java.text.DecimalFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 

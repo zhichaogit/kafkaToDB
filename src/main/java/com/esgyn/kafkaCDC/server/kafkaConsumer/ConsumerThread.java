@@ -108,6 +108,8 @@ public class ConsumerThread extends Thread {
     public void show(StringBuffer strBuffer, int format) { 
 	Long  waitLoaderTime = Utils.getTime() - preLoaderTime;
 	Long  consumeTime    = Utils.getTime() - startTime;
+	Long  maxWaitTime    = consumerTasks.getMaxWaitTime();
+	maxWaitTime          = maxWaitTime < 0 ? -1 : maxWaitTime;
 	if (consumeTime <= 0)
 	    consumeTime = (long)1;
 
@@ -117,7 +119,7 @@ public class ConsumerThread extends Thread {
 		String.format("  -> Consumer {ID:%3d, Msgs:%12d, Speed: %6d, Wait:%12dms,"
 			      + " Wait Loader: %12dms, Max Free: %8dms, Looping:%5s, Running:%5s}",
 			      consumerID, consumedNumber, consumedNumber/consumeTime, 
-			      waitTime, waitLoaderTime, consumerTasks.getMaxWaitTime(),
+			      waitTime, waitLoaderTime, maxWaitTime,
 			      String.valueOf(looping), String.valueOf(getRunning()));
 	    strBuffer.append(consumerThreadStr);
 	    break;
