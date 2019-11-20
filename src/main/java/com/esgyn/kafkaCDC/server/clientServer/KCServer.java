@@ -12,7 +12,6 @@ import org.apache.log4j.Logger;
 
 import com.esgyn.kafkaCDC.server.kafkaConsumer.ConsumerTasks;
 import com.esgyn.kafkaCDC.server.utils.Constants;
-import com.esgyn.kafkaCDC.server.utils.Utils;
 
 public class KCServer extends Thread{
     private static Logger log = Logger.getLogger(KCServer.class);
