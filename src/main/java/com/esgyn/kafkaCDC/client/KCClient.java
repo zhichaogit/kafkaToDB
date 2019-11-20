@@ -18,6 +18,8 @@ public class KCClient {
     private static String         type    = null;
     private static String         subType = null;
 
+    private static Message close  = new Message(Message.CLOSE, Message.DISCONNECT);
+
     public static void main(String[] args) {
         KCClient kcClient = new KCClient();
 
@@ -98,6 +100,7 @@ public class KCClient {
 		kcConnection.send(reqMessage);
 
 		Message msg = kcConnection.receive();
+		kcConnection.send(close);
 
 		System.out.println(msg.getMsgs());
 	    }

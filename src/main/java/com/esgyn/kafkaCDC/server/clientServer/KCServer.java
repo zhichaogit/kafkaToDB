@@ -90,6 +90,7 @@ public class KCServer extends Thread{
 		SocketChannel xServer  = getSocketChannel(key);
 		KCConnection  kcConn   = null;
 		Message       feedback = null;
+		Message       require  = null;
 
 		SUCCEED.setMsgs("");
 		if (log.isDebugEnabled()) {
@@ -101,9 +102,9 @@ public class KCServer extends Thread{
 			xServer.finishConnect();
 		    }
 
-		    kcConn = new KCConnection(xServer);
-		    Message require   = kcConn.receive();
-		    feedback  = processKCMessage(require);
+		    kcConn   = new KCConnection(xServer);
+		    require  = kcConn.receive();
+		    feedback = processKCMessage(require);
 
 		    if (log.isDebugEnabled()) {
 			log.debug("client connection request established");
@@ -116,11 +117,16 @@ public class KCServer extends Thread{
 		    try {
 			kcConn.send(feedback);
 
-			Utils.waitMillisecond(1000);
-
+			// wait ask to exit
+			require = kcConn.receive();
+			if (require.getMsgType() != Message.CLOSE 
+			    || require.getSubType() != Message.DISCONNECT)
+			    log.error("client message type [" + require.getMsgType() 
+				      + "], sub type [" + require.getSubType() + "] error");
+			
 			xServer.close();
-		    } catch (IOException ioe) {
-			log.error(ioe);
+		    } catch (Exception e) {
+			log.error(e);
 		    }
 		}
 	    }

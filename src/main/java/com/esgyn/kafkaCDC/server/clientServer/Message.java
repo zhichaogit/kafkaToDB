@@ -26,6 +26,7 @@ public class Message implements Serializable {
     public final static int  START      = 2;
     public final static int  STOP       = 3;
     public final static int  PRINT      = 4;
+    public final static int  CLOSE      = 5;
     
     // feedback msg type
     public final static int  RETURN     = 6;
@@ -42,12 +43,15 @@ public class Message implements Serializable {
     public final static int  LOADER     = 202;
 
     // print sub type 
-    public final static int  CONSUMERS  = 301;
-    public final static int  LOADERS    = 302;
-    public final static int  TABLES     = 303;
-    public final static int  TASKS      = 304;
-    public final static int  KAFKA      = 305;
-    public final static int  DATABASE   = 306;
+    public final static int  CONSUMERS  = 401;
+    public final static int  LOADERS    = 402;
+    public final static int  TABLES     = 403;
+    public final static int  TASKS      = 404;
+    public final static int  KAFKA      = 405;
+    public final static int  DATABASE   = 406;
+
+    // print sub type 
+    public final static int  DISCONNECT = 501;
 
     // the return values
     public final static int  SUCCEED    = 900;
