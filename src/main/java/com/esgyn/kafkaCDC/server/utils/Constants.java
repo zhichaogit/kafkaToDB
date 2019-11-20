@@ -102,10 +102,10 @@ public class Constants {
 	return "";
     }
 
-    public static String getFormatEnd(int format) {
+    public static String getFormatEnd(String end, int format) {
 	switch(format) {
 	case KAFKA_JSON_FORMAT:
-	    return "]}\n";
+	    return "]" + end + "}\n";
 	}
 
 	return "\n";

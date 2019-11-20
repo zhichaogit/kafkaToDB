@@ -102,7 +102,7 @@ public class LoadStates {
 		tableInfo.show(strBuffer, format);
 	    }
 	}
-	strBuffer.append(Constants.getFormatEnd(format));
+	strBuffer.append(Constants.getFormatEnd("", format));
     }
 
     public void showDatabase(StringBuffer strBuffer, int format) {

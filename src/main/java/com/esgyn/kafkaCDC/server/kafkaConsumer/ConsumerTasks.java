@@ -191,7 +191,7 @@ public class ConsumerTasks<T> {
 	    first = false;
 	    consumer.show(strBuffer, format);
 	}
-	strBuffer.append(Constants.getFormatEnd(format));
+	strBuffer.append(Constants.getFormatEnd("", format));
     }
 
     public void showTasks(StringBuffer strBuffer, int format) { 
@@ -214,7 +214,14 @@ public class ConsumerTasks<T> {
 	    first = false;
 	    task.show(strBuffer, format);
 	}
-	strBuffer.append(Constants.getFormatEnd(format));
+
+	String end = "";
+	if (format == Constants.KAFKA_JSON_FORMAT) {
+	    end = ", \"oldest\": \"" + Utils.stampToDateStr(oldestTime) + "\""
+		+ ", \"newest\": \"" + Utils.stampToDateStr(newestTime) + "\"";
+	}
+
+	strBuffer.append(Constants.getFormatEnd(end, format));
     }
 
     public void show(StringBuffer strBuffer) { 

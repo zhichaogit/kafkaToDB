@@ -64,7 +64,7 @@ public class LoaderTasks<T> {
 	    first = false;
 	    loader.show(strBuffer, format);
 	}
-	strBuffer.append(Constants.getFormatEnd(format));
+	strBuffer.append(Constants.getFormatEnd("", format));
     }
 
     public void show(StringBuffer strBuffer) {
