@@ -193,6 +193,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 		    }
 		}
 		operatorType = "D";
+		break;
 	    }
             case DELETE_VAL: {
                 operatorType = "D";
@@ -213,6 +214,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 		    }
 		}
 		operatorType = "U";
+		break;
 	    } 
             case UPDATE_COMP_SQL_VAL: {
                 operatorType = "U";
