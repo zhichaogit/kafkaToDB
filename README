@@ -5,6 +5,7 @@ usage: Consumer Server
     --batchSize <arg>   batch means update operate will batch execute,
                         default: 500
     --batchUpdate       update operate will use batch, default: false
+    --ignore            ignore the data where user defined, default: false
     --bigendian         the data format is big endian, default: little endian
     --cleanInterval <arg>   clean log interval time,-1 will not clean.default: 10s
     --cleanDelayTime <arg>   clean the log delay time,default: 3600s

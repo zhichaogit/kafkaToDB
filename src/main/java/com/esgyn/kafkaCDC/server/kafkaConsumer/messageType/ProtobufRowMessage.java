@@ -182,7 +182,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 
 	    case DELETE_DRDS: {
 		ColumnInfo columnInfo = tableInfo.getColumn("\"DELETE_TAG\"");
-		if (columnInfo != null) {
+		if (params.getDatabase().isIgnore() && columnInfo != null) {
 		    ColumnValue columnValue = columns.get(columnInfo.getColumnID());
 		    String     oldValue = columnValue.getOldValue();
 
@@ -192,6 +192,8 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 			tableName += "_NO_SYNC_";
 		    }
 		}
+		operatorType = "D";
+		break;
 	    }
             case DELETE_VAL: {
                 operatorType = "D";
@@ -200,7 +202,7 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 
 	    case UPDATE_DRDS: {
 		ColumnInfo columnInfo = tableInfo.getColumn("\"DELETE_TAG\"");
-		if (updateColumns == 1 && columnInfo != null){
+		if (params.getDatabase().isIgnore() && updateColumns == 1 && columnInfo != null ){
 		    ColumnValue columnValue = columns.get(columnInfo.getColumnID());
 		    String     oldValue = columnValue.getOldValue();
 		    String     curValue = columnValue.getCurValue();
@@ -211,6 +213,8 @@ public class ProtobufRowMessage extends RowMessage<byte[]> {
 			tableName += "_NO_SYNC_";
 		    }
 		}
+		operatorType = "U";
+		break;
 	    } 
             case UPDATE_COMP_SQL_VAL: {
                 operatorType = "U";

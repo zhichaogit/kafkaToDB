@@ -143,6 +143,7 @@ public class Constants {
         {"",   "batchSize",   false,  true, "batch means update operate will batch execute,"
 	 + " default: 500 "},
 	{"",   "batchUpdate", false, false, "update operate will use batch, default: true"},
+	{"",   "ignore",      false, false, "ignore the data where user defined, default: false"},
 	{"",   "conf",        false,  true, "specified configuration parameter file"},
 	{"",   "networkTO",   false,  true, "Sets a time limit that the driver waits for a reply, default: 5s"},
         {"d",  "dbip",        false,  true, "database server ip, default: \"localhost\""},
