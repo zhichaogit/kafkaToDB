@@ -28,6 +28,9 @@ public class DatabaseParams {
     @Getter 
     private boolean         batchUpdate = false;
     @Setter
+    @Getter 
+    private boolean         ignore      = false;
+    @Setter
     @Getter
     private String          DBIP        = "localhost";
     @Setter
@@ -437,6 +440,7 @@ public class DatabaseParams {
         strBuffer.append("\nDatabase options:")
 	    .append("\n\tbatchSize     = "    + batchSize)
 	    .append("\n\tbatchUpdate   = "    + batchUpdate)
+	    .append("\n\tignore        = "    + ignore)
 	    .append("\n\tDBIP          = "    + DBIP)
 	    .append("\n\tDBPort        = "    + DBPort)
 	    .append("\n\tDBDriver      = "    + DBDriver)

@@ -3,6 +3,7 @@
 		"batchSize": 500,
 		"networkTO": 5,
 		"batchUpdate":true,
+		"ignore": false,
 		"DBIP": "localhost",
 		"DBPort": "23400",
 		"DBType": "EsgynDB",
