@@ -48,7 +48,7 @@ usage: Consumer Server
 *    --maxBackupIndex <arg>   maxBackupIndex for dump to file,-1 is the
                              Integer.MAX_VALUE. default:10
 *    --maxFileSize <arg> maxFileSize for dump to file, default:1024MB
-*    --networkTO <arg>  Sets a time limit that the driver waits for a reply, default:5
+*    --networkTO <arg>  Sets a time limit that the driver waits for a reply, default:30
 *    --logDelay <arg>   Dynamically load log4j.xml conf files interval
                         time, default:10s
 *    --mode <arg>       pull data from beginning or End or specify the

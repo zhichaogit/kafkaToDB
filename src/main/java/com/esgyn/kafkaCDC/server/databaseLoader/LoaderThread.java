@@ -25,7 +25,7 @@ public class LoaderThread extends Thread {
 
     private Connection          dbConn         = null;
 
-    private static int    state = Constants.KAFKA_CDC_RUNNING;
+    private int                 state          = Constants.KAFKA_CDC_RUNNING;
 
     private static Logger log = Logger.getLogger(LoaderThread.class);
 
@@ -140,6 +140,11 @@ public class LoaderThread extends Thread {
 	    }
 	} // while true
 
+	if (dbConn != null) {
+            Database.CloseConnection(dbConn);
+            dbConn = null;
+        }
+
 	while (loaderTask != null) {
 	    switch (getLoaderState()) {
 	    case Constants.KAFKA_CDC_RUNNING:
@@ -163,13 +168,10 @@ public class LoaderThread extends Thread {
 	    loaderTask = loaderHandle.poll();	    
 	}
 
-	if (dbConn != null) {
-	    Database.CloseConnection(dbConn);
-	    dbConn = null;
-	}
-
 	loaderTasks.decrease();
 	looping = false;
+
+	log.info("loader exit,current state[" + state +"]");
 
         if (log.isTraceEnabled()) { log.trace("exit");}
     }

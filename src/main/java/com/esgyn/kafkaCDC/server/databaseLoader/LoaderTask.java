@@ -128,7 +128,9 @@ public class LoaderTask {
 	    return -1;
 	
 	long endProcessTime = Utils.getTime();
-        dbConn.commit();
+	if (dbConn != null) {
+	    dbConn.commit();
+        }
 	long endCommitTime = Utils.getTime();
 	loadStates.addTransTotal(1);
 	loadStates.addDoneTasks(1);

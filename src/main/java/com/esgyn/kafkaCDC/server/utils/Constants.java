@@ -9,7 +9,7 @@ public class Constants {
     public final static int          DEFAULT_KC_PORT       = 8889;
 
     // the unit is second
-    public final static long         DEFAULT_NETWORK_TO_S  = 20;
+    public final static long         DEFAULT_NETWORK_TO_S  = 30;
     public final static long         DEFAULT_LOGDELAY_TO_S = 10;
     public final static long         DEFAULT_STREAM_TO_S   = -1;
     public final static long         DEFAULT_WAIT_TO_S     = 1;
@@ -145,7 +145,7 @@ public class Constants {
 	{"",   "batchUpdate", false, false, "update operate will use batch, default: true"},
 	{"",   "ignore",      false, false, "ignore the data where user defined, default: false"},
 	{"",   "conf",        false,  true, "specified configuration parameter file"},
-	{"",   "networkTO",   false,  true, "Sets a time limit that the driver waits for a reply, default: 5s"},
+	{"",   "networkTO",   false,  true, "Sets a time limit that the driver waits for a reply, default: 30s"},
         {"d",  "dbip",        false,  true, "database server ip, default: \"localhost\""},
         {"",   "dbport",      false,  true, "database server port, default: 23400"},
         {"",   "dbuser",      false,  true, "database server user, default: db__root"},

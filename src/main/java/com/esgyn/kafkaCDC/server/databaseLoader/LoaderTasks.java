@@ -90,6 +90,9 @@ public class LoaderTasks<T> {
 		    // don't need to join, same as ConsumerTasks
 		    // loader.join();
 		    log.info("loader [" + loader.getName() + "] stop succeed!");
+		}else {
+		    log.info(loader.getName() + " current Loaderstate:[" + loader.getLoaderState()
+                            + "],signal_ [" + signal_ +"],loaders num [" + loaders.size() + "]");
 		}
             } catch (Exception e) {
                 log.error("load thread join exception", e);

@@ -1,7 +1,7 @@
 {
 	"database": {
 		"batchSize": 500,
-		"networkTO": 5,
+		"networkTO": 30,
 		"batchUpdate":true,
 		"ignore": false,
 		"DBIP": "localhost",
