@@ -1,11 +1,11 @@
 # Build Process:
-KafkaCDC depends jdbc jar files(reference pom.xml):
+KafkaToDB depends jdbc jar files(reference pom.xml):
 
 jdbcT4-2.4.7.jar couldn't download it by maven ,so you should move it to 
 /home/${user}/.m2/repository/org/apache/trafodion/jdbc/t4/jdbcT4/2.4.7
  by yourself.
 
-# KafkaCDC
+# KafkaToDB
 usage: Consumer Server
 * -b,--broker <arg>     bootstrap.servers setting, ex: <node>:9092,
                         default: "localhost:9092"
@@ -94,14 +94,14 @@ usage: Consumer Server
 * -z,--zook <arg>       zookeeper connection list, ex:<node>:port[/kafka],...
 *    --zkto <arg>       zookeeper time-out limit, default: 10s
 
-# KafkaCDC Dataflow
+# KafkaToDB Dataflow
 * the dataflow of KafkaCDC as following:<br/>
 <p align="center">
 <a href="https://github.com/esgyn/kafkaCDC/blob/new_design/design/dataflow.jpg" target="_blank">
 <img align="center" src="https://github.com/esgyn/kafkaCDC/blob/master/design/dataflow.jpg" alt="Geolife data at block scale"></a><br/><br/>
 </p>
 
-# KafkaCDC Design
+# KafkaToDB Design
 * the architecture of KafkaCDC as following:<br/>
 <p align="center">
 <a href="https://github.com/esgyn/kafkaCDC/blob/master/new_design/architecture.jpg" target="_blank">
