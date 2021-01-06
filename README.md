@@ -94,25 +94,7 @@ usage: Consumer Server
 * -z,--zook <arg>       zookeeper connection list, ex:<node>:port[/kafka],...
 *    --zkto <arg>       zookeeper time-out limit, default: 10s
 
-# KafkaToDB Dataflow
-* the dataflow of KafkaCDC as following:<br/>
-<p align="center">
-<a href="https://github.com/esgyn/kafkaCDC/blob/new_design/design/dataflow.jpg" target="_blank">
-<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/master/design/dataflow.jpg" alt="Geolife data at block scale"></a><br/><br/>
-</p>
 
-# KafkaToDB Design
-* the architecture of KafkaCDC as following:<br/>
-<p align="center">
-<a href="https://github.com/esgyn/kafkaCDC/blob/master/new_design/architecture.jpg" target="_blank">
-<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/master/design/architecture.jpg" alt="Geolife data at block scale"></a><br/><br/>
-</p>
-
-* the classes of KafkaCDC as following:<br/>
-<p align="center">
-<a href="https://github.com/esgyn/kafkaCDC/blob/new_design/design/classes.jpg" target="_blank">
-<img align="center" src="https://github.com/esgyn/kafkaCDC/blob/master/design/classes.jpg" alt="Geolife data at block scale"></a><br/><br/>
-</p>
 
 # example:
 Must create the schema and tables first of all.
@@ -121,10 +103,10 @@ Must have maven and JDK.
 # normal
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -s SEABASE --table tab -t test --mode start -dbuser trafodion --dbpw traf123
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -s SEABASE --table tab -t test --mode start --sto 20 --interval 10 --sto 20  --dbuser trafodion --dbpw traf123 --fetchSize 500 --batchSize 500 -delim "|"
-# HongQuan
+# somecom
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -s SEABASE --table tab -t g_ad --mode start --dbuser trafodion --dbpw traf123 -f HongQuan -s kafkaCDC --table hqTable  --sto 20 --interval 10 --zkto 20 --key org.apache.kafka.common.serialization.LongDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
 
-# Unicom
+# com2
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom  -t test
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --mode start --dbuser trafodion --dbpw traf123 -t test
 * ./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost -g 1 -f Unicom --mode start --dbuser trafodion --dbpw traf123 -s SEABASE  -t test
@@ -137,7 +119,7 @@ Must have maven and JDK.
 *./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f Protobuf --mode start --dbuser trafodion --dbpw traf123 -s schemaname -t testTopic -f  --encode GBK --sto 20 --interval 5 --fetchSize 500 --batchSize 500 --key org.apache.kafka.common.serialization.ByteArrayDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer
 *./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f Protobuf --mode start --dbuser trafodion --dbpw traf123 -s schemaname -t testTopic -f  --encode GBK --sto 20 --interval 5 --fetchSize 500 --batchSize 500 --key org.apache.kafka.common.serialization.ByteArrayDeserializer --value org.apache.kafka.common.serialization.ByteArrayDeserializer  --kafkauser username --kafkapw password
 
-# UnicomJson And authentication
+# comJson And authentication
 *./KafkaCDC-server.sh -p 1 -b localhost:9092 -d localhost  -g 1 -f UnicomJson --mode start --dbuser trafodion --dbpw traf123 -s schemaName  -t testTopic --sto 20 --interval 10  --fetchSize 500 --batchSize 500  --kafkauser username --kafkapw passwd
 
 #.encryption the password(e.g. encodePW:[dHJhZjEyMw==],the [dHJhZjEyMw==] is your password)
